@@ -998,7 +998,6 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   }
 
   private void setDebugPaused(boolean paused) {
-    System.out.println("setDebugPaused: " + paused);
     if (debugPaused == paused) {
       return;
     }

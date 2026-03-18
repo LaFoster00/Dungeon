@@ -17,6 +17,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Base class for integration tests that run against a live Blockly Dungeon session.
@@ -40,6 +41,7 @@ public class DungeonCompilerTestBase {
   private static final HttpClient HTTP = HttpClient.newHttpClient();
 
   static @Nullable Thread clientThread;
+  private static final AtomicBoolean DUNGEON_STARTED = new AtomicBoolean(false);
 
   // =========================================================================
   // Lifecycle
@@ -50,7 +52,13 @@ public class DungeonCompilerTestBase {
    * reachable before returning.
    */
   @BeforeAll
-  static void setUpDungeon() {
+  static synchronized void setUpDungeon() {
+    if (DUNGEON_STARTED.get()) {
+      awaitServerReady(Duration.ofSeconds(30));
+      awaitPlayerPosition(Duration.ofSeconds(5));
+      return;
+    }
+
     Client.MOVEMENT_FORCE = Client.MOVEMENT_FORCE * 5f; // increase player speed for faster tests
     clientThread =
         new Thread(
@@ -65,8 +73,18 @@ public class DungeonCompilerTestBase {
             "dungeon-test-client");
     clientThread.setDaemon(true);
     clientThread.start();
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  if (clientThread != null) {
+                    clientThread.interrupt();
+                  }
+                },
+                "dungeon-test-client-shutdown"));
     awaitServerReady(Duration.ofSeconds(30));
     awaitPlayerPosition(Duration.ofSeconds(5));
+    DUNGEON_STARTED.set(true);
   }
 
   /**
@@ -82,10 +100,8 @@ public class DungeonCompilerTestBase {
   /** Interrupts the dungeon thread when the whole test class has finished. */
   @AfterAll
   static void tearDownDungeon() {
-    if (clientThread != null) {
-      clientThread.interrupt();
-      clientThread = null;
-    }
+    // Keep the shared dungeon session alive across test classes in the same JVM.
+    // This avoids reinitializing static game managers when suites run back-to-back.
   }
 
   // =========================================================================
