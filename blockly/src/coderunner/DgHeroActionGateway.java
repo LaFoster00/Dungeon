@@ -14,6 +14,7 @@ import contrib.utils.components.skill.projectileSkill.FireballSkill;
 import core.Entity;
 import core.Game;
 import core.components.PositionComponent;
+import core.components.VelocityComponent;
 import core.level.Tile;
 import core.utils.Direction;
 import core.utils.MissingPlayerException;
@@ -115,8 +116,13 @@ public class DgHeroActionGateway implements DgActionGateway {
                     .filter(entity -> entity.name().equals(BlocklyMonster.BLACK_KNIGHT_NAME))
                     .findFirst();
             blackNightOpt
-                .flatMap(entity -> entity.fetch(PositionComponent.class))
-                .ifPresent(pc -> pc.viewDirection(pc.viewDirection().applyRelative(direction)));
+              .flatMap(
+                entity ->
+                  entity
+                    .fetch(VelocityComponent.class)
+                    .filter(vc -> vc.maxSpeed() > 0)
+                    .flatMap(vc -> entity.fetch(PositionComponent.class)))
+              .ifPresent(pc -> pc.viewDirection(pc.viewDirection().applyRelative(direction.opposite())));
           }
           onComplete.run();
         });
@@ -189,24 +195,26 @@ public class DgHeroActionGateway implements DgActionGateway {
   public void drop(@NotNull DgAttrs.DropTypeAttr.DropType dropType, @NotNull Runnable onComplete) {
     Gdx.app.postRunnable(
         () -> {
-          var heroOpt = Game.player();
-          if (heroOpt.isEmpty()) {
-            onComplete.run();
-            return;
-          }
-          var hero = heroOpt.get();
-          Point heroPos =
+          try {
+            var heroOpt = Game.player();
+            if (heroOpt.isEmpty()) {
+              return;
+            }
+            var hero = heroOpt.get();
+            Point heroPos =
               hero.fetch(PositionComponent.class)
-                  .map(PositionComponent::position)
-                  .map(pos -> pos.translate(0.5f, 0.5f))
-                  .orElse(null);
+                .map(PositionComponent::position)
+                .map(pos -> pos.translate(0.5f, 0.5f))
+                .orElse(null);
 
-          switch (dropType) {
-            case BREADCRUMBS -> Game.add(MiscFactory.breadcrumb(heroPos));
-            case CLOVER -> Game.add(MiscFactory.clover(heroPos));
-            default ->
-                throw new IllegalArgumentException(
-                    "Can not convert " + dropType + " to droppable Item.");
+            switch (dropType) {
+              case BREADCRUMBS -> Game.add(MiscFactory.breadcrumb(heroPos));
+              case CLOVER -> Game.add(MiscFactory.clover(heroPos));
+              default -> throw new IllegalArgumentException(
+                "Can not convert " + dropType + " to droppable Item.");
+            }
+          } finally {
+            onComplete.run();
           }
         });
   }
