@@ -10,6 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -66,6 +67,9 @@ public class DapServer implements AutoCloseable {
    * operations.
    */
   private final @NotNull AtomicReference<DapAdapter> currentAdapter = new AtomicReference<>();
+
+  private final @NotNull AtomicReference<Consumer<Boolean>> debugPauseListener =
+      new AtomicReference<>();
 
   /**
    * Create a server that listens on the given port.
@@ -175,6 +179,7 @@ public class DapServer implements AutoCloseable {
     if (adapter == null) {
       VM vm = vmFactory.get();
       DapAdapter fresh = new DapAdapter(vm);
+      fresh.setDebugPauseListener(debugPauseListener.get());
       if (currentAdapter.compareAndSet(null, fresh)) {
         adapter = fresh;
       } else {
@@ -293,6 +298,7 @@ public class DapServer implements AutoCloseable {
     if (adapter == null) {
       VM vm = vmFactory.get();
       DapAdapter fresh = new DapAdapter(vm);
+      fresh.setDebugPauseListener(debugPauseListener.get());
       if (currentAdapter.compareAndSet(null, fresh)) {
         adapter = fresh;
       } else {
@@ -300,6 +306,21 @@ public class DapServer implements AutoCloseable {
       }
     }
     adapter.reloadProgram(newProgram, stopOnEntry);
+  }
+
+  /**
+   * Registers a callback that receives debugger pause-state transitions.
+   *
+   * <p>The callback gets {@code true} when execution is paused (entry/breakpoint/step/pause) and
+   * {@code false} when execution resumes (continue/disconnect/reload/stop). If an adapter already
+   * exists, the listener is applied immediately.
+   */
+  public void setDebugPauseListener(Consumer<Boolean> listener) {
+    debugPauseListener.set(listener);
+    DapAdapter adapter = currentAdapter.get();
+    if (adapter != null) {
+      adapter.setDebugPauseListener(listener);
+    }
   }
 
   /**

@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static dgir.dialect.arith.ArithOps.ConstantOp;
@@ -359,6 +360,34 @@ class DapServerTest extends VmTestBase {
         session.server().continue_(contArgs).get(5, TimeUnit.SECONDS);
 
         session.client().awaitExited();
+        session.client().awaitTerminated();
+      }
+    }
+  }
+
+  /**
+   * Verifies that {@link DapServer#setDebugPauseListener(java.util.function.Consumer)} emits pause
+   * state transitions when the debugger stops on entry and then continues.
+   */
+  @Test
+  void pauseListener_reportsPauseAndResumeTransitions() throws Exception {
+    var serverAndSession = createServerAndConnect(simplePrintProgram("pause-listener"));
+    try (DapServer server = serverAndSession.getLeft()) {
+      LinkedBlockingQueue<Boolean> states = new LinkedBlockingQueue<>();
+      server.setDebugPauseListener(states::add);
+
+      try (ClientSession<CollectingClient> session = serverAndSession.getRight()) {
+        fullHandshake(session, true);
+
+        StoppedEventArguments stopped = session.client().awaitStopped();
+        assertEquals("entry", stopped.getReason());
+        assertEquals(true, states.poll(5, TimeUnit.SECONDS), "Should publish paused=true");
+
+        session.server().continue_(new ContinueArguments()).get(5, TimeUnit.SECONDS);
+        assertEquals(false, states.poll(5, TimeUnit.SECONDS), "Should publish paused=false");
+
+        ExitedEventArguments exited = session.client().awaitExited();
+        assertEquals(0, exited.getExitCode());
         session.client().awaitTerminated();
       }
     }
@@ -1278,6 +1307,73 @@ class DapServerTest extends VmTestBase {
 
       assertTrue(done.await(5, TimeUnit.SECONDS), "Headless VM should complete within 5 s");
       assertTrue(exitOk[0], "Headless program should exit successfully");
+    }
+  }
+
+  /**
+   * Verifies that reloading with {@code stopOnEntry=true} while no DAP client is connected keeps
+   * the VM suspended until a client later attaches and completes the handshake.
+   *
+   * <p><b>Steps:</b>
+   *
+   * <ol>
+   *   <li>Start a server with an instrumented VM that signals when {@link VM#run()} begins/ends.
+   *   <li>Call {@link DapServer#reloadProgram(ProgramOp, boolean)} with {@code stopOnEntry=true}
+   *       before any client connects.
+   *   <li>Assert that {@code run()} did not start yet.
+   *   <li>Connect a client, send {@code initialize}, {@code attach}, and {@code configurationDone}.
+   *   <li>Assert an {@code entry} stop arrives, then continue and verify normal completion.
+   * </ol>
+   */
+  @Test
+  void reload_headless_waitForDebugger_suspendsUntilAttach() throws Exception {
+    CountDownLatch runStarted = new CountDownLatch(1);
+    CountDownLatch runDone = new CountDownLatch(1);
+    boolean[] exitOk = {false};
+
+    VM instrumentedVm =
+        new VM() {
+          @Override
+          public boolean run() {
+            runStarted.countDown();
+            boolean ok = super.run();
+            exitOk[0] = ok;
+            runDone.countDown();
+            return ok;
+          }
+        };
+
+    try (DapServer server = new DapServer(0, () -> instrumentedVm)) {
+      server.start();
+
+      // No debugger attached yet: the VM must not start in wait-for-debugger mode.
+      server.reloadProgram(simplePrintProgram("wait-for-debugger"), /* stopOnEntry= */ true);
+      assertFalse(
+          runStarted.await(300, TimeUnit.MILLISECONDS),
+          "VM must stay suspended until a debugger attaches");
+
+      try (ClientSession<CollectingClient> session = connect(server)) {
+        initializeHandshake(session);
+        session.server().attach(Map.of()).get(5, TimeUnit.SECONDS);
+        session
+            .server()
+            .configurationDone(new ConfigurationDoneArguments())
+            .get(5, TimeUnit.SECONDS);
+
+        StoppedEventArguments stopped = session.client().awaitStopped();
+        assertEquals(
+            "entry", stopped.getReason(), "Attached debugger should receive an entry stop");
+
+        session.server().continue_(new ContinueArguments()).get(5, TimeUnit.SECONDS);
+
+        ExitedEventArguments exited = session.client().awaitExited();
+        assertEquals(0, exited.getExitCode());
+        session.client().awaitTerminated();
+      }
+
+      assertTrue(runStarted.await(1, TimeUnit.SECONDS), "VM should start after debugger attach");
+      assertTrue(runDone.await(5, TimeUnit.SECONDS), "VM should finish after continue");
+      assertTrue(exitOk[0], "Program should exit successfully after attach + continue");
     }
   }
 

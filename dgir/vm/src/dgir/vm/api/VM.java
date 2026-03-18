@@ -223,6 +223,7 @@ public class VM {
     pauseLock.lock();
     try {
       paused = false;
+      if (debugger != null) debugger.onUnpause();
       stepMode = StepMode.NONE;
       resumeCondition.signalAll();
     } finally {
@@ -268,6 +269,7 @@ public class VM {
     pauseLock.lock();
     try {
       paused = false;
+      if (debugger != null) debugger.onUnpause();
       stepMode = StepMode.STEP_OVER;
       // Record the current callstack depth so we can detect when we have returned to
       // the same "level". The op currently on top will be executed next (and may push
@@ -294,6 +296,7 @@ public class VM {
     pauseLock.lock();
     try {
       paused = false;
+      if (debugger != null) debugger.onUnpause();
       stepMode = StepMode.STEP_IN;
       // Remember which source line we are stepping from so we can skip over peer IR
       // operations that belong to the same line.
@@ -317,6 +320,7 @@ public class VM {
     pauseLock.lock();
     try {
       paused = false;
+      if (debugger != null) debugger.onUnpause();
       stepMode = StepMode.STEP_OUT;
       // Record the current callstack depth -1 so we can step through the outer stack frame as
       // expected without entering
@@ -674,6 +678,7 @@ public class VM {
     pauseLock.lock();
     try {
       paused = true;
+      if (debugger != null) debugger.onPause();
       while (paused) {
         resumeCondition.await();
       }

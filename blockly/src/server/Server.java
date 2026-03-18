@@ -153,8 +153,9 @@ public class Server {
   private void addCorsHeaders(HttpExchange exchange) {
     exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
     exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    exchange.getResponseHeaders().add(
-        "Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    exchange
+        .getResponseHeaders()
+        .add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
     exchange.getResponseHeaders().add("Access-Control-Max-Age", "86400");
   }
 
@@ -193,17 +194,15 @@ public class Server {
   }
 
   /**
-   * Returns the first value for a named query parameter or null when the parameter is absent.
-   * Helps handlers avoid repeated null/empty checks.
+   * Returns the first value for a named query parameter or null when the parameter is absent. Helps
+   * handlers avoid repeated null/empty checks.
    */
   private String firstParam(Map<String, List<String>> params, String name) {
     List<String> values = params.get(name);
     return values == null || values.isEmpty() ? null : values.getFirst();
   }
 
-  /**
-   * URL-decodes a single value using UTF-8. Keeps query parsing readable in one place.
-   */
+  /** URL-decodes a single value using UTF-8. Keeps query parsing readable in one place. */
   private String urlDecode(String value) {
     return URLDecoder.decode(value, StandardCharsets.UTF_8);
   }
@@ -291,6 +290,9 @@ public class Server {
     Map<String, List<String>> queryParams = parseQueryParams(exchange);
 
     boolean isStopRequest = queryParams.containsKey("stop");
+    boolean isCompleteProgram = queryParams.containsKey("complete");
+    boolean waitForDebugger = queryParams.containsKey("waitForDebugger");
+    String sourceFileNameParam = firstParam(queryParams, "sourceFileName");
     int sleepAfterEachLine = -1;
     String sleepParam = firstParam(queryParams, "sleep");
     if (sleepParam != null) {
@@ -320,9 +322,12 @@ public class Server {
     interruptExecution = false;
     try {
       if (sleepAfterEachLine >= 0) {
-        BlocklyCodeRunner.instance().compileAndRunCode(text, sleepAfterEachLine);
+        BlocklyCodeRunner.instance()
+            .compileAndRunCode(
+                text, sleepAfterEachLine, isCompleteProgram, waitForDebugger, sourceFileNameParam);
       } else {
-        BlocklyCodeRunner.instance().compileAndRunCode(text);
+        BlocklyCodeRunner.instance()
+            .compileAndRunCode(text, isCompleteProgram, waitForDebugger, sourceFileNameParam);
       }
 
       // Wait 1 second to check for errors or completion

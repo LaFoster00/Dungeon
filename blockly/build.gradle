@@ -32,6 +32,8 @@ dependencies {
     // JUnit Jupiter for testing
     testImplementation supportDependencies.junit
     testRuntimeOnly supportDependencies.junitLauncher
+    testImplementation 'org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0'
+    testImplementation 'org.eclipse.lsp4j:org.eclipse.lsp4j.debug:1.0.0'
 }
 
 tasks.withType(Jar).configureEach {

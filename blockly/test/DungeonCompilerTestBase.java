@@ -117,6 +117,23 @@ public class DungeonCompilerTestBase {
     }
   }
 
+  /** Submits code but keeps execution suspended until an external debugger attaches. */
+  protected static void sendCodeWaitForDebugger(@NotNull String code)
+      throws IOException, InterruptedException {
+    HttpRequest req =
+        HttpRequest.newBuilder()
+            .uri(URI.create(BASE_URL + "/code?waitForDebugger"))
+            .header("Content-Type", "text/plain")
+            .POST(HttpRequest.BodyPublishers.ofString(code))
+            .timeout(Duration.ofSeconds(10))
+            .build();
+    HttpResponse<String> resp = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
+    if (resp.statusCode() != 200) {
+      throw new IllegalStateException(
+          "Code submission failed (HTTP " + resp.statusCode() + "): " + resp.body());
+    }
+  }
+
   /**
    * Returns {@code true} if the dungeon is currently executing a program.
    *

@@ -4,8 +4,10 @@ import blockly.dgir.compiler.java.JavaCompiler;
 import core.utils.logging.DungeonLogger;
 import dgir.vm.api.DapServerUtils;
 import dgir.vm.dap.DapServer;
+import org.jetbrains.annotations.Nullable;
 import server.Server;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import static dgir.dialect.builtin.BuiltinOps.ProgramOp;
@@ -26,7 +28,7 @@ public class BlocklyCodeRunner {
   private static final DungeonLogger LOGGER = DungeonLogger.getLogger(BlocklyCodeRunner.class);
   private static BlocklyCodeRunner instance;
 
-  private DapServer dapServer;
+  private final DapServer dapServer;
 
   private static final String baseCode =
 """
@@ -44,6 +46,12 @@ public class Main {
   // private constructor for singleton
   private BlocklyCodeRunner() {
     dapServer = DapServerUtils.createServer();
+    try {
+      dapServer.start();
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to start DAP server", e);
+    }
+    DebugPauseBridge.install(dapServer);
   }
 
   /**
@@ -78,20 +86,44 @@ public class Main {
     dapServer.stopVm();
   }
 
-  public void compileAndRunCode(String code) {
-    compileAndRunCode(code, 0);
+  public void compileAndRunCode(
+      String code,
+      boolean isCompleteProgram,
+      boolean waitForDebugger,
+      @Nullable String sourceFileName) {
+    compileAndRunCode(code, 0, isCompleteProgram, waitForDebugger, sourceFileName);
   }
 
-  public void compileAndRunCode(String code, int sleepAfterEachLine) {
-    String completeCode = String.format(baseCode, code);
-    LOGGER.info("Compiling and running code: " + completeCode);
-    Optional<ProgramOp> program = JavaCompiler.compileSource(completeCode, "Main.java");
+  public void compileAndRunCode(
+      String code,
+      int sleepAfterEachLine,
+      boolean completeProgram,
+      boolean waitForDebugger,
+      @Nullable String sourceFileName) {
+    String completeCode;
+    if (!completeProgram) {
+      completeCode = String.format(baseCode, code);
+    } else {
+      completeCode = code;
+    }
+    LOGGER.info(
+        "Compiling and running code: "
+            + completeCode
+            + "for file: "
+            + sourceFileName
+            + " with sleep: "
+            + sleepAfterEachLine
+            + " and waitForDebugger: "
+            + waitForDebugger);
+    Optional<ProgramOp> program =
+        JavaCompiler.compileSource(
+            completeCode, sourceFileName != null ? sourceFileName : "Main.java");
     if (program.isEmpty()) {
       LOGGER.error("Failed to compile code");
       return;
     }
     try {
-      dapServer.reloadProgram(program.get());
+      dapServer.reloadProgram(program.get(), waitForDebugger);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }

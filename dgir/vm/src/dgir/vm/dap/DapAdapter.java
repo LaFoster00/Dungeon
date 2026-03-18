@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static dgir.dialect.builtin.BuiltinOps.ProgramOp;
@@ -110,6 +111,12 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   /** Set to {@code true} by {@link #pause(PauseArguments)} to request a suspend. */
   private volatile boolean pauseRequested = false;
 
+  /** Tracks whether the VM is currently paused in debugger control flow. */
+  private volatile boolean debugPaused = false;
+
+  /** Optional callback used by host applications to mirror debugger pause state. */
+  private volatile @Nullable Consumer<Boolean> debugPauseListener;
+
   /**
    * Set to {@code true} when a {@code next}/{@code stepIn}/{@code stepOut} command was issued.
    * Cleared and used by {@link #onStep} to fire a {@code "step"} stopped event instead of a generic
@@ -142,6 +149,14 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   public void setClient(@NotNull IDebugProtocolClient client) {
     this.client = client;
     vm.setDebugger(this); // Re-install in case a prior disconnect() cleared it.
+  }
+
+  /**
+   * Installs a callback that is invoked with {@code true} on debugger pause and {@code false} on
+   * debugger resume.
+   */
+  public void setDebugPauseListener(@Nullable Consumer<Boolean> listener) {
+    this.debugPauseListener = listener;
   }
 
   // =========================================================================
@@ -197,6 +212,7 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
     if (t != null && t.isAlive()) {
       t.interrupt();
     }
+    setDebugPaused(false);
   }
 
   /**
@@ -234,6 +250,7 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
     vm.clearBreakpoints();
     vm.resume();
     configDone.countDown(); // unblock in case launch/configDone was never sent
+    setDebugPaused(false);
   }
 
   // =========================================================================
@@ -755,6 +772,16 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
     return DebugControl.CONTINUE;
   }
 
+  @Override
+  public void onUnpause() {
+    setDebugPaused(false);
+  }
+
+  @Override
+  public void onPause() {
+    setDebugPaused(true);
+  }
+
   /** VM callback when a breakpoint is about to be executed. */
   @Override
   public @NotNull DebugControl onBreakpointHit(
@@ -870,6 +897,7 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   public void reloadProgram(@NotNull ProgramOp newProgram, boolean stopOnEntry)
       throws InterruptedException {
     reloadInProgress = true;
+    setDebugPaused(false);
 
     // Release the configDone latch in case the VM thread is still waiting on it
     // (i.e. launch/attach was never sent or configurationDone was never sent).
@@ -912,9 +940,15 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
       // Start the VM thread now so it is ready to receive configurationDone.
       startVmThread();
     } else {
-      // No debugger attached — start immediately without waiting for configurationDone.
-      configDone.countDown();
-      startVmThread();
+      if (stopOnEntry) {
+        // waitForDebugger/stopOnEntry mode without a client: keep VM fully suspended.
+        // attach()+configurationDone() will start the VM thread later.
+        LOG.info("Program reloaded in wait-for-debugger mode; delaying VM start until attach.");
+      } else {
+        // No debugger attached — start immediately without waiting for configurationDone.
+        configDone.countDown();
+        startVmThread();
+      }
     }
   }
 
@@ -961,5 +995,17 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   private static @NotNull String formatValue(@Nullable Object value) {
     // Keep formatting minimal for now; extend for structured types later.
     return value != null ? value.toString() : "null";
+  }
+
+  private void setDebugPaused(boolean paused) {
+    System.out.println("setDebugPaused: " + paused);
+    if (debugPaused == paused) {
+      return;
+    }
+    debugPaused = paused;
+    Consumer<Boolean> listener = debugPauseListener;
+    if (listener != null) {
+      listener.accept(paused);
+    }
   }
 }
