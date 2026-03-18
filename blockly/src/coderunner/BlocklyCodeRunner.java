@@ -30,8 +30,11 @@ public class BlocklyCodeRunner {
 
   private static final String baseCode =
 """
+import Dungeon.Direction;
 import Dungeon.Hero;
 import Dungeon.IO;
+import Dungeon.ItemType;
+import Dungeon.LevelElement;
 
 public class Main {
   %s

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public sealed interface DgRunners {
 
@@ -161,7 +163,13 @@ public sealed interface DgRunners {
       var tile = state.getValueAsOrThrow(op.getOperandOrThrow(0), Integer.class);
       var dir = state.getValueAsOrThrow(op.getOperandOrThrow(1), Integer.class);
       CountDownLatch done = new CountDownLatch(1);
-      boolean result = DgActionGateway.get().isNearTile(tile, dir, done::countDown);
+      Future<Boolean> resultFuture = DgActionGateway.get().isNearTile(tile, dir, done::countDown);
+      boolean result;
+      try {
+        result = resultFuture.get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
       state.setValueForNumberOutput(op, result);
       return awaitAction(done);
     }
@@ -176,7 +184,13 @@ public sealed interface DgRunners {
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       var dir = state.getValueAsOrThrow(op.getOperandOrThrow(0), Integer.class);
       CountDownLatch done = new CountDownLatch(1);
-      boolean result = DgActionGateway.get().active(dir, done::countDown);
+      Future<Boolean> resultFuture = DgActionGateway.get().active(dir, done::countDown);
+      boolean result;
+      try {
+        result = resultFuture.get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
       state.setValueForNumberOutput(op, result);
       return awaitAction(done);
     }

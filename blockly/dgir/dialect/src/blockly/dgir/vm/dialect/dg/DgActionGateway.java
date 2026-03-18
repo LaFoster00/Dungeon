@@ -3,6 +3,7 @@ package blockly.dgir.vm.dialect.dg;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -89,17 +90,28 @@ public interface DgActionGateway {
   void rest(@NotNull Runnable onComplete);
 
   /**
-   * Check if a tile of a given type is near the hero in a given direction.
+   * Check if the next tile in the given direction is an {@code LevelElement} Type Tile.
    *
-   * @param tile the tile type to check
-   * @param direction the direction to check
+   * @param tile Tile Type to check for.
+   * @param direction Direction to check
+   * @return Returns true if the hero is null or a tile of the given type was detected. Otherwise,
+   *     returns false.
    */
-  boolean isNearTile(int tile, int direction, Runnable onComplete);
+  Future<Boolean> isNearTile(int tile, int direction, Runnable onComplete);
 
   /**
-   * Check if the hero's current tile matches a given type.
+   * Determines whether the specified direction leads to an active state.
    *
-   * @param direction the direction to check
+   * <p>A tile in the given direction is considered active if:
+   *
+   * <ul>
+   *   <li>it is a {@code DoorTile} and it is "open", or
+   *   <li>it contains at least one {@code LeverComponent}, and all found levers are in the "on"
+   *       state.
+   * </ul>
+   *
+   * @param direction the direction to check relative to the player's position.
+   * @return {@code true} if the tile in the given direction is active, {@code false} otherwise.
    */
-  boolean active(int direction, Runnable onComplete);
+  Future<Boolean> active(int direction, Runnable onComplete);
 }

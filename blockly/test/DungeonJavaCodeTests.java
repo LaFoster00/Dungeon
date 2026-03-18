@@ -27,7 +27,7 @@ public class DungeonJavaCodeTests extends DungeonCompilerTestBase {
             public static void main() {
               for (int i = 0; i < 25; i++) {
                 Hero.move();
-                Hero.turnLeft();
+                Hero.rotate(Direction.LEFT);
               }
             }
           """);
@@ -47,7 +47,7 @@ public class DungeonJavaCodeTests extends DungeonCompilerTestBase {
         """
             public static void main() {
               for (int i = 0; i < 25; i++) {
-                Hero.turnLeft();
+                Hero.rotate(Direction.LEFT);
                 Hero.move();
               }
             }
@@ -70,10 +70,10 @@ public class DungeonJavaCodeTests extends DungeonCompilerTestBase {
               for (int x = 0; x < 4; x++) {
                 for (int i = 0; i < 5; i++) {
                   Hero.move();
-                  Hero.turnLeft();
+                  Hero.rotate(Direction.LEFT);
                 }
                 for (int i = 0; i < 5; i++) {
-                  Hero.turnLeft();
+                  Hero.rotate(Direction.LEFT);
                   Hero.move();
                 }
               }

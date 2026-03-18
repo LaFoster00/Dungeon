@@ -9,6 +9,10 @@ public enum Direction {
    */
   INFRONT,
   /**
+   * Represents a position or movement to the right of the current entity.
+   */
+  RIGHT,
+  /**
    * Represents a position or movement behind the current entity.
    */
   BEHIND,
@@ -16,10 +20,6 @@ public enum Direction {
    * Represents a position or movement to the left of the current entity.
    */
   LEFT,
-  /**
-   * Represents a position or movement to the right of the current entity.
-   */
-  RIGHT,
   /**
    * Represents the current position (no movement).
    */
