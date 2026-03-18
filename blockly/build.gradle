@@ -1,21 +1,25 @@
-
+plugins {
+    id 'application'
+}
 
 repositories {
     mavenCentral()
 }
 
-
-
 application {
-    // Define the main class for the application
     mainClass = 'client.Client'
 }
 
-sourceSets.main.java.srcDirs = ['src/']
-sourceSets.main.resources.srcDirs = ['assets/']
-
-sourceSets.test.java.srcDirs = ['test/']
-sourceSets.test.resources.srcDirs = ['test_assets/']
+sourceSets {
+    main {
+        java.srcDirs = ['src']
+        resources.srcDirs = ['assets']
+    }
+    test {
+        java.srcDirs = ['test']
+        resources.srcDirs = ['test_assets']
+    }
+}
 
 dependencies {
     implementation project(':dungeon')
@@ -25,39 +29,39 @@ dependencies {
     implementation project(':blockly:dgir:dialect')
     implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.28.0'
 
-    // JUnit 4 and Mockito for testing
+    // JUnit Jupiter for testing
     testImplementation supportDependencies.junit
     testRuntimeOnly supportDependencies.junitLauncher
 }
 
-tasks.withType(Jar) {
-    // filter everythink that should not be in the jar
-    exclude("**/*.xcf")
-    exclude("**/debug/**")
-    exclude("**/*.pdf") // Falls eine Library Dokumentation mitschleppt
+tasks.withType(Jar).configureEach {
+    // Exclude development or large source assets from packaged jars.
+    exclude('**/*.xcf', '**/debug/**', '**/*.pdf')
 }
+
+def npmCommand = System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm'
 
 tasks.register("npmInstall", Exec) {
     group = 'build'
-    workingDir = file("$projectDir/frontend")
-    def os = System.getProperty('os.name').toLowerCase()
-    commandLine os.contains('windows') ? ['npm.cmd', 'install'] : ['npm', 'install']
+    description = 'Install frontend npm dependencies.'
+    workingDir = layout.projectDirectory.dir('frontend').asFile
+    commandLine npmCommand, 'install'
 }
 
 tasks.register("npmBuild", Exec) {
     group = 'build'
-    workingDir = file("$projectDir/frontend")
-
-    def os = System.getProperty('os.name').toLowerCase()
-    commandLine os.contains('windows') ? ['npm.cmd', 'run', 'build'] : ['npm', 'run', 'build']
-
-    dependsOn 'npmInstall'
+    description = 'Build frontend assets with npm.'
+    workingDir = layout.projectDirectory.dir('frontend').asFile
+    commandLine npmCommand, 'run', 'build'
+    dependsOn(tasks.named('npmInstall'))
 }
 
 tasks.register('runJar', JavaExec) {
     group = 'application'
-    classpath tasks.named('jar').map { it.outputs }
-    println(project.properties)
+    description = 'Run the packaged Blockly fat jar.'
+    mainClass = 'client.Client'
+    classpath = files(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    dependsOn(tasks.named('jar'))
 }
 
 
@@ -79,13 +83,13 @@ tasks.register('runSandbox', JavaExec) {
     workingDir = rootProject.projectDir
 }
 
-def configureBaseJare(jar) {
+def configureBaseJar(jar) {
     jar.with {
-        archiveBaseName.set('Blockly.jar')
+        archiveBaseName.set('Blockly')
         dependsOn project(':dungeon').tasks.named('jar')
         dependsOn tasks.named('npmBuild')
 
-        from sourceSets.main.output // TODO is this line necessary?
+        from sourceSets.main.output
         from project(':dungeon').sourceSets.main.output
 
         manifest {
@@ -99,7 +103,7 @@ def configureBaseJare(jar) {
             }
         }
 
-        // Source für Language Server
+        // Source files for language server integration.
         from(project(':dungeon').projectDir) {
             include 'src/core/level/utils/LevelElement.java'
             eachFile { it.path = it.path.replaceFirst('src/', '') }
@@ -136,7 +140,7 @@ tasks.register("jarWeb", Jar) {
     archiveFileName.set('Blockly-web.jar')
     archiveClassifier = 'web'
     configureBaseJar(it)
-    from(resources.text.fromString("web=true")) {
+    from(resources.text.fromString("--web")) {
         rename { "application.properties" }
     }
 }
@@ -146,14 +150,10 @@ tasks.register("jarDesktop", Jar) {
     archiveFileName.set('Blockly-desktop.jar')
     archiveClassifier = 'desktop'
     configureBaseJar(it)
-    from(resources.text.fromString("web=false")) {
-        rename { "application.properties" }
-    }
 }
 
-// Optional: Mit 'build' beide gleichzeitig erstellen
-artifacts {
-    archives jarDesktop, jarWeb
+tasks.named('assemble') {
+    dependsOn(tasks.named('jarDesktop'), tasks.named('jarWeb'))
 }
 
 tasks.withType(Test).configureEach {
