@@ -1,6 +1,5 @@
 package level.produs;
 
-import contrib.hud.DialogUtils;
 import core.Game;
 import core.level.utils.DesignLabel;
 import core.level.utils.LevelElement;
@@ -41,6 +40,13 @@ public class Level010 extends BlocklyLevel {
         "Variablen",
         "Bedingungen",
         "Sonstige");
+
+    addWebPopup(new ImagePopup("popups/level010/webpopups/01_Feuerball.jpg"));
+    addWebPopup(new ImagePopup("popups/level010/webpopups/02_Feuerball2.jpg"));
+
+    addCodePopup(new ImagePopup("popups/level010/codepopups/01_Feuerball.jpg"));
+    addCodePopup(new ImagePopup("popups/level010/codepopups/02_Feuerball2.jpg"));
+    addCodePopup(new ImagePopup("popups/overview1.jpg"));
   }
 
   @Override
@@ -51,9 +57,7 @@ public class Level010 extends BlocklyLevel {
     LevelManagementUtils.playerViewDirection(Direction.LEFT);
     LevelManagementUtils.zoomDefault();
     if (showText) {
-      DialogUtils.showTextPopup(
-          "Mit diesen Spruchrollen kannst du einen mächtigen Feuerball beschwören.",
-          "Kapitel 1: Ausbruch");
+      showPopups();
       showText = false;
     }
     Game.add(MiscFactory.fireballScroll(getPoint(0)));

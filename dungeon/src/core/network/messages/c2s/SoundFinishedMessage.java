@@ -1,7 +1,6 @@
 package core.network.messages.c2s;
 
 import core.network.messages.NetworkMessage;
-import java.io.Serial;
 
 /**
  * Client → server message reporting that a sound has finished playing.
@@ -17,5 +16,4 @@ import java.io.Serial;
  * @see core.sound.player.IPlayHandle#onFinished(Runnable)
  */
 public record SoundFinishedMessage(long soundInstanceId) implements NetworkMessage {
-  @Serial private static final long serialVersionUID = 1L;
 }

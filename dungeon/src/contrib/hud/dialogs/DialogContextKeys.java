@@ -50,11 +50,19 @@ public class DialogContextKeys {
   public static final String ON_CANCEL = "onCancel";
 
   /**
-   * The key for the callback function to handle input submission.
-   *
-   * <p>For FreeInputDialog, register a callback with this key to receive the user's input text.
+   * The key for the callback function to execute on closure of the dialog.
    */
-  public static final String INPUT_CALLBACK = "inputCallback";
+  public static final String ON_CLOSE = "onClose";
+
+  /**
+   * The key for the callback function to execute on a "Resume" response.
+   */
+  public static final String ON_RESUME = "onResume";
+
+  /**
+   * The key for the callback function to execute on a "Quit" response.
+   */
+  public static final String ON_QUIT = "onQuit";
 
   /** The key for the placeholder text in an input field. */
   public static final String INPUT_PLACEHOLDER = "inputPlaceholder";

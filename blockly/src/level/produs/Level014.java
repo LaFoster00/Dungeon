@@ -1,6 +1,5 @@
 package level.produs;
 
-import contrib.hud.DialogUtils;
 import core.level.utils.Coordinate;
 import core.level.utils.DesignLabel;
 import core.level.utils.LevelElement;
@@ -44,6 +43,13 @@ public class Level014 extends BlocklyLevel {
         // Kategorien
         "Variablen",
         "Sonstige");
+
+    addWebPopup(new ImagePopup("popups/level014/webpopups/01_Wand.jpg"));
+    addWebPopup(new ImagePopup("popups/level014/webpopups/02_Schleife.jpg"));
+
+    addCodePopup(new ImagePopup("popups/level014/codepopups/01_Wand.jpg"));
+    addCodePopup(new ImagePopup("popups/level014/codepopups/02_Schleife.jpg"));
+    addCodePopup(new ImagePopup("popups/overview1.jpg"));
   }
 
   @Override
@@ -54,10 +60,8 @@ public class Level014 extends BlocklyLevel {
     LevelManagementUtils.playerViewDirection(Direction.UP);
     LevelManagementUtils.zoomDefault();
     if (showText) {
-      DialogUtils.showTextPopup(
-          "Ganz schön verwirrend hier. Du brauchst eine gute Strategie um den Ausgang zu finden.",
-          "Kapitel 2: Flucht");
       showText = false;
+      showPopups();
     }
   }
 

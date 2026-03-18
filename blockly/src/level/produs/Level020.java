@@ -28,6 +28,8 @@ import java.util.Map;
  * wait block to time movements.
  */
 public class Level020 extends BlocklyLevel {
+  private static boolean showText = true;
+
   /** Time in milliseconds it takes for a pit to fully open after being triggered. */
   private static final int PIT_TIME_TO_OPEN_IN_MS = 12000;
 
@@ -45,8 +47,6 @@ public class Level020 extends BlocklyLevel {
 
   /** Minimum distance (in tiles) between player and boss at which the boss escapes. */
   private static final int ESCAPE_DISTANCE = 2;
-
-  private static boolean showText = true;
 
   /**
    * Helper flag for the EventScheduler; set to true if the boss is looking left and the coyote time
@@ -94,6 +94,11 @@ public class Level020 extends BlocklyLevel {
         "default_block",
         // Kategorien
         "Sonstige");
+
+    addWebPopup(new ImagePopup("popups/level020/webpopups/01_intro.jpg"));
+
+    addCodePopup((new ImagePopup("popups/level020/codepopups/01_intro.jpg")));
+    addCodePopup(new ImagePopup("popups/overview1.jpg"));
   }
 
   @Override
@@ -133,11 +138,8 @@ public class Level020 extends BlocklyLevel {
               ((PitTile) tile).timeToOpen(PIT_TIME_TO_OPEN_IN_MS);
               ((PitTile) tile).close();
             });
-
     if (showText) {
-      DialogUtils.showTextPopup(
-          "Von dir lass ich mich nicht besiegen! Meine Waffe erkennt jede Bewegung und vernichtet dich auf der Stelle!",
-          "BOSS");
+      showPopups();
       showText = false;
     }
   }

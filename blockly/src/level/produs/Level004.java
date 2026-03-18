@@ -4,7 +4,6 @@ import static level.LevelManagementUtils.cameraFocusOn;
 
 import contrib.components.LeverComponent;
 import contrib.entities.LeverFactory;
-import contrib.hud.DialogUtils;
 import core.Entity;
 import core.Game;
 import core.level.elements.tile.DoorTile;
@@ -57,15 +56,18 @@ public class Level004 extends BlocklyLevel {
         "Variablen",
         "Bedingungen",
         "Sonstige");
+
+    addWebPopup(new ImagePopup("popups/level004/webpopups/01_inventory_character.jpg"));
+    addWebPopup(new ImagePopup("popups/level004/webpopups/02_inventory_character2.jpg"));
+
+    addCodePopup(new ImagePopup("popups/level004/codepopups/01_inventory_character.jpg"));
+    addCodePopup(new ImagePopup("popups/level004/codepopups/02_inventory_character2.jpg"));
+    addCodePopup(new ImagePopup("popups/overview1.jpg"));
   }
 
   @Override
   protected void onFirstTick() {
     LevelManagementUtils.fog(false);
-    if (showText) {
-      DialogUtils.showTextPopup("Versuch mal die Schalter zu benutzen.", "Kapitel 1: Ausbruch");
-      showText = false;
-    }
     cameraFocusOn(new Coordinate(12, 5));
     LevelManagementUtils.centerHero();
     LevelManagementUtils.playerViewDirection(Direction.RIGHT);
@@ -86,6 +88,10 @@ public class Level004 extends BlocklyLevel {
     Game.add(MiscFactory.stone(getPoint(2)));
     Game.add(s1);
     Game.add(s2);
+    if (showText) {
+      showPopups();
+      showText = false;
+    }
   }
 
   @Override

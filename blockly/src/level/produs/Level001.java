@@ -1,8 +1,5 @@
 package level.produs;
 
-import client.Client;
-import com.badlogic.gdx.Input;
-import core.configuration.KeyboardConfig;
 import core.level.utils.DesignLabel;
 import core.level.utils.LevelElement;
 import core.utils.Direction;
@@ -46,20 +43,15 @@ public class Level001 extends BlocklyLevel {
         "Bedingungen",
         "Sonstige");
 
-    addPopup(
-        new TextPopup(
-            "Willkommen im Blockly Dungeon! Heute wirst du mir helfen, aus den Fängen des Bösen zu entkommen."
-                + " Drücke "
-                + Input.Keys.toString(KeyboardConfig.PAUSE.value())
-                + " wenn ich mich wiederholen soll.",
-            "Blockly Dungeon"));
+    addWebPopup(new ImagePopup("popups/level001/webpopups/01_start_block.jpg"));
+    addWebPopup(new ImagePopup("popups/level001/webpopups/02_skills.jpg"));
+    addWebPopup(new ImagePopup("popups/level001/webpopups/03_commands.jpg"));
+    addWebPopup(new ImagePopup("popups/level001/webpopups/04_start_game.jpg"));
 
-    addPopup(
-        new TextPopup(
-            "Ich bin "
-                + Client.WIZARD_NAME
-                + ", der Codemagier! Mit deiner Hilfe kann ich Zauber wirken – aber nur, wenn du die richtigen Codeblöcke im Browser benutzt. Komm, ich zeige dir, wie das geht!",
-            "Blockly Dungeon"));
+    addCodePopup(new ImagePopup("popups/level001/codepopups/01_start_block.jpg"));
+    addCodePopup(new ImagePopup("popups/level001/codepopups/02_skills.jpg"));
+    addCodePopup(new ImagePopup("popups/level001/codepopups/03_commands.jpg"));
+    addCodePopup(new ImagePopup("popups/overview1.jpg"));
   }
 
   @Override

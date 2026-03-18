@@ -5,6 +5,7 @@ import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.backends.headless.HeadlessFiles;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -28,6 +29,7 @@ import core.System;
 import core.components.DrawComponent;
 import core.components.PlayerComponent;
 import core.components.PositionComponent;
+import core.components.SoundComponent;
 import core.level.loader.DungeonLoader;
 import core.level.loader.LevelParser;
 import core.network.ConnectionListener;
@@ -35,13 +37,18 @@ import core.network.MessageDispatcher;
 import core.network.client.ClientNetwork;
 import core.network.messages.c2s.InputMessage;
 import core.network.messages.s2c.*;
+import core.network.server.SoundTracker;
 import core.sound.player.GdxSoundPlayer;
 import core.sound.player.ISoundPlayer;
 import core.sound.player.NoSoundPlayer;
 import core.systems.*;
+import core.systems.input.InputManager;
+import core.systems.input.InputSystem;
+import core.systems.input.JoystickSystem;
 import core.utils.Direction;
 import core.utils.IVoidFunction;
 import core.utils.components.MissingComponentException;
+import core.utils.components.draw.DrawComponentFactory;
 import core.utils.logging.DungeonLogger;
 import java.util.*;
 
@@ -61,6 +68,7 @@ public final class GameLoop extends ScreenAdapter {
   private static ISoundPlayer soundPlayer = new NoSoundPlayer();
   private static Stage stage;
   private boolean doSetup = true;
+  private static final Set<IResizable> resizables = new HashSet<>();
 
   /**
    * Sets {@link Game#currentLevel} to the new level and changes the currently active entity
@@ -76,6 +84,8 @@ public final class GameLoop extends ScreenAdapter {
   public static final IVoidFunction onLevelLoad =
       () -> {
         if (!PreRunConfiguration.isNetworkServer()) return; // no authority
+
+        SoundTracker.instance().clear();
 
         List<Entity> allPlayers = ECSManagement.allPlayers().toList();
         boolean firstLoad = !ECSManagement.levelStorageMap().containsKey(Game.currentLevel().get());
@@ -228,6 +238,7 @@ public final class GameLoop extends ScreenAdapter {
     ECSManagement.executeOneTick(
         isMultiplayerClient ? System.AuthoritativeSide.CLIENT : System.AuthoritativeSide.BOTH);
 
+    InputManager.update();
     CameraSystem.camera().update();
     // stage logic
     stage().ifPresent(GameLoop::updateStage);
@@ -300,14 +311,20 @@ public final class GameLoop extends ScreenAdapter {
     doSetup = false;
     if (!PreRunConfiguration.multiplayerEnabled() || !PreRunConfiguration.isNetworkServer()) {
       setupClient();
+    } else {
+      Gdx.files = new HeadlessFiles();
     }
+
+    Crafting.loadRecipes();
 
     PreRunConfiguration.userOnSetup().execute();
     Game.network().start();
 
-    Crafting.loadRecipes();
+    if (!Game.isHeadless()) InputManager.init();
 
-    Game.system(LevelSystem.class, LevelSystem::execute); // load initial level
+    if (!DungeonLoader.levelOrder().isEmpty()) {
+      if (Game.currentLevel().isEmpty()) DungeonLoader.loadLevel(0); // load the first level
+    } else LOGGER.warn("No levels found to load!");
   }
 
   private void setupMessageHandlers() {
@@ -352,8 +369,12 @@ public final class GameLoop extends ScreenAdapter {
           }
 
           Entity newEntity = new Entity(event.entityId());
-          newEntity.add(event.positionComponent());
-          newEntity.add(event.drawComponent());
+          if (event.positionComponent() != null) {
+            newEntity.add(event.positionComponent());
+          }
+          if (event.drawInfo() != null) {
+            newEntity.add(DrawComponentFactory.fromDrawInfo(event.drawInfo()));
+          }
           newEntity.persistent(event.isPersistent());
           Game.add(newEntity);
         });
@@ -398,17 +419,54 @@ public final class GameLoop extends ScreenAdapter {
         (ctx, event) -> {
           try {
             Game.network().snapshotTranslator().applySnapshot(event, dispatcher);
-          } catch (Exception ignored) {
-            LOGGER.warn("Error while applying snapshot message: {}", ignored.getMessage(), ignored);
+          } catch (Exception e) {
+            LOGGER.warn("Error while applying snapshot message: {}", e.getMessage(), e);
           }
         });
+
+    dispatcher.registerHandler(
+      SoundPlayMessage.class,
+      (ctx, msg) -> {
+        LOGGER.debug(
+          "Received SoundPlayMessage: {} (instance={})",
+          msg.soundSpec().soundName(),
+          msg.soundSpec().instanceId());
+
+        Optional<Entity> entity = Game.findEntityById(msg.entityId());
+        if (entity.isEmpty() && msg.soundSpec().maxDistance() > 0f) {
+          LOGGER.warn(
+            "Entity {} not found for positional sound {}",
+            msg.entityId(),
+            msg.soundSpec().soundName());
+          return;
+        }
+
+        Entity targetEntity = entity.orElseGet(() -> Game.audio().ensureSoundHub());
+        SoundComponent sc =
+          targetEntity
+            .fetch(SoundComponent.class)
+            .orElseGet(
+              () -> {
+                SoundComponent newSc = new SoundComponent();
+                targetEntity.add(newSc);
+                return newSc;
+              });
+        sc.add(msg.soundSpec());
+      });
+
+    dispatcher.registerHandler(
+      SoundStopMessage.class,
+      (ctx, msg) -> {
+        LOGGER.debug("Received SoundStopMessage: {}", msg.soundInstanceId());
+        Game.audio().stopInstance(msg.soundInstanceId());
+      });
 
     dispatcher.registerHandler(
         DialogShowMessage.class,
         (ctx, msg) -> {
           LOGGER.debug("Received DialogShowMessage for dialog: {}", msg.context().dialogId());
 
-          DialogFactory.show(msg.context(), false, msg.canBeClosed(), new int[] {});
+          DialogFactory.show(msg.context(), false, msg.canBeClosed());
         });
 
     dispatcher.registerHandler(
@@ -446,7 +504,8 @@ public final class GameLoop extends ScreenAdapter {
   }
 
   private void fullscreenKey() {
-    if (Gdx.input.isKeyJustPressed(core.configuration.KeyboardConfig.TOGGLE_FULLSCREEN.value())) {
+    if (InputManager.isKeyJustPressed(
+      core.configuration.KeyboardConfig.TOGGLE_FULLSCREEN.value())) {
       if (!Gdx.graphics.isFullscreen()) {
         Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
       } else {
@@ -498,6 +557,26 @@ public final class GameLoop extends ScreenAdapter {
               x.getViewport().setWorldSize(width, height);
               x.getViewport().update(width, height, true);
             });
+    resizables.forEach(r -> r.onResize(width, height));
+  }
+
+  /**
+   * Register an {@link IResizable} to be notified when the window is resized.
+   *
+   * @param resizable the resizable to register
+   */
+  public static void registerResizable(IResizable resizable) {
+    resizables.add(resizable);
+  }
+
+  /**
+   * Unregister an {@link IResizable} to stop being notified when the window is resized.
+   *
+   * @param resizable the resizable to unregister
+   * @return true if the resizable was registered and removed, false otherwise
+   */
+  public static boolean removeResizable(IResizable resizable) {
+    return resizables.remove(resizable);
   }
 
   /**
@@ -520,5 +599,6 @@ public final class GameLoop extends ScreenAdapter {
     ECSManagement.add(new InputSystem());
     ECSManagement.add(new DebugDrawSystem());
     ECSManagement.add(new AttributeBarSystem());
+    ECSManagement.add(new JoystickSystem());
   }
 }

@@ -58,7 +58,7 @@ public class StraightRangeAI implements Consumer<Entity>, ISkillUser {
     boolean playerInRange =
         Game.player()
             .flatMap(hero -> hero.fetch(PositionComponent.class))
-            .map(pc -> pc.position().translate(Vector2.of(0.5f, 0.5f)))
+          .map(PositionComponent::position)
             .map(
                 pos -> {
                   Entity dummy = new Entity("dummy");

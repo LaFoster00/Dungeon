@@ -52,7 +52,12 @@ public interface DialogType {
     KEYPAD("KEYPAD"),
 
     /** Progress bar display dialog. */
-    PROGRESS_BAR("PROGRESS_BAR");
+    PROGRESS_BAR("PROGRESS_BAR"),
+
+    /**
+     * Pause menu dialog.
+     */
+    PAUSE_MENU("PAUSE_MENU");
 
     private final String type;
 

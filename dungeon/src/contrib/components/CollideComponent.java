@@ -4,11 +4,14 @@ import contrib.utils.components.collide.Collider;
 import contrib.utils.components.collide.Hitbox;
 import core.Component;
 import core.Entity;
+import core.components.VelocityComponent;
 import core.utils.Direction;
 import core.utils.Rectangle;
 import core.utils.TriConsumer;
 import core.utils.Vector2;
 import core.utils.logging.DungeonLogger;
+
+import java.util.function.Function;
 
 /**
  * Allow an entity to collide with other entities that have a {@link CollideComponent}.
@@ -107,6 +110,12 @@ public final class CollideComponent implements Component {
   private TriConsumer<Entity, Entity, Direction> collideHold;
 
   /**
+   * Callback to check, if the entity is static.
+   */
+  private Function<Entity, Boolean> staticCallback =
+    entity -> entity.fetch(VelocityComponent.class).map(vc -> vc.maxSpeed() == 0f).orElse(true);
+
+  /**
    * Creates a new {@code CollideComponent}.
    *
    * <p>This component handles collisions for an entity using a hitbox defined by {@code offset} and
@@ -188,8 +197,8 @@ public final class CollideComponent implements Component {
   }
 
   /**
-   * Creates a new {@code CollideComponent} with a default offset of 0.25f x 0.25f and a default
-   * size of 0.5f x 0.5f.
+   * Creates a new {@code CollideComponent} with a default offset of 0.1f x 0.1f and a default size
+   * of 0.8f x 0.8f.
    *
    * <p>The collision handlers use a {@link TriConsumer} with three parameters:
    *
@@ -211,8 +220,8 @@ public final class CollideComponent implements Component {
   }
 
   /**
-   * Create a new CollisionComponent with a default offset of 0.25f x 0.25f and a default size of
-   * 0.5f x 0.5f and empty collide functions.
+   * Create a new CollisionComponent with a default offset of 0.1f x 0.1f and a default size of 0.8f
+   * x 0.8f and empty collide functions.
    */
   public CollideComponent() {
     this(CollideComponent.DEFAULT_COLLIDER, CollideComponent.DEFAULT_COLLIDER);
@@ -352,5 +361,24 @@ public final class CollideComponent implements Component {
    */
   public void collider(Collider collider) {
     this.collider = collider;
+  }
+
+  /**
+   * Returns if the entity is static.
+   *
+   * @param entity The entity that should be checked.
+   * @return True if the entity is static.
+   */
+  public boolean isStatic(Entity entity) {
+    return staticCallback.apply(entity);
+  }
+
+  /**
+   * Sets the callback that definies if an entity is static or non-static.
+   *
+   * @param callback Function that receives an entity and returns true, if the entity is static.
+   */
+  public void staticCallback(Function<Entity, Boolean> callback) {
+    this.staticCallback = callback != null ? callback : this.staticCallback;
   }
 }

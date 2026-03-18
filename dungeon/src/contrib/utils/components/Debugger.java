@@ -1,12 +1,12 @@
 package contrib.utils.components;
 
-import com.badlogic.gdx.Gdx;
 import contrib.components.AIComponent;
 import contrib.components.CollideComponent;
 import contrib.components.HealthComponent;
 import contrib.components.UIComponent;
 import contrib.configuration.KeyboardConfig;
-import contrib.hud.dialogs.DialogFactory;
+import contrib.hud.UIUtils;
+import contrib.hud.dialogs.PauseDialog;
 import contrib.systems.DebugDrawSystem;
 import contrib.systems.LevelEditorSystem;
 import contrib.utils.components.ai.fight.AIChaseBehaviour;
@@ -25,6 +25,7 @@ import core.level.elements.tile.ExitTile;
 import core.level.utils.Coordinate;
 import core.level.utils.LevelElement;
 import core.systems.CameraSystem;
+import core.systems.input.InputManager;
 import core.utils.Direction;
 import core.utils.IVoidFunction;
 import core.utils.Point;
@@ -47,6 +48,12 @@ public class Debugger extends System {
 
   private static final DungeonLogger LOGGER = DungeonLogger.getLogger(Debugger.class);
   private static Entity pauseMenu;
+  private static int advanceTimer = 0;
+
+  /**
+   * Use this value to quickly test different states or values in any other part of the game.
+   */
+  public static int multiPurposeDebugValue = 0;
 
   /** Creates a new Debugger system. */
   public Debugger() {
@@ -185,16 +192,42 @@ public class Debugger extends System {
 
   /** Pauses the game. */
   public static void PAUSE_GAME() {
-    if (pauseMenu == null
-        || pauseMenu.fetch(UIComponent.class).map(x -> x.dialog().getStage() == null).orElse(true))
-      pauseMenu = newPauseMenu();
+    if (isPaused()) {
+      unpause();
+    } else {
+      pause();
+    }
   }
 
-  private static Entity newPauseMenu() {
-    UIComponent ui = DialogFactory.showOkDialog("Pause", "Spiel pausiert", () -> {});
+  private static void pause() {
+    UIComponent ui = PauseDialog.showPauseDialog();
+    pauseMenu = ui.dialogContext().ownerEntity();
+  }
 
-    ui.dialog().setVisible(true);
-    return ui.dialogContext().ownerEntity();
+  private static void unpause() {
+    if (pauseMenu == null) return;
+    UIUtils.closeDialog(pauseMenu.fetch(UIComponent.class).orElseThrow());
+  }
+
+  private static boolean isPaused() {
+    if (pauseMenu == null) return false;
+    return pauseMenu.fetch(UIComponent.class).map(x -> x.dialog().getStage() != null).orElse(false);
+  }
+
+  private static void ADVANCE_FRAME() {
+    if (!isPaused()) return;
+    unpause();
+    advanceTimer = 2; // Set to 2 to account for the current frame
+    LOGGER.info("Advanced one frame");
+  }
+
+  private static void checkFrameAdvance() {
+    if (advanceTimer > 0) {
+      advanceTimer--;
+      if (advanceTimer == 0) {
+        pause();
+      }
+    }
   }
 
   private static void OPEN_DOORS() {
@@ -202,29 +235,50 @@ public class Debugger extends System {
     Game.allTiles(LevelElement.DOOR).forEach(door -> ((DoorTile) door).open());
   }
 
+  @Override
+  public void stop() {
+    // Cant be stopped
+  }
+
   /**
    * Checks for key input corresponding to Debugger functionalities, and executes the relevant
    * function if detected.
    */
   public void execute() {
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_ZOOM_OUT.value()))
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_ZOOM_OUT.value()))
       Debugger.ZOOM_CAMERA(-0.2f);
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_ZOOM_IN.value()))
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_ZOOM_IN.value()))
       Debugger.ZOOM_CAMERA(0.2f);
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_TELEPORT_TO_CURSOR.value()))
+
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_TELEPORT_TO_CURSOR.value()))
       Debugger.TELEPORT_TO_CURSOR();
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_TELEPORT_TO_END.value()))
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_TELEPORT_TO_END.value()))
       Debugger.TELEPORT_TO_END();
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_TELEPORT_TO_START.value()))
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_TELEPORT_TO_START.value()))
       Debugger.TELEPORT_TO_START();
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_TELEPORT_ON_END.value()))
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_TELEPORT_ON_END.value()))
       Debugger.LOAD_NEXT_LEVEL();
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_SPAWN_MONSTER.value())
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_SPAWN_MONSTER.value())
         && !LevelEditorSystem.active()) Debugger.SPAWN_MONSTER_ON_CURSOR();
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_OPEN_DOORS.value())) Debugger.OPEN_DOORS();
-    if (Gdx.input.isKeyJustPressed(core.configuration.KeyboardConfig.PAUSE.value()))
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_OPEN_DOORS.value()))
+      Debugger.OPEN_DOORS();
+    if (InputManager.isKeyJustPressed(core.configuration.KeyboardConfig.PAUSE.value()))
       Debugger.PAUSE_GAME();
-    if (Gdx.input.isKeyJustPressed(KeyboardConfig.DEBUG_TOGGLE_HUD.value()))
+    if (InputManager.isKeyJustPressed(core.configuration.KeyboardConfig.ADVANCE_FRAME.value()))
+      Debugger.ADVANCE_FRAME();
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_TOGGLE_HUD.value()))
       Game.system(DebugDrawSystem.class, DebugDrawSystem::toggleHUD);
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_TOGGLE_SCENE_HUD.value()))
+      Game.stage().ifPresent(stage -> stage.setDebugAll(!stage.isDebugAll()));
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_VALUE_UP.value())) {
+      multiPurposeDebugValue += 1;
+      LOGGER.info("multiPurposeDebugValue: " + multiPurposeDebugValue);
+    }
+    if (InputManager.isKeyJustPressed(KeyboardConfig.DEBUG_VALUE_DOWN.value())) {
+      multiPurposeDebugValue -= 1;
+      LOGGER.info("multiPurposeDebugValue: " + multiPurposeDebugValue);
+    }
+
+    checkFrameAdvance();
   }
 }

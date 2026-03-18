@@ -23,8 +23,14 @@ import core.utils.components.draw.state.StateMachine;
 import core.utils.components.path.SimpleIPath;
 import dgir.vm.api.DialectRunner;
 import entities.HeroTankControlledFactory;
+
+import java.io.IOException;
+import java.util.Properties;
+import java.util.Set;
+
 import level.produs.*;
 import level.sandbox.SandboxLevel;
+import server.FrontendServer;
 import server.Server;
 import systems.HeroActionTickSystem;
 import systems.TintTilesSystem;
@@ -46,10 +52,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class Client {
 
-  /** The name of the blockly player. */
+  /**
+   * The name of the blockly player.
+   */
   public static final String WIZARD_NAME = "Algorim";
 
-  /** Force to apply for movement of all entities. */
+  /**
+   * Force to apply for movement of all entities.
+   */
   public static float MOVEMENT_FORCE = 7.5f;
 
   private static final AtomicBoolean restartQueued = new AtomicBoolean(false);
@@ -74,6 +84,12 @@ public class Client {
   public static boolean debugMode = false;
 
   /**
+   * If true, the Web interface Blockly is used for interaction with the Dungeon. Otherwise, the
+   * Code API is used.
+   */
+  public static boolean runInWeb = false;
+
+  /**
    * If {@code true}, the game runs in sandbox mode: only the empty {@link SandboxLevel} is loaded,
    * all Blockly blocks are unlocked, popups are suppressed, and extra debug systems are active.
    *
@@ -91,13 +107,27 @@ public class Client {
    * <ul>
    *   <li>{@code --debug} – activate debug systems (hitboxes, tile editor, …)
    *   <li>{@code --sandbox} – start on the empty sandbox level with all blocks unlocked and no
-   *       popups; implies {@code --debug}
+   *       popups
    * </ul>
    *
    * @param args CLI arguments
    * @throws IOException if textures can not be loaded.
    */
   public static void main(String[] args) throws IOException {
+    try {
+      Properties props = new Properties();
+      // loads the file that sets the web mode (incase jar was created with jardesktop or jarweb)
+      props.load(Client.class.getResourceAsStream("/application.properties"));
+      runInWeb = Boolean.parseBoolean(props.getProperty("web"));
+    } catch (Exception e) {
+      for (String arg : args) {
+        // incase the program is executed from runBlockly or the normal jar
+        if (arg.equalsIgnoreCase("--web")) {
+          runInWeb = true;
+        }
+      }
+    }
+
     for (String arg : args) {
       if (arg.equalsIgnoreCase("--debug")) {
         debugMode = true;
@@ -105,6 +135,11 @@ public class Client {
       if (arg.equalsIgnoreCase("--sandbox")) {
         sandboxMode = true;
       }
+    }
+
+
+    if (runInWeb) {
+      FrontendServer.run();
     }
 
     StateMachine.setResetFrame(false);
@@ -124,12 +159,13 @@ public class Client {
         httpServer.stop(0);
       }
       BlocklyCodeRunner.instance().stopExecution();
+      FrontendServer.stopServer();
     }
   }
 
   private static void onSetup() {
     Game.userOnSetup(
-        () -> {
+      () -> {
           if (sandboxMode) {
             // Sandbox: only expose the empty sandbox level – no story progression, no popups.
             DungeonLoader.addLevel(Tuple.of("sandbox", SandboxLevel.class));
@@ -163,37 +199,35 @@ public class Client {
             DungeonLoader.addLevel(Tuple.of("level022", Level022.class));
           }
 
-          createHero();
-          createSystems();
+        createHero();
+        createSystems();
 
-          startServer();
-
-          DungeonLoader.loadLevel(0);
-        });
+        startServer();
+      });
   }
 
   private static void onLevelLoad() {
     Game.userOnLevelLoad(
-        (firstLoad) -> {
+      (firstLoad) -> {
           BlocklyCodeRunner.instance().stopExecution();
-          Game.player()
-              .flatMap(e -> e.fetch(VelocityComponent.class))
-              .ifPresent(
-                  vc -> {
-                    vc.clearForces();
-                    vc.currentVelocity(Vector2.ZERO);
-                  });
-          Game.player()
-              .flatMap(e -> e.fetch(AmmunitionComponent.class))
-              .map(AmmunitionComponent::resetCurrentAmmunition);
-        });
+        Game.player()
+          .flatMap(e -> e.fetch(VelocityComponent.class))
+          .ifPresent(
+            vc -> {
+              vc.clearForces();
+              vc.currentVelocity(Vector2.ZERO);
+            });
+        Game.player()
+          .flatMap(e -> e.fetch(AmmunitionComponent.class))
+          .map(AmmunitionComponent::resetCurrentAmmunition);
+      });
   }
 
   private static void configGame() throws IOException {
     Game.loadConfig(
-        new SimpleIPath("dungeon_config.json"),
-        contrib.configuration.KeyboardConfig.class,
-        core.configuration.KeyboardConfig.class);
+      new SimpleIPath("dungeon_config.json"),
+      contrib.configuration.KeyboardConfig.class,
+      core.configuration.KeyboardConfig.class);
     Game.frameRate(30);
     Game.disableAudio(true);
     Game.resizeable(true);
@@ -295,6 +329,7 @@ public class Client {
     Game.removeAllEntities();
     Game.system(PositionSystem.class, System::stop);
     createHero();
+    SHOOT_AT_PLAYER = true;
     DungeonLoader.reloadCurrentLevel();
     Game.system(PositionSystem.class, System::run);
     DialogTracker.instance().clear();

@@ -1,6 +1,5 @@
 package contrib.systems;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -16,15 +15,12 @@ import contrib.utils.EntityUtils;
 import core.Entity;
 import core.Game;
 import core.System;
-import core.components.DrawComponent;
-import core.components.PlayerComponent;
-import core.components.PositionComponent;
-import core.components.SoundComponent;
-import core.components.VelocityComponent;
+import core.components.*;
 import core.game.WindowEventManager;
 import core.level.DungeonLevel;
 import core.level.elements.ILevel;
 import core.systems.CameraSystem;
+import core.systems.input.InputManager;
 import core.utils.FontHelper;
 import core.utils.Point;
 import core.utils.Vector2;
@@ -32,12 +28,8 @@ import core.utils.components.MissingComponentException;
 import core.utils.components.draw.BlendUtils;
 import core.utils.components.draw.ColorUtils;
 import core.utils.components.draw.animation.Animation;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+
+import java.util.*;
 
 /**
  * A debug system that visually overlays entity information on top of the game world.
@@ -201,8 +193,10 @@ public class DebugDrawSystem extends System {
     float width = topRight.x() - bottomLeft.x();
     float height = topRight.y() - bottomLeft.y();
 
+    Color color = cc.isSolid() ? Color.RED : Color.WHITE;
+
     SHAPE_RENDERER.begin(ShapeRenderer.ShapeType.Line);
-    SHAPE_RENDERER.setColor(withAlpha(Color.RED, alpha));
+    SHAPE_RENDERER.setColor(withAlpha(color, alpha));
     SHAPE_RENDERER.rect(bottomLeft.x(), bottomLeft.y(), width, height);
     SHAPE_RENDERER.end();
   }
@@ -389,8 +383,8 @@ public class DebugDrawSystem extends System {
     }
 
     // If holding Shift, show all components; otherwise hint how to show them
-    if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
-        || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+    if (InputManager.isKeyPressed(Input.Keys.SHIFT_LEFT)
+      || InputManager.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
       info.append(componentNames.size())
           .append(" component")
           .append(componentNames.size() == 1 ? "" : "s")

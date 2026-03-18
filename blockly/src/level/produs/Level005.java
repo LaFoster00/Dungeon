@@ -2,7 +2,6 @@ package level.produs;
 
 import static level.LevelManagementUtils.cameraFocusOn;
 
-import contrib.hud.DialogUtils;
 import core.Game;
 import core.level.utils.Coordinate;
 import core.level.utils.DesignLabel;
@@ -50,15 +49,16 @@ public class Level005 extends BlocklyLevel {
         "Variablen",
         "Bedingungen",
         "Sonstige");
+
+    addPopup(new ImagePopup("popups/level005/01_intro.jpg"));
+    addCodePopup(new ImagePopup("popups/overview1.jpg"));
   }
 
   @Override
   protected void onFirstTick() {
     LevelManagementUtils.fog(false);
     if (showText) {
-      DialogUtils.showTextPopup(
-          "Die Monster sehen böse aus, du solltest ihnen nicht zu nahe kommen.",
-          "Kapitel 1: Ausbruch");
+      showPopups();
       showText = false;
     }
     cameraFocusOn(new Coordinate(7, 6));

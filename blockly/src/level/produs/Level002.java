@@ -1,6 +1,5 @@
 package level.produs;
 
-import contrib.hud.DialogUtils;
 import core.level.utils.DesignLabel;
 import core.level.utils.LevelElement;
 import core.utils.Direction;
@@ -42,6 +41,13 @@ public class Level002 extends BlocklyLevel {
         "Schleife",
         "Bedingungen",
         "Sonstige");
+
+    addWebPopup(new ImagePopup("popups/level002/webpopups/01_intro.jpg"));
+
+    addCodePopup(new ImagePopup("popups/level002/codepopups/01_datei_erstellen.jpg"));
+    addCodePopup(new ImagePopup("popups/level002/codepopups/02_datei_erstellen.jpg"));
+    addCodePopup(new ImagePopup("popups/level002/codepopups/04_intro.jpg"));
+    addCodePopup(new ImagePopup("popups/overview1.jpg"));
   }
 
   @Override
@@ -52,9 +58,7 @@ public class Level002 extends BlocklyLevel {
     LevelManagementUtils.playerViewDirection(Direction.RIGHT);
     LevelManagementUtils.zoomDefault();
     if (showText) {
-      DialogUtils.showTextPopup(
-          "Pass auf, die Monster sind angekettet und können sich nicht bewegen, aber wenn du ihnen zu nahe kommst, wird es eng für dich.",
-          "Kapitel 1: Ausbruch");
+      showPopups();
       showText = false;
     }
 
@@ -63,9 +67,9 @@ public class Level002 extends BlocklyLevel {
         .attackRange(3)
         .viewDirection(Direction.LEFT)
         .addToGame()
-        .build(getPoint(0));
+      .build(getPoint("guard"));
 
-    removeNamedPoint("Point0");
+    removeNamedPoint("guard");
 
     BlocklyMonster.Builder hedgehogBuilder = BlocklyMonster.HEDGEHOG.builder().attackRange(0);
     namedPoints()

@@ -1,6 +1,10 @@
-plugins {
-    id 'application'
+
+
+repositories {
+    mavenCentral()
 }
+
+
 
 application {
     // Define the main class for the application
@@ -19,11 +23,35 @@ dependencies {
     implementation project(':dgir:vm')
     implementation project(':blockly:dgir:compiler')
     implementation project(':blockly:dgir:dialect')
-    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.27.1'
+    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.28.0'
 
     // JUnit 4 and Mockito for testing
     testImplementation supportDependencies.junit
     testRuntimeOnly supportDependencies.junitLauncher
+}
+
+tasks.withType(Jar) {
+    // filter everythink that should not be in the jar
+    exclude("**/*.xcf")
+    exclude("**/debug/**")
+    exclude("**/*.pdf") // Falls eine Library Dokumentation mitschleppt
+}
+
+tasks.register("npmInstall", Exec) {
+    group = 'build'
+    workingDir = file("$projectDir/frontend")
+    def os = System.getProperty('os.name').toLowerCase()
+    commandLine os.contains('windows') ? ['npm.cmd', 'install'] : ['npm', 'install']
+}
+
+tasks.register("npmBuild", Exec) {
+    group = 'build'
+    workingDir = file("$projectDir/frontend")
+
+    def os = System.getProperty('os.name').toLowerCase()
+    commandLine os.contains('windows') ? ['npm.cmd', 'run', 'build'] : ['npm', 'run', 'build']
+
+    dependsOn 'npmInstall'
 }
 
 tasks.register('runJar', JavaExec) {
@@ -33,7 +61,7 @@ tasks.register('runJar', JavaExec) {
 }
 
 
-tasks.register('runBlocklyDebug', JavaExec) {
+tasks.register('runDebug', JavaExec) {
     group = 'application'
     description = 'Start Blockly Dungeon with debug systems active (hitboxes, tile editor, tank controls) (--debug).'
     mainClass = 'client.Client'
@@ -42,7 +70,7 @@ tasks.register('runBlocklyDebug', JavaExec) {
     workingDir = rootProject.projectDir
 }
 
-tasks.register('runBlocklySandbox', JavaExec) {
+tasks.register('runSandbox', JavaExec) {
     group = 'application'
     description = 'Start Blockly Dungeon in sandbox mode: empty level, no popups, all blocks unlocked, debug systems active (--sandbox).'
     mainClass = 'client.Client'
@@ -51,31 +79,84 @@ tasks.register('runBlocklySandbox', JavaExec) {
     workingDir = rootProject.projectDir
 }
 
-jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest {
-        attributes('Main-Class': 'client.Client')
+def configureBaseJare(jar) {
+    jar.with {
+        archiveBaseName.set('Blockly.jar')
+        dependsOn project(':dungeon').tasks.named('jar')
+        dependsOn tasks.named('npmBuild')
+
+        from sourceSets.main.output // TODO is this line necessary?
+        from project(':dungeon').sourceSets.main.output
+
+        manifest {
+            attributes 'Main-Class': 'client.Client'
+        }
+
+        // Bundle runtime classpath into the fat jar so all jar dependencies are included.
+        from {
+            configurations.runtimeClasspath.collect {
+                it.isDirectory() ? it : zipTree(it)
+            }
+        }
+
+        // Source für Language Server
+        from(project(':dungeon').projectDir) {
+            include 'src/core/level/utils/LevelElement.java'
+            eachFile { it.path = it.path.replaceFirst('src/', '') }
+            includeEmptyDirs = false
+        }
+        from(project(':blockly:dgir:compiler').projectDir) {
+            include 'assets/imports/Dungeon/Intrinsic.java'
+            include 'assets/imports/Dungeon/Hero.java'
+            include 'assets/imports/Dungeon/IO.java'
+            eachFile { it.path = it.path.replaceFirst('assets/', '') }
+            includeEmptyDirs = false
+        }
+
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+        into('assets') {
+            from project(':dungeon').file('assets')
+            from projectDir.toPath().resolve('frontend/dist').toFile()
+        }
+
+        // Exclude signature metadata from shaded dependencies
+        exclude('META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
     }
-    // Bundle runtime classpath into the fat jar so all jar dependencies are included.
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+}
+
+tasks.named("jar", Jar) {
+    group = 'build'
+    archiveFileName.set('Blockly.jar')
+    configureBaseJar(it)
+}
+
+tasks.register("jarWeb", Jar) {
+    group = 'build'
+    archiveFileName.set('Blockly-web.jar')
+    archiveClassifier = 'web'
+    configureBaseJar(it)
+    from(resources.text.fromString("web=true")) {
+        rename { "application.properties" }
     }
-    // Exclude signature metadata from shaded dependencies to prevent invalid digest errors.
-    exclude('META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
-    dependsOn project(':dungeon').tasks.named('jar')
+}
+
+tasks.register("jarDesktop", Jar) {
+    group = 'build'
+    archiveFileName.set('Blockly-desktop.jar')
+    archiveClassifier = 'desktop'
+    configureBaseJar(it)
+    from(resources.text.fromString("web=false")) {
+        rename { "application.properties" }
+    }
+}
+
+// Optional: Mit 'build' beide gleichzeitig erstellen
+artifacts {
+    archives jarDesktop, jarWeb
 }
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
-}
-
-// Wire optional frontend startup into run/runJar
-tasks.withType(JavaExec).forEach {
-    it.doFirst {
-        println("\u001B[31mIf the frontend is not already running, start it with\n 'npm run dev'\nin the 'frontend' directory.\u001B[0m")
-    }
-}
-
-repositories {
-    mavenCentral()
+    failOnNoDiscoveredTests = false
 }

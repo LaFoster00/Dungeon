@@ -14,9 +14,10 @@ processResources {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-tasks.register('runAdvancedDungeon', JavaExec) {
+
+tasks.register('runPortal', JavaExec) {
     group 'starter'
-    mainClass = 'produsAdvanced.AdvancedDungeon'
+    mainClass = 'starter.PortalStarter'
     classpath = sourceSets.main.runtimeClasspath
 }
 
@@ -35,6 +36,7 @@ tasks.register('runPathFindingComparison', JavaExec) {
 tasks.named('clean') {
     delete(
             file("$rootDir/currentAdvancedLevel.json"),
+        file("$rootDir/currentPortalLevel.json"),
     )
 }
 

@@ -3,7 +3,6 @@ package level.produs;
 import contrib.components.BlockComponent;
 import contrib.components.LeverComponent;
 import contrib.entities.LeverFactory;
-import contrib.hud.DialogUtils;
 import core.Entity;
 import core.Game;
 import core.components.DrawComponent;
@@ -63,6 +62,17 @@ public class Level013 extends BlocklyLevel {
         // Kategorien
         "Variablen",
         "Sonstige");
+
+    addWebPopup(new ImagePopup("popups/level013/webpopups/01_Abfrage.jpg"));
+    addWebPopup(new ImagePopup("popups/level013/webpopups/02_Abfrage.jpg"));
+    addWebPopup(new ImagePopup("popups/level013/webpopups/03_Abfrage.jpg"));
+    addWebPopup(new ImagePopup("popups/level013/webpopups/04_Abfrage.jpg"));
+
+    addCodePopup(new ImagePopup("popups/level013/codepopups/01_Abfrage.jpg"));
+    addCodePopup(new ImagePopup("popups/level013/codepopups/02_Abfrage.jpg"));
+    addCodePopup(new ImagePopup("popups/level013/codepopups/03_Abfrage.jpg"));
+    addCodePopup(new ImagePopup("popups/level013/codepopups/04_Abfrage.jpg"));
+    addCodePopup(new ImagePopup("popups/overview1.jpg"));
   }
 
   @Override
@@ -72,12 +82,6 @@ public class Level013 extends BlocklyLevel {
     LevelManagementUtils.cameraFocusHero();
     LevelManagementUtils.playerViewDirection(Direction.RIGHT);
     LevelManagementUtils.zoomDefault();
-    if (showText) {
-      DialogUtils.showTextPopup(
-          "Endlich raus da, aber wie geht es jetzt weiter?", "Kapitel 2: Flucht");
-      showText = false;
-    }
-
     // create torches and light every second one
     final boolean[] coin = {new Random().nextBoolean()};
     namedPoints()
@@ -106,6 +110,10 @@ public class Level013 extends BlocklyLevel {
 
     door = (DoorTile) Game.randomTile(LevelElement.DOOR).orElseThrow();
     door.close();
+    if (showText) {
+      showPopups();
+      showText = false;
+    }
   }
 
   @Override
