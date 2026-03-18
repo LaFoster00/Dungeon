@@ -1,9 +1,13 @@
 package level.sandbox;
 
+import contrib.entities.LeverFactory;
+import core.Game;
 import core.level.utils.DesignLabel;
 import core.level.utils.LevelElement;
 import core.utils.Direction;
 import core.utils.Point;
+import entities.MiscFactory;
+import entities.monster.BlocklyMonster;
 import level.BlocklyLevel;
 import level.LevelManagementUtils;
 
@@ -26,6 +30,11 @@ import java.util.Map;
  */
 public class SandboxLevel extends BlocklyLevel {
 
+  private static final Point STONE_SPAWN = new Point(16f, 12f);
+  private static final Point LEVER_SPAWN = new Point(13f, 13f);
+  private static final Point PRESSURE_PLATE_SPAWN = new Point(17f, 12f);
+  private static final Point BLACK_KNIGHT_SPAWN = new Point(19f, 12f);
+
   /**
    * Creates a new SandboxLevel.
    *
@@ -46,6 +55,15 @@ public class SandboxLevel extends BlocklyLevel {
     LevelManagementUtils.centerHero();
     LevelManagementUtils.playerViewDirection(Direction.DOWN);
     LevelManagementUtils.zoomDefault();
+    Game.add(MiscFactory.stone(STONE_SPAWN));
+    Game.add(LeverFactory.createLever(LEVER_SPAWN));
+    Game.add(LeverFactory.pressurePlate(PRESSURE_PLATE_SPAWN, 1f));
+    BlocklyMonster.BLACK_KNIGHT
+        .builder()
+        .speed(4f)
+        .viewDirection(Direction.LEFT)
+        .addToGame()
+        .build(BLACK_KNIGHT_SPAWN);
     // Intentionally no popups – sandbox must never block test execution.
   }
 }

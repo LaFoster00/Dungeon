@@ -1,4 +1,5 @@
 import client.Client;
+import core.Entity;
 import core.Game;
 import core.components.PositionComponent;
 import core.utils.Direction;
@@ -203,6 +204,23 @@ public class DungeonCompilerTestBase {
         .orElseThrow(() -> new AssertionError("No player direction available"));
   }
 
+  /** Returns the position of a level entity by exact name. */
+  protected static @NotNull Point entityPosition(@NotNull String entityName) {
+    return findEntity(entityName)
+        .flatMap(entity -> entity.fetch(PositionComponent.class))
+        .map(PositionComponent::position)
+        .map(Point::new)
+        .orElseThrow(() -> new AssertionError("No position available for entity: " + entityName));
+  }
+
+  /** Returns the view direction of a level entity by exact name. */
+  protected static @NotNull Direction entityDirection(@NotNull String entityName) {
+    return findEntity(entityName)
+        .flatMap(entity -> entity.fetch(PositionComponent.class))
+        .map(PositionComponent::viewDirection)
+        .orElseThrow(() -> new AssertionError("No direction available for entity: " + entityName));
+  }
+
   // =========================================================================
   // Private helpers
   // =========================================================================
@@ -252,5 +270,9 @@ public class DungeonCompilerTestBase {
       }
     }
     throw new AssertionError("Player did not become available within " + timeout);
+  }
+
+  private static java.util.Optional<Entity> findEntity(@NotNull String entityName) {
+    return Game.levelEntities().filter(entity -> entityName.equals(entity.name())).findFirst();
   }
 }
