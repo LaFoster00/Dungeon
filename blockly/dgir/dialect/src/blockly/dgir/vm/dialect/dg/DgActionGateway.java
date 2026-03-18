@@ -1,6 +1,5 @@
 package blockly.dgir.vm.dialect.dg;
 
-import blockly.dgir.dialect.dg.DgAttrs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,14 +57,14 @@ public interface DgActionGateway {
    *
    * @param dir the turn direction (LEFT or RIGHT).
    */
-  void turn(@NotNull DgAttrs.TurnDirectionAttr.TurnDir dir, @NotNull Runnable onComplete);
+  void turn(int dir, @NotNull Runnable onComplete);
 
   /**
    * Interact with entities in a given direction relative to the hero.
    *
    * @param dir direction relative to the hero's facing direction (or HERE for current tile).
    */
-  void use(@NotNull DgAttrs.UseDirectionAttr.UseDir dir, @NotNull Runnable onComplete);
+  void use(int dir, @NotNull Runnable onComplete);
 
   /** Push the entity in front of the hero. */
   void push(@NotNull Runnable onComplete);
@@ -78,7 +77,7 @@ public interface DgActionGateway {
    *
    * @param dropType the type of item to drop.
    */
-  void drop(@NotNull DgAttrs.DropTypeAttr.DropType dropType, @NotNull Runnable onComplete);
+  void drop(int dropType, @NotNull Runnable onComplete);
 
   /** Pick up an item on the hero's current tile. */
   void pickup(@NotNull Runnable onComplete);
@@ -88,4 +87,19 @@ public interface DgActionGateway {
 
   /** Make the hero rest (do nothing) for a brief period. */
   void rest(@NotNull Runnable onComplete);
+
+  /**
+   * Check if a tile of a given type is near the hero in a given direction.
+   *
+   * @param tile the tile type to check
+   * @param direction the direction to check
+   */
+  boolean isNearTile(int tile, int direction, Runnable onComplete);
+
+  /**
+   * Check if the hero's current tile matches a given type.
+   *
+   * @param direction the direction to check
+   */
+  boolean active(int direction, Runnable onComplete);
 }

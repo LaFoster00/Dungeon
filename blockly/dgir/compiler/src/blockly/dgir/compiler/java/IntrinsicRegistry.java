@@ -3,6 +3,8 @@ package blockly.dgir.compiler.java;
 import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +16,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Retreive information about the intrinsic methods specified for blockly. These are place in
@@ -25,26 +26,11 @@ public class IntrinsicRegistry {
 
   static boolean initialized = false;
 
-  /**
-   * A mapping from method signature to opcode name for all methods annotated with @Intrinsic in the
-   * Dungeon files. Populated by {@link #init()}.
-   */
-  public static final @NotNull Map<@NotNull String, @NotNull String> signatureToOpCode =
-      new HashMap<>();
+  /** A set of all intrinsic methods and types that have been found in the Dungeon files. */
+  public static final @NotNull Set<String> intrinsics = new HashSet<>();
 
-  /**
-   * A mapping from opcode name to method signature for all methods annotated with @Intrinsic in the
-   * Dungeon files. Populated by {@link #init()}.
-   */
-  public static final @NotNull Map<@NotNull String, @NotNull Set<@NotNull String>>
-      opcodeToIntrinsic = new HashMap<>();
-
-  /**
-   * A mapping from module name to a mapping from method signature to opcode name for all methods in
-   * that module annotated with @Intrinsic. Populated by {@link #init()}.
-   */
-  public static final @NotNull Map<@NotNull String, @NotNull Map<@NotNull String, @NotNull String>>
-      intrinsicsByModule = new HashMap<>();
+  /** A mapping from file name to a mapping from opcode name to method declaration for */
+  public static final @NotNull Map<String, Set<String>> fileToIntrinsics = new HashMap<>();
 
   public static @NotNull @Unmodifiable List<String> listDungeonFiles() throws IOException {
     InputStream indexStream = openDungeonFile("_index.txt");
@@ -102,49 +88,70 @@ public class IntrinsicRegistry {
     // the @Intrinsic annotation. Store the mapping from opcode name to method declaration in a
     // global map for later use.
     for (Map.Entry<String, String> entry : intrinsicSources.entrySet()) {
-      String moduleName = entry.getKey();
+      String fileName = entry.getKey();
       String source = entry.getValue();
       CompilationUnit result;
       try {
         result = StaticJavaParser.parse(source);
       } catch (ParseProblemException e) {
         logger.severe(
-            "Failed to parse Java source code for module " + moduleName + ": " + e.getMessage());
+            "Failed to parse Java source code for module " + fileName + ": " + e.getMessage());
         return;
       } catch (RuntimeException e) {
         logger.severe("Unexpected error while parsing Java source code: " + e.getMessage());
         return;
       }
       IntrinsicsEmitter emitter = new IntrinsicsEmitter();
-      var moduleIntrinsics = intrinsicsByModule.computeIfAbsent(moduleName, s -> new HashMap<>());
-      emitter.visit(result, moduleIntrinsics);
-      signatureToOpCode.putAll(moduleIntrinsics);
+      Set<String> fileIntrinsics = fileToIntrinsics.computeIfAbsent(fileName, s -> new HashSet<>());
+      emitter.visit(result, fileIntrinsics);
 
       // Log the intrinsics for this module
-      logger.info(
-          "Intrinsics for module "
-              + moduleName
-              + ": "
-              + moduleIntrinsics.keySet().stream()
-                  .map(s -> s + " -> " + moduleIntrinsics.get(s))
-                  .toList());
-    }
+      logger.info("Intrinsics for module " + fileName + ": " + fileIntrinsics);
 
-    opcodeToIntrinsic.putAll(
-        signatureToOpCode.entrySet().stream()
-            .collect(
-                Collectors.groupingBy(
-                    Map.Entry::getValue,
-                    Collectors.mapping(Map.Entry::getKey, Collectors.toSet()))));
+      intrinsics.addAll(fileIntrinsics);
+    }
   }
 
   /**
    * Visitor that looks for method declarations annotated with @Intrinsic and adds their signature
    * and opcode name to the provided collector map.
    */
-  private static final class IntrinsicsEmitter extends VoidVisitorAdapter<Map<String, String>> {
+  private static final class IntrinsicsEmitter extends VoidVisitorAdapter<Set<String>> {
     @Override
-    public void visit(MethodDeclaration md, Map<String, String> collector) {
+    public void visit(ClassOrInterfaceDeclaration n, Set<String> collector) {
+      super.visit(n, collector);
+      n.getAnnotationByName("Intrinsic")
+          .ifPresent(
+              annotation -> {
+                String opcodeName =
+                    annotation
+                        .asSingleMemberAnnotationExpr()
+                        .getMemberValue()
+                        .asStringLiteralExpr()
+                        .getValue();
+                collector.add(opcodeName);
+              });
+    }
+
+    @Override
+    public void visit(EnumDeclaration n, Set<String> collector) {
+      super.visit(n, collector);
+      n.getAnnotationByName("Intrinsic")
+          .ifPresent(
+              annotation -> {
+                String opcodeName =
+                    annotation
+                        .asSingleMemberAnnotationExpr()
+                        .getMemberValue()
+                        .asStringLiteralExpr()
+                        .getValue();
+                collector.add(opcodeName);
+              });
+    }
+
+    @Override
+    public void visit(MethodDeclaration md, Set<String> collector) {
+      super.visit(md, collector);
       md.getAnnotationByName("Intrinsic")
           .ifPresent(
               annotation -> {
@@ -154,7 +161,7 @@ public class IntrinsicRegistry {
                         .getMemberValue()
                         .asStringLiteralExpr()
                         .getValue();
-                collector.put(opcodeName, md.getDeclarationAsString());
+                collector.add(opcodeName);
               });
     }
   }

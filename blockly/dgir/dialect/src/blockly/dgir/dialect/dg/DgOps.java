@@ -1,21 +1,17 @@
 package blockly.dgir.dialect.dg;
 
-import dgir.core.Dialect;
 import dgir.core.DgirCoreUtils;
+import dgir.core.Dialect;
 import dgir.core.debug.Location;
-import dgir.core.ir.NamedAttribute;
 import dgir.core.ir.Op;
 import dgir.core.ir.Operation;
-import dgir.core.traits.INoOperands;
-import dgir.core.traits.INoResult;
+import dgir.core.ir.Value;
+import dgir.core.traits.*;
+import dgir.dialect.builtin.BuiltinTypes;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.function.Function;
-
-import static blockly.dgir.dialect.dg.DgAttrs.*;
 
 /**
  * Sealed marker interface for all operations in the {@link DungeonDialect}.
@@ -50,14 +46,7 @@ public sealed interface DgOps {
    * <p>All subclasses are leaf ops that carry their meaning solely through their ident and default
    * attributes.
    */
-  abstract class HeroOp extends DungeonOp implements INoOperands, INoResult {
-    @Override
-    public @NonNull Function<Operation, Boolean> getVerifier() {
-      // No verification needed since the traits guarantee that the operation has no operands and no
-      // results.
-      return ignored -> true;
-    }
-
+  abstract class HeroOp extends DungeonOp {
     protected HeroOp() {}
 
     protected HeroOp(Location location) {
@@ -70,10 +59,15 @@ public sealed interface DgOps {
    *
    * <p>Ident: {@code dg.move}
    */
-  final class MoveOp extends HeroOp implements DgOps {
+  final class MoveOp extends HeroOp implements DgOps, INoResult, INoOperands {
     @Override
     public @NotNull String getIdent() {
       return "dg.move";
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return ignored -> true;
     }
 
     private MoveOp() {}
@@ -87,38 +81,29 @@ public sealed interface DgOps {
    * Turn the hero left or right.
    *
    * <p>Ident: {@code dg.turn}
-   *
-   * <p>Default attributes:
-   *
-   * <ul>
-   *   <li>{@code direction}: {@link TurnDirectionAttr} (default {@code LEFT})
-   * </ul>
    */
-  final class TurnOp extends HeroOp implements DgOps {
+  final class RotateOp extends HeroOp implements DgOps, ISingleOperand, INoResult {
     @Override
     public @NotNull String getIdent() {
-      return "dg.turn";
+      return "dg.rotate";
     }
 
     @Override
-    public @NotNull @Unmodifiable List<NamedAttribute> getDefaultAttributes() {
-      return List.of(
-          new NamedAttribute("direction", new TurnDirectionAttr(TurnDirectionAttr.TurnDir.LEFT)));
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return operation -> {
+        RotateOp op = operation.as(RotateOp.class).orElseThrow();
+        if (!(op.getOperand().getType() instanceof BuiltinTypes.IntegerT)) {
+          operation.emitError("Expected operand of type Integer, got " + op.getOperand().getType());
+          return false;
+        }
+        return true;
+      };
     }
 
-    private TurnOp() {}
+    private RotateOp() {}
 
-    public TurnOp(Location location, TurnDirectionAttr.TurnDir turnDir) {
-      super(location);
-      getDirectionAttribute().setDirection(turnDir);
-    }
-
-    public @NotNull TurnDirectionAttr getDirectionAttribute() {
-      return getAttributeAs("direction", TurnDirectionAttr.class).orElseThrow();
-    }
-
-    public @NotNull DgAttrs.TurnDirectionAttr.TurnDir getDirection() {
-      return getDirectionAttribute().getDirection();
+    public RotateOp(Location location, Value turnDir) {
+      setOperation(Operation.Create(location, this, List.of(turnDir), null, null));
     }
   }
 
@@ -126,39 +111,29 @@ public sealed interface DgOps {
    * Use an interactable relative to the hero.
    *
    * <p>Ident: {@code dg.use}
-   *
-   * <p>Default attributes:
-   *
-   * <ul>
-   *   <li>{@code direction}: {@link UseDirectionAttr} (default {@code HERE})
-   * </ul>
    */
-  final class UseOp extends HeroOp implements DgOps {
+  final class InteractOp extends HeroOp implements DgOps, ISingleOperand, INoResult {
     @Override
     public @NotNull String getIdent() {
-      return "dg.use";
+      return "dg.interact";
     }
 
     @Override
-    public @NotNull @Unmodifiable List<NamedAttribute> getDefaultAttributes() {
-      return List.of(
-          new NamedAttribute(
-              "direction", new DgAttrs.UseDirectionAttr(UseDirectionAttr.UseDir.HERE)));
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return operation -> {
+        var op = operation.as(InteractOp.class).orElseThrow();
+        if (!(op.getOperand().getType() instanceof BuiltinTypes.IntegerT)) {
+          operation.emitError("Expected operand of type Integer, got " + op.getOperand().getType());
+          return false;
+        }
+        return true;
+      };
     }
 
-    private UseOp() {}
+    private InteractOp() {}
 
-    public UseOp(Location location, UseDirectionAttr.UseDir useDir) {
-      super(location);
-      getDirectionAttribute().setDirection(useDir);
-    }
-
-    public @NotNull UseDirectionAttr getDirectionAttribute() {
-      return getAttributeAs("direction", UseDirectionAttr.class).orElseThrow();
-    }
-
-    public @NotNull DgAttrs.UseDirectionAttr.UseDir getDirection() {
-      return getDirectionAttribute().getDirection();
+    public InteractOp(Location location, Value useDir) {
+      setOperation(Operation.Create(location, this, List.of(useDir), null, null));
     }
   }
 
@@ -167,10 +142,15 @@ public sealed interface DgOps {
    *
    * <p>Ident: {@code dg.push}
    */
-  final class PushOp extends HeroOp implements DgOps {
+  final class PushOp extends HeroOp implements DgOps, INoResult, INoOperands {
     @Override
     public @NotNull String getIdent() {
       return "dg.push";
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return ignored -> true;
     }
 
     private PushOp() {}
@@ -185,10 +165,15 @@ public sealed interface DgOps {
    *
    * <p>Ident: {@code dg.pull}
    */
-  final class PullOp extends HeroOp implements DgOps {
+  final class PullOp extends HeroOp implements DgOps, INoResult, INoOperands {
     @Override
     public @NotNull String getIdent() {
       return "dg.pull";
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return ignored -> true;
     }
 
     private PullOp() {}
@@ -202,23 +187,23 @@ public sealed interface DgOps {
    * Drop an item on the hero's tile.
    *
    * <p>Ident: {@code dg.drop}
-   *
-   * <p>Default attributes:
-   *
-   * <ul>
-   *   <li>{@code dropType}: {@link DropTypeAttr} (default {@code CLOVER})
-   * </ul>
    */
-  final class DropOp extends HeroOp implements DgOps {
+  final class DropOp extends HeroOp implements DgOps, INoResult, ISingleOperand {
     @Override
     public @NotNull String getIdent() {
       return "dg.drop";
     }
 
     @Override
-    public @NotNull @Unmodifiable List<NamedAttribute> getDefaultAttributes() {
-      return List.of(
-          new NamedAttribute("dropType", new DropTypeAttr(DropTypeAttr.DropType.CLOVER)));
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return operation -> {
+        var op = operation.as(DropOp.class).orElseThrow();
+        if (!(op.getOperand().getType() instanceof BuiltinTypes.IntegerT)) {
+          operation.emitError("Expected operand of type Integer, got " + op.getOperand().getType());
+          return false;
+        }
+        return true;
+      };
     }
 
     private DropOp() {}
@@ -227,9 +212,8 @@ public sealed interface DgOps {
       super(location);
     }
 
-    public DropOp(Location location, DropTypeAttr.DropType dropType) {
-      super(location);
-      getAttributeAs("dropType", DropTypeAttr.class).orElseThrow().setDropType(dropType);
+    public DropOp(Location location, Value dropType) {
+      setOperation(Operation.Create(location, this, List.of(dropType), null, null));
     }
   }
 
@@ -238,7 +222,12 @@ public sealed interface DgOps {
    *
    * <p>Ident: {@code dg.pickup}
    */
-  final class PickupOp extends HeroOp implements DgOps {
+  final class PickupOp extends HeroOp implements DgOps, INoResult, INoOperands {
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return ignored -> true;
+    }
+
     @Override
     public @NotNull String getIdent() {
       return "dg.pickup";
@@ -256,10 +245,15 @@ public sealed interface DgOps {
    *
    * <p>Ident: {@code dg.fireball}
    */
-  final class FireballOp extends HeroOp implements DgOps {
+  final class FireballOp extends HeroOp implements DgOps, INoResult, INoOperands {
     @Override
     public @NotNull String getIdent() {
       return "dg.fireball";
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return ignored -> true;
     }
 
     private FireballOp() {}
@@ -274,16 +268,96 @@ public sealed interface DgOps {
    *
    * <p>Ident: {@code dg.rest}
    */
-  final class RestOp extends HeroOp implements DgOps {
+  final class RestOp extends HeroOp implements DgOps, INoResult, INoOperands {
     @Override
     public @NotNull String getIdent() {
       return "dg.rest";
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return ignored -> true;
     }
 
     private RestOp() {}
 
     public RestOp(Location location) {
       super(location);
+    }
+  }
+
+  final class IsNearTileOp extends HeroOp implements DgOps, IHasResult {
+    @Override
+    public @NotNull String getIdent() {
+      return "dg.isNearTile";
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return operation -> {
+        var op = operation.as(IsNearTileOp.class).orElseThrow();
+        if (op.getOperands().size() != 2) {
+          operation.emitError("Expected exactly 2 operands, got " + op.getOperands().size());
+          return false;
+        }
+        if (!(op.getOperandValue(0).orElseThrow().getType() instanceof BuiltinTypes.IntegerT)) {
+          operation.emitError(
+              "Expected first operand to be of type Integer, got "
+                  + op.getOperandValue(0).orElseThrow().getType());
+          return false;
+        }
+        if (!(op.getOperandValue(1).orElseThrow().getType() instanceof BuiltinTypes.IntegerT)) {
+          operation.emitError(
+              "Expected second operand to be of type Integer, got "
+                  + op.getOperandValue(1).orElseThrow().getType());
+          return false;
+        }
+        if (!(op.getResultType().equals(BuiltinTypes.IntegerT.BOOL))) {
+          operation.emitError(
+              "Expected result to be of type Bool, got " + op.getResult().getType());
+          return false;
+        }
+        return true;
+      };
+    }
+
+    private IsNearTileOp() {}
+
+    public IsNearTileOp(Location location, Value tileType, Value direction) {
+      setOperation(
+          Operation.Create(
+              location, this, List.of(tileType, direction), null, BuiltinTypes.IntegerT.BOOL));
+    }
+  }
+
+  final class IsActiveOp extends HeroOp implements DgOps, ISingleOperand, IHasResult {
+    @Override
+    public @NotNull String getIdent() {
+      return "dg.isActive";
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return operation -> {
+        var op = operation.as(IsActiveOp.class).orElseThrow();
+        if (!(op.getOperand().getType() instanceof BuiltinTypes.IntegerT)) {
+          operation.emitError("Expected operand of type Integer, got " + op.getOperand().getType());
+          return false;
+        }
+        if (!(op.getResultType().equals(BuiltinTypes.IntegerT.BOOL))) {
+          operation.emitError(
+              "Expected result to be of type Bool, got " + op.getResult().getType());
+          return false;
+        }
+        return true;
+      };
+    }
+
+    private IsActiveOp() {}
+
+    public IsActiveOp(Location location, Value direction) {
+      setOperation(
+          Operation.Create(location, this, List.of(direction), null, BuiltinTypes.IntegerT.BOOL));
     }
   }
 }

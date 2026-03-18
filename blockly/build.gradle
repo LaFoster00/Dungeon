@@ -64,6 +64,15 @@ tasks.register('runJar', JavaExec) {
     dependsOn(tasks.named('jar'))
 }
 
+tasks.register('runWeb', JavaExec) {
+    group = 'application'
+    description = 'Start Blockly Dungeon with web-specific settings (--web).'
+    mainClass = 'client.Client'
+    classpath = sourceSets.main.runtimeClasspath
+    args '--web'
+    workingDir = rootProject.projectDir
+}
+
 
 tasks.register('runDebug', JavaExec) {
     group = 'application'

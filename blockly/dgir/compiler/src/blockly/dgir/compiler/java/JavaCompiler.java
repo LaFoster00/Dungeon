@@ -1,23 +1,18 @@
 package blockly.dgir.compiler.java;
 
 import blockly.dgir.compiler.java.transformations.*;
-import blockly.dgir.dialect.dg.DgAttrs;
 import blockly.dgir.dialect.dg.DgOps;
 import blockly.dgir.dialect.dg.DungeonDialect;
 import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.*;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.modules.ModuleDeclaration;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
-import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
-import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
+import com.github.javaparser.resolution.declarations.*;
 import com.github.javaparser.resolution.types.ResolvedType;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
@@ -75,7 +70,8 @@ public class JavaCompiler {
 
   public static @NotNull Optional<ProgramOp> compileSource(
       @NotNull String source, @NotNull String filename) {
-    StaticJavaParser.getParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
+    StaticJavaParser.getParserConfiguration()
+        .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
     IntrinsicRegistry.init();
     CompilationUnit result;
 
@@ -223,7 +219,12 @@ public class JavaCompiler {
     @Override
     public EmitResult<Optional<Value>> visit(ImportDeclaration n, EmitContext context) {
       return switch (n.getNameAsString()) {
-        case "Dungeon.Hero", "Dungeon.IO" -> EmitResult.success(Optional.empty());
+        case "Dungeon.Hero",
+            "Dungeon.IO",
+            "Dungeon.Direction",
+            "Dungeon.ItemType",
+            "Dungeon.LevelElement" ->
+            EmitResult.success(Optional.empty());
         default ->
             EmitResult.failure(
                 context, n, "Import of " + n.getNameAsString() + " is not supported.");
@@ -1093,9 +1094,80 @@ public class JavaCompiler {
       return EmitResult.ofNullable(n.getInner().accept(this, context));
     }
 
+    static final Map<String, List<String>> intrinsicEnums = new HashMap<>();
+
     @Override
     public EmitResult<Optional<Value>> visit(FieldAccessExpr n, EmitContext context) {
+      // Check if the field is an enum constant and if so if that enum constant is part of the
+      // intrinsic registry. If so, we can emit it as a constant integer value corresponding to its
+      // ordinal in the enum declaration. This allows us to support intrinsic enums without having
+      // to emit the full enum declaration and all its constants.
+      Optional<ResolvedValueDeclaration> resolvedValueDeclarationOpt =
+          CompilerUtils.resolve(n, context);
+      if (resolvedValueDeclarationOpt.isEmpty()) {
+        return EmitResult.failure();
+      }
+      ResolvedValueDeclaration resolvedValueDeclaration = resolvedValueDeclarationOpt.get();
+      if (resolvedValueDeclaration.isEnumConstant()) {
+        ResolvedEnumConstantDeclaration enumConstant = resolvedValueDeclaration.asEnumConstant();
+        populateIntrinsicEnumLookup(enumConstant);
+        List<String> enumValues = intrinsicEnums.get(enumConstant.getType().describe());
+        if (enumValues == null) {
+          return EmitResult.failure(
+              context,
+              n,
+              "Failed to emit field access of enum constant "
+                  + enumConstant.getName()
+                  + " of type "
+                  + enumConstant.getType());
+        }
+        return EmitResult.of(
+            Optional.of(
+                context
+                    .insert(
+                        new ConstantOp(
+                            context.loc(n),
+                            new IntegerAttribute(
+                                enumValues.indexOf(enumConstant.getName()), IntegerT.UINT32)))
+                    .getResult()));
+      }
       return EmitResult.failure(context, n, "Field access is not supported.");
+    }
+
+    private void populateIntrinsicEnumLookup(ResolvedEnumConstantDeclaration enumConstant) {
+      try {
+        ResolvedEnumDeclaration enumTypeDeclaration =
+            enumConstant
+                .getType()
+                .asReferenceType()
+                .getTypeDeclaration()
+                .orElseThrow(
+                    () ->
+                        new RuntimeException(
+                            "Failed to resolve enum type declaration of enum constant "
+                                + enumConstant.getName()))
+                .asEnum();
+        // Intrinsic enum constants can be resolved to integers at compile time, so we can emit them
+        // directly as constants.
+        if (IntrinsicRegistry.intrinsics.contains(enumTypeDeclaration.getQualifiedName())) {
+          // Only populate the cache if needed
+          if (intrinsicEnums.containsKey(enumConstant.getType().describe())) {
+            return;
+          }
+          List<String> enumValues =
+              intrinsicEnums.computeIfAbsent(
+                  enumConstant.getType().describe(), k -> new ArrayList<>());
+          for (ResolvedEnumConstantDeclaration entry : enumTypeDeclaration.getEnumConstants()) {
+            enumValues.add(entry.getName());
+          }
+        }
+      } catch (Exception e) {
+        System.err.println(
+            "Failed to populate intrinsic enum lookup for "
+                + enumConstant.getName()
+                + "\n"
+                + e.getMessage());
+      }
     }
 
     @Override
@@ -1221,7 +1293,7 @@ public class JavaCompiler {
         args.addFirst(scopeResult.get().orElseThrow());
       }
 
-      if (IntrinsicRegistry.signatureToOpCode.containsKey(targetMethod.getQualifiedSignature())) {
+      if (IntrinsicRegistry.intrinsics.contains(targetMethod.getQualifiedSignature())) {
         context.emitInfo(n, "Intrinsic: " + targetMethod.getQualifiedSignature());
         return emitIntrinsic(n, targetMethod.getQualifiedSignature(), args, context);
       }
@@ -1440,37 +1512,22 @@ public class JavaCompiler {
       switch (intrinsicName) {
 
         // Hero Operations
-
         case "Dungeon.Hero.move()" -> {
           context.insert(new DgOps.MoveOp(context.loc(n)));
           return EmitResult.of(Optional.empty());
         }
-        case "Dungeon.Hero.turnLeft()" -> {
-          context.insert(new DgOps.TurnOp(context.loc(n), DgAttrs.TurnDirectionAttr.TurnDir.LEFT));
+        case "Dungeon.Hero.rotate(Dungeon.Direction)" -> {
+          EmitResult<List<Value>> arguments = visitNodeListWithResult(n.getArguments(), context);
+          if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
+          Value directionValue = arguments.get().getFirst();
+          context.insert(new DgOps.RotateOp(context.loc(n), directionValue));
           return EmitResult.of(Optional.empty());
         }
-        case "Dungeon.Hero.turnRight()" -> {
-          context.insert(new DgOps.TurnOp(context.loc(n), DgAttrs.TurnDirectionAttr.TurnDir.RIGHT));
-          return EmitResult.of(Optional.empty());
-        }
-        case "Dungeon.Hero.useHere()" -> {
-          context.insert(new DgOps.UseOp(context.loc(n), DgAttrs.UseDirectionAttr.UseDir.HERE));
-          return EmitResult.of(Optional.empty());
-        }
-        case "Dungeon.Hero.useLeft()" -> {
-          context.insert(new DgOps.UseOp(context.loc(n), DgAttrs.UseDirectionAttr.UseDir.LEFT));
-          return EmitResult.of(Optional.empty());
-        }
-        case "Dungeon.Hero.useRight()" -> {
-          context.insert(new DgOps.UseOp(context.loc(n), DgAttrs.UseDirectionAttr.UseDir.RIGHT));
-          return EmitResult.of(Optional.empty());
-        }
-        case "Dungeon.Hero.useUp()" -> {
-          context.insert(new DgOps.UseOp(context.loc(n), DgAttrs.UseDirectionAttr.UseDir.UP));
-          return EmitResult.of(Optional.empty());
-        }
-        case "Dungeon.Hero.useDown()" -> {
-          context.insert(new DgOps.UseOp(context.loc(n), DgAttrs.UseDirectionAttr.UseDir.DOWN));
+        case "Dungeon.Hero.interact(Dungeon.Direction)" -> {
+          EmitResult<List<Value>> arguments = visitNodeListWithResult(n.getArguments(), context);
+          if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
+          Value directionValue = arguments.get().getFirst();
+          context.insert(new DgOps.InteractOp(context.loc(n), directionValue));
           return EmitResult.of(Optional.empty());
         }
         case "Dungeon.Hero.push()" -> {
@@ -1481,13 +1538,11 @@ public class JavaCompiler {
           context.insert(new DgOps.PullOp(context.loc(n)));
           return EmitResult.of(Optional.empty());
         }
-        case "Dungeon.Hero.dropClover()" -> {
-          context.insert(new DgOps.DropOp(context.loc(n), DgAttrs.DropTypeAttr.DropType.CLOVER));
-          return EmitResult.of(Optional.empty());
-        }
-        case "Dungeon.Hero.dropBreadCrumbs()" -> {
-          context.insert(
-              new DgOps.DropOp(context.loc(n), DgAttrs.DropTypeAttr.DropType.BREADCRUMBS));
+        case "Dungeon.Hero.drop(Dungeon.ItemType)" -> {
+          EmitResult<List<Value>> arguments = visitNodeListWithResult(n.getArguments(), context);
+          if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
+          Value itemTypeValue = arguments.get().getFirst();
+          context.insert(new DgOps.DropOp(context.loc(n), itemTypeValue));
           return EmitResult.of(Optional.empty());
         }
         case "Dungeon.Hero.pickUp()" -> {
@@ -1501,6 +1556,34 @@ public class JavaCompiler {
         case "Dungeon.Hero.rest()" -> {
           context.insert(new DgOps.RestOp(context.loc(n)));
           return EmitResult.of(Optional.empty());
+        }
+        case "Dungeon.Hero.isNearTile(Dungeon.LevelElement, Dungeon.Direction)" -> {
+          EmitResult<List<Value>> arguments = visitNodeListWithResult(n.getArguments(), context);
+          if (arguments.isFailure() || arguments.get().size() != 2) return EmitResult.failure();
+          Value levelElementValue = arguments.get().getFirst();
+          Value directionValue = arguments.get().get(1);
+          var op =
+              context.insert(
+                  new DgOps.IsNearTileOp(context.loc(n), levelElementValue, directionValue));
+          return EmitResult.of(Optional.of(op.getResult()));
+        }
+        case "Dungeon.Hero.matchesTile(Dungeon.LevelElement, Dungeon.LevelElement)" -> {
+          EmitResult<List<Value>> arguments = visitNodeListWithResult(n.getArguments(), context);
+          if (arguments.isFailure() || arguments.get().size() != 2) return EmitResult.failure();
+          Value levelElementValue1 = arguments.get().getFirst();
+          Value levelElementValue2 = arguments.get().get(1);
+          var op =
+              context.insert(
+                  new ArithOps.BinaryOp(
+                      context.loc(n), levelElementValue1, levelElementValue2, BinMode.EQ));
+          return EmitResult.of(Optional.of(op.getResult()));
+        }
+        case "Dungeon.Hero.active(Dungeon.Direction)" -> {
+          EmitResult<List<Value>> arguments = visitNodeListWithResult(n.getArguments(), context);
+          if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
+          Value directionValue = arguments.get().getFirst();
+          var op = context.insert(new DgOps.IsActiveOp(context.loc(n), directionValue));
+          return EmitResult.of(Optional.of(op.getResult()));
         }
 
         // IO Operations

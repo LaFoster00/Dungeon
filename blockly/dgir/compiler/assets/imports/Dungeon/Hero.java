@@ -1,50 +1,61 @@
 package Dungeon;
 
 import Intrinsic;
+import Direction;
+import ItemType;
+import LevelElement;
 
 public class Hero {
   @Intrinsic("Dungeon.Hero.move()")
-  public static void move() {}
+  public static void move() {
+  }
 
-  @Intrinsic("Dungeon.Hero.turnLeft()")
-  public static void turnLeft() {}
+  @Intrinsic("Dungeon.Hero.rotate(Dungeon.Direction)")
+  public static void rotate(Direction direction) {
+  }
 
-  @Intrinsic("Dungeon.Hero.turnRight()")
-  public static void turnRight() {}
-
-  @Intrinsic("Dungeon.Hero.useHere()")
-  public static void useHere() {}
-
-  @Intrinsic("Dungeon.Hero.useLeft()")
-  public static void useLeft() {}
-
-  @Intrinsic("Dungeon.Hero.useRight()")
-  public static void useRight() {}
-
-  @Intrinsic("Dungeon.Hero.useUp()")
-  public static void useUp() {}
-
-  @Intrinsic("Dungeon.Hero.useDown()")
-  public static void useDown() {}
+  @Intrinsic("Dungeon.Hero.interact(Dungeon.Direction)")
+  public static void interact(Direction direction) {
+  }
 
   @Intrinsic("Dungeon.Hero.push()")
-  public static void push() {}
+  public static void push() {
+  }
 
   @Intrinsic("Dungeon.Hero.pull()")
-  public static void pull() {}
+  public static void pull() {
+  }
 
-  @Intrinsic("Dungeon.Hero.dropClover()")
-  public static void dropClover() {}
-
-  @Intrinsic("Dungeon.Hero.dropBreadCrumbs()")
-  public static void dropBreadCrumbs() {}
+  @Intrinsic("Dungeon.Hero.drop(Dungeon.ItemType)")
+  public static void drop(ItemType type) {
+  }
 
   @Intrinsic("Dungeon.Hero.pickUp()")
-  public static void pickUp() {}
+  public static void pickUp() {
+  }
 
   @Intrinsic("Dungeon.Hero.fireball()")
-  public static void fireball() {}
+  public static void fireball() {
+  }
 
   @Intrinsic("Dungeon.Hero.rest()")
-  public static void rest() {}
+  public static void rest() {
+  }
+
+  @Intrinsic("Dungeon.Hero.isNearTile(Dungeon.LevelElement, Dungeon.Direction)")
+  public static boolean isNearTile(LevelElement tile, Direction direction) {
+  }
+
+  @Intrinsic("Dungeon.Hero.matchesTile(Dungeon.LevelElement, Dungeon.LevelElement)")
+  public static boolean matchesTile(LevelElement target, LevelElement actual) {
+  }
+
+  /* TODO: Implement this intrinsic
+  @Intrinsic("Dungeon.Hero.isNearComponent(Class, Direction)")
+  public static boolean isNearComponent(Class<? extends Component>  component, Direction direction) {}
+   */
+
+  @Intrinsic("Dungeon.Hero.active(Dungeon.Direction)")
+  public static boolean active(Direction direction) {
+  }
 }

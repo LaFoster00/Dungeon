@@ -11,24 +11,35 @@ public class DungeonDialectCompilationTests extends CompilerTestBase {
     String code =
 """
 import Dungeon.Hero;
+import Dungeon.Direction;
+import Dungeon.ItemType;
+import Dungeon.LevelElement;
 
 public class %ClassName {
   public static void main() {
     Hero.move();
-    Hero.turnLeft();
-    Hero.turnRight();
-    Hero.useHere();
-    Hero.useLeft();
-    Hero.useRight();
-    Hero.useUp();
-    Hero.useDown();
+
+    Hero.rotate(Direction.LEFT);
+    Hero.rotate(Direction.RIGHT);
+
+    Hero.interact(Direction.HERE);
+    Hero.interact(Direction.LEFT);
+    Hero.interact(Direction.RIGHT);
+    Hero.interact(Direction.INFRONT);
+    Hero.interact(Direction.BEHIND);
+
+    Hero.drop(ItemType.CLOVER);
+    Hero.drop(ItemType.BREADCRUMB);
+
     Hero.push();
     Hero.pull();
-    Hero.dropClover();
-    Hero.dropBreadCrumbs();
     Hero.pickUp();
     Hero.fireball();
     Hero.rest();
+
+    boolean nearTile = Hero.isNearTile(LevelElement.WALL, Direction.INFRONT);
+    boolean matchesTile = Hero.matchesTile(LevelElement.FLOOR, LevelElement.FLOOR);
+    boolean active = Hero.active(Direction.LEFT);
   }
 }
 """;

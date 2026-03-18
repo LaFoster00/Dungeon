@@ -3,6 +3,7 @@ package dgir.vm.api;
 import dgir.core.ir.Operation;
 import dgir.core.ir.Value;
 import dgir.core.ir.ValueOperand;
+import dgir.dialect.builtin.BuiltinTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -203,6 +204,24 @@ public class State {
           "Object " + object + " is not valid for value " + operation.getOutputValueOrThrow());
     }
     stack.set(operation.getOutputValueOrThrow(), object);
+  }
+
+  public void setValueForNumberOutput(@NotNull Operation operation, Number number) {
+    Number validNumber =
+        switch (operation.getOutputOrThrow().getType()) {
+          case BuiltinTypes.IntegerT integerT -> integerT.convertToValidNumber(number.longValue());
+          case BuiltinTypes.FloatT floatT -> floatT.convertToValidNumber(number);
+          default -> throw new IllegalArgumentException("Unsupported number type");
+        };
+    stack.set(operation.getOutputValueOrThrow(), validNumber);
+  }
+
+  public void setValueForNumberOutput(@NotNull Operation operation, boolean value) {
+    Number validNumber;
+    if (operation.getOutputOrThrow().getType() instanceof BuiltinTypes.IntegerT integerT)
+      validNumber = integerT.convertToValidNumber(value ? 1 : 0);
+    else throw new IllegalArgumentException("Unsupported number type");
+    stack.set(operation.getOutputValueOrThrow(), validNumber);
   }
 
   // =========================================================================

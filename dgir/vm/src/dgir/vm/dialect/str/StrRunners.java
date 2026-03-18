@@ -1,7 +1,6 @@
 package dgir.vm.dialect.str;
 
 import dgir.core.ir.Operation;
-import dgir.dialect.builtin.BuiltinTypes;
 import dgir.dialect.str.StrOps;
 import dgir.vm.api.Action;
 import dgir.vm.api.OpRunner;
@@ -22,10 +21,7 @@ public sealed interface StrRunners {
           state
               .getValueAsOrThrow(op.getOperandValueOrThrow(0), String.class)
               .charAt(state.getValueAsOrThrow(op.getOperandValueOrThrow(1), Integer.class));
-      state.setValueForOutput(
-          op,
-          ((BuiltinTypes.IntegerT) op.getOutputValueOrThrow().getType())
-              .convertToValidNumber(result));
+      state.setValueForNumberOutput(op, (int) result);
       return Action.Next();
     }
   }
@@ -52,10 +48,7 @@ public sealed interface StrRunners {
     @Override
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       String value = state.getValueAsOrThrow(op.getOperandValueOrThrow(0), String.class);
-      state.setValueForOutput(
-          op,
-          ((BuiltinTypes.IntegerT) op.getOutputValueOrThrow().getType())
-              .convertToValidNumber(value.length()));
+      state.setValueForNumberOutput(op, value.length());
       return Action.Next();
     }
   }
@@ -82,7 +75,7 @@ public sealed interface StrRunners {
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       Object left = state.getValueOrThrow(op.getOperandValueOrThrow(0));
       Object right = state.getValueOrThrow(op.getOperandValueOrThrow(1));
-      state.setValueForOutput(op, (byte) (left.equals(right) ? 1 : 0));
+      state.setValueForNumberOutput(op, left.equals(right));
       return Action.Next();
     }
   }
@@ -95,7 +88,7 @@ public sealed interface StrRunners {
     @Override
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       String value = state.getValueAsOrThrow(op.getOperandValueOrThrow(0), String.class);
-      state.setValueForOutput(op, (byte) (value.isEmpty() ? 1 : 0));
+      state.setValueForNumberOutput(op, value.isEmpty());
       return Action.Next();
     }
   }
@@ -167,7 +160,7 @@ public sealed interface StrRunners {
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       String value = state.getValueAsOrThrow(op.getOperandValueOrThrow(0), String.class);
       String prefix = state.getValueAsOrThrow(op.getOperandValueOrThrow(1), String.class);
-      state.setValueForOutput(op, (byte) (value.startsWith(prefix) ? 1 : 0));
+      state.setValueForNumberOutput(op, value.startsWith(prefix));
       return Action.Next();
     }
   }
@@ -181,7 +174,7 @@ public sealed interface StrRunners {
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       String value = state.getValueAsOrThrow(op.getOperandValueOrThrow(0), String.class);
       String suffix = state.getValueAsOrThrow(op.getOperandValueOrThrow(1), String.class);
-      state.setValueForOutput(op, (byte) (value.endsWith(suffix) ? 1 : 0));
+      state.setValueForNumberOutput(op, value.endsWith(suffix));
       return Action.Next();
     }
   }
@@ -195,10 +188,7 @@ public sealed interface StrRunners {
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       String value = state.getValueAsOrThrow(op.getOperandValueOrThrow(0), String.class);
       String substring = state.getValueAsOrThrow(op.getOperandValueOrThrow(1), String.class);
-      state.setValueForOutput(
-          op,
-          ((BuiltinTypes.IntegerT) op.getOutputValueOrThrow().getType())
-              .convertToValidNumber(value.indexOf(substring)));
+      state.setValueForNumberOutput(op, value.indexOf(substring));
       return Action.Next();
     }
   }
@@ -212,10 +202,7 @@ public sealed interface StrRunners {
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       String value = state.getValueAsOrThrow(op.getOperandValueOrThrow(0), String.class);
       String substring = state.getValueAsOrThrow(op.getOperandValueOrThrow(1), String.class);
-      state.setValueForOutput(
-          op,
-          ((BuiltinTypes.IntegerT) op.getOutputValueOrThrow().getType())
-              .convertToValidNumber(value.lastIndexOf(substring)));
+      state.setValueForNumberOutput(op, value.lastIndexOf(substring));
       return Action.Next();
     }
   }

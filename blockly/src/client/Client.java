@@ -23,11 +23,6 @@ import core.utils.components.draw.state.StateMachine;
 import core.utils.components.path.SimpleIPath;
 import dgir.vm.api.DialectRunner;
 import entities.HeroTankControlledFactory;
-
-import java.io.IOException;
-import java.util.Properties;
-import java.util.Set;
-
 import level.produs.*;
 import level.sandbox.SandboxLevel;
 import server.FrontendServer;
@@ -36,6 +31,7 @@ import systems.HeroActionTickSystem;
 import systems.TintTilesSystem;
 
 import java.io.IOException;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -136,7 +132,6 @@ public class Client {
         sandboxMode = true;
       }
     }
-
 
     if (runInWeb) {
       FrontendServer.run();

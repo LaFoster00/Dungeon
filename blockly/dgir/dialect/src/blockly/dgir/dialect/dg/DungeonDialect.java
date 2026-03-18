@@ -46,6 +46,6 @@ public class DungeonDialect extends Dialect {
   @Unmodifiable
   @Override
   public List<Attribute> allAttributes() {
-    return DgirCoreUtils.Dialect.allAttributes(DungeonDialect.class, DgAttrs.class);
+    return List.of();
   }
 }

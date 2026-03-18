@@ -1,6 +1,5 @@
 package blockly.dgir.vm.dialect.dg;
 
-import blockly.dgir.dialect.dg.DgAttrs;
 import blockly.dgir.dialect.dg.DgOps;
 import dgir.core.ir.Operation;
 import dgir.vm.api.Action;
@@ -47,13 +46,12 @@ public sealed interface DgRunners {
 
   final class TurnRunner extends OpRunner implements DgRunners {
     public TurnRunner() {
-      super(DgOps.TurnOp.class);
+      super(DgOps.RotateOp.class);
     }
 
     @Override
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
-      DgAttrs.TurnDirectionAttr.TurnDir dir =
-          op.as(DgOps.TurnOp.class).orElseThrow().getDirection();
+      var dir = state.getValueAsOrThrow(op.getOperandOrThrow(0), Integer.class);
       CountDownLatch done = new CountDownLatch(1);
       DgActionGateway.get().turn(dir, done::countDown);
       return awaitAction(done);
@@ -62,12 +60,12 @@ public sealed interface DgRunners {
 
   final class UseRunner extends OpRunner implements DgRunners {
     public UseRunner() {
-      super(DgOps.UseOp.class);
+      super(DgOps.InteractOp.class);
     }
 
     @Override
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
-      DgAttrs.UseDirectionAttr.UseDir dir = op.as(DgOps.UseOp.class).orElseThrow().getDirection();
+      var dir = state.getValueAsOrThrow(op.getOperandOrThrow(0), Integer.class);
       CountDownLatch done = new CountDownLatch(1);
       DgActionGateway.get().use(dir, done::countDown);
       return awaitAction(done);
@@ -107,12 +105,7 @@ public sealed interface DgRunners {
 
     @Override
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
-      DgAttrs.DropTypeAttr.DropType dropType =
-          op.as(DgOps.DropOp.class)
-              .orElseThrow()
-              .getAttributeAs("dropType", DgAttrs.DropTypeAttr.class)
-              .orElseThrow()
-              .getDropType();
+      var dropType = state.getValueAsOrThrow(op.getOperandOrThrow(0), Integer.class);
       CountDownLatch done = new CountDownLatch(1);
       DgActionGateway.get().drop(dropType, done::countDown);
       return awaitAction(done);
@@ -154,6 +147,37 @@ public sealed interface DgRunners {
     protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
       CountDownLatch done = new CountDownLatch(1);
       DgActionGateway.get().rest(done::countDown);
+      return awaitAction(done);
+    }
+  }
+
+  final class IsNearTileRunner extends OpRunner implements DgRunners {
+    public IsNearTileRunner() {
+      super(DgOps.IsNearTileOp.class);
+    }
+
+    @Override
+    protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
+      var tile = state.getValueAsOrThrow(op.getOperandOrThrow(0), Integer.class);
+      var dir = state.getValueAsOrThrow(op.getOperandOrThrow(1), Integer.class);
+      CountDownLatch done = new CountDownLatch(1);
+      boolean result = DgActionGateway.get().isNearTile(tile, dir, done::countDown);
+      state.setValueForNumberOutput(op, result);
+      return awaitAction(done);
+    }
+  }
+
+  final class IsActiveRunner extends OpRunner implements DgRunners {
+    public IsActiveRunner() {
+      super(DgOps.IsActiveOp.class);
+    }
+
+    @Override
+    protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
+      var dir = state.getValueAsOrThrow(op.getOperandOrThrow(0), Integer.class);
+      CountDownLatch done = new CountDownLatch(1);
+      boolean result = DgActionGateway.get().active(dir, done::countDown);
+      state.setValueForNumberOutput(op, result);
       return awaitAction(done);
     }
   }
