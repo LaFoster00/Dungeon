@@ -31,6 +31,12 @@ import java.util.stream.Collectors;
  * <p>If you use a jar file, the source files must be copied to the jar file. The source files must
  * be in the same package as the class files.
  */
+/* TODO
+   This does not work with the current setup. This need to be reimplemented to use the source files in
+   blockly/dgir/compiler/assets/imports/Dungeon
+   These are the source of truth for the custom compiler implementation and are references by java parser during compilation.
+   Anything not in those source files will not compile.
+*/
 public class LanguageServer {
 
   private static final DungeonLogger LOGGER = DungeonLogger.getLogger(LanguageServer.class);
