@@ -29,6 +29,6 @@ public class ScfDialectRunner extends DialectRunner {
 
   @Override
   public @NotNull List<@NotNull OpRunner> allRunners() {
-    return allRunners(ScfDialectRunner.class, ScfRunners.class);
+    return allRunners(ScfRunners.class);
   }
 }

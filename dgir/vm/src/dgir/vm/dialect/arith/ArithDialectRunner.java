@@ -29,6 +29,6 @@ public class ArithDialectRunner extends DialectRunner {
 
   @Override
   public @NotNull List<@NotNull OpRunner> allRunners() {
-    return allRunners(ArithDialectRunner.class, ArithRunners.class);
+    return allRunners(ArithRunners.class);
   }
 }

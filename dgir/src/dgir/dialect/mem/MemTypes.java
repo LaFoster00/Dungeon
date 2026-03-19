@@ -39,7 +39,7 @@ public sealed interface MemTypes {
         if (!(value instanceof Object[] objects)) return false;
         if (width != -1 && objects.length != width) return false;
         for (Object object : objects) {
-          if (!elementType.getValidator().apply(object)) return false;
+          if (object != null && !elementType.getValidator().apply(object)) return false;
         }
         return true;
       };

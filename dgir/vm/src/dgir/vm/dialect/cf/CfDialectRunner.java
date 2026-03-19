@@ -29,6 +29,6 @@ public class CfDialectRunner extends DialectRunner {
 
   @Override
   public @NotNull List<@NotNull OpRunner> allRunners() {
-    return allRunners(CfDialectRunner.class, CfRunners.class);
+    return allRunners(CfRunners.class);
   }
 }

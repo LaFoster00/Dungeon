@@ -6,6 +6,7 @@ import dgir.vm.dialect.builtin.BuiltinDialectRunner;
 import dgir.vm.dialect.cf.CfDialectRunner;
 import dgir.vm.dialect.func.FuncDialectRunner;
 import dgir.vm.dialect.io.IoDialectRunner;
+import dgir.vm.dialect.mem.MemoryDialectRunner;
 import dgir.vm.dialect.scf.ScfDialectRunner;
 import dgir.vm.dialect.str.StrDialectRunner;
 import org.jetbrains.annotations.NotNull;
@@ -39,19 +40,19 @@ public abstract class DialectRunner {
     CfDialectRunner.get().register();
     FuncDialectRunner.get().register();
     IoDialectRunner.get().register();
+    MemoryDialectRunner.get().register();
     ScfDialectRunner.get().register();
     StrDialectRunner.get().register();
   }
 
   @NotNull
   @Unmodifiable
-  public static List<@NotNull OpRunner> allRunners(
-      @NotNull Class<? extends DialectRunner> dialect, @NotNull Class<?> diRunners) {
+  protected List<@NotNull OpRunner> allRunners(@NotNull Class<?> diRunners) {
     // Check that diRunners is a sealed interface
     assert diRunners.isSealed() : diRunners.getSimpleName() + " interface must be sealed";
 
-    if (dialectOpRunners.containsKey(dialect)) {
-      return dialectOpRunners.get(dialect);
+    if (dialectOpRunners.containsKey(this.getClass())) {
+      return dialectOpRunners.get(this.getClass());
     }
 
     // Go over all permitted subclasses of this interface and collect their prototypes. This
@@ -86,7 +87,7 @@ public abstract class DialectRunner {
             "OpRunner class must have a default constructor: " + subclass.getName(), e);
       }
     }
-    dialectOpRunners.put(dialect, ops);
+    dialectOpRunners.put(this.getClass(), ops);
     return ops;
   }
 }

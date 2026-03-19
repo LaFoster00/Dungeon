@@ -29,6 +29,6 @@ public class FuncDialectRunner extends DialectRunner {
 
   @Override
   public @NotNull List<@NotNull OpRunner> allRunners() {
-    return allRunners(FuncDialectRunner.class, FuncRunners.class);
+    return allRunners(FuncRunners.class);
   }
 }

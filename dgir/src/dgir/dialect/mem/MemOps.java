@@ -286,7 +286,7 @@ public sealed interface MemOps {
     }
   }
 
-  final class SetElementOp extends MemOp implements MemOps, ISingleOperand, INoResult {
+  final class SetElementOp extends MemOp implements MemOps, INoResult {
     @Override
     public @NotNull String getIdent() {
       return "mem.set_element";

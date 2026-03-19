@@ -29,6 +29,6 @@ public class DungeonDialectRunner extends DialectRunner {
 
   @Override
   public @NotNull List<@NotNull OpRunner> allRunners() {
-    return allRunners(DungeonDialectRunner.class, DgRunners.class);
+    return allRunners(DgRunners.class);
   }
 }

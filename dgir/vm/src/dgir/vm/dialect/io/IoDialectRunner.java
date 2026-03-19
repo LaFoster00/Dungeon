@@ -29,6 +29,6 @@ public class IoDialectRunner extends DialectRunner {
 
   @Override
   public @NotNull List<@NotNull OpRunner> allRunners() {
-    return allRunners(IoDialectRunner.class, IoRunners.class);
+    return allRunners(IoRunners.class);
   }
 }
