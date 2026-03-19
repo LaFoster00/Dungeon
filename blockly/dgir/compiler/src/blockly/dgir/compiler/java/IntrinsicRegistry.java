@@ -6,6 +6,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +32,8 @@ public class IntrinsicRegistry {
 
   /** A mapping from file name to a mapping from opcode name to method declaration for */
   public static final @NotNull Map<String, Set<String>> fileToIntrinsics = new HashMap<>();
+
+  public static final @NotNull Set<String> types = new HashSet<>();
 
   public static @NotNull @Unmodifiable List<String> listDungeonFiles() throws IOException {
     InputStream indexStream = openDungeonFile("_index.txt");
@@ -131,6 +134,12 @@ public class IntrinsicRegistry {
                         .getValue();
                 collector.add(opcodeName);
               });
+      String packageName =
+          n.findCompilationUnit()
+              .flatMap(CompilationUnit::getPackageDeclaration)
+              .map(NodeWithName::getNameAsString)
+              .orElse("");
+      types.add(packageName + "." + n.getNameAsString());
     }
 
     @Override
@@ -147,6 +156,12 @@ public class IntrinsicRegistry {
                         .getValue();
                 collector.add(opcodeName);
               });
+      String packageName =
+          n.findCompilationUnit()
+              .flatMap(CompilationUnit::getPackageDeclaration)
+              .map(NodeWithName::getNameAsString)
+              .orElse("");
+      types.add(packageName + "." + n.getNameAsString());
     }
 
     @Override

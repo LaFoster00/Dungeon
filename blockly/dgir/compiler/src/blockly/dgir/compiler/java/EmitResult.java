@@ -15,45 +15,45 @@ import java.util.stream.Stream;
 
 public sealed interface EmitResult<T> {
   @Contract("_ -> new")
-  static <T> @NonNull EmitResult<T> success(T result) {
+  static <T> @NonNull EmitResult<@NotNull T> success(@NotNull T result) {
     return new Success<>(result);
   }
 
   @Contract(" -> new")
-  static <T> @NonNull EmitResult<T> failure() {
+  static <T> @NonNull EmitResult<@NotNull T> failure() {
     return new Failure<>();
   }
 
   @Contract("_, _, _, _ -> new")
-  static <T> @NonNull EmitResult<T> failure(
+  static <T> @NonNull EmitResult<@NotNull T> failure(
       @NonNull EmitContext context, Node node, String message, Object... args) {
     context.emitError(node, message, args);
     return new Failure<>();
   }
 
   @Contract("_ -> new")
-  static <T> @NonNull EmitResult<T> of(@NotNull T result) {
+  static <T> @NonNull EmitResult<@NotNull T> of(@NotNull T result) {
     return success(result);
   }
 
-  static <T> @NotNull EmitResult<T> ofNullable(@Nullable T result) {
+  static <T> @NotNull EmitResult<@NotNull T> ofNullable(@Nullable T result) {
     return result == null ? failure() : success(result);
   }
 
-  static <T> @NotNull EmitResult<T> ofNullable(@Nullable EmitResult<T> result) {
+  static <T> @NotNull EmitResult<@NonNull T> ofNullable(@Nullable EmitResult<@NonNull T> result) {
     return result == null ? failure() : result;
   }
 
-  static <T> @NotNull EmitResult<T> ofNullable(
+  static <T> @NotNull EmitResult<@NonNull T> ofNullable(
       @Nullable T result, EmitContext context, Node node, String message, Object... args) {
     return result == null ? failure(context, node, message, args) : success(result);
   }
 
-  static <T> @NonNull EmitResult<T> ofOptional(@NotNull Optional<T> result) {
+  static <T> @NonNull EmitResult<@NonNull T> ofOptional(@NotNull Optional<T> result) {
     return result.map(EmitResult::success).orElseGet(EmitResult::failure);
   }
 
-  static <T> @NonNull EmitResult<T> ofOptional(
+  static <T> @NonNull EmitResult<@NonNull T> ofOptional(
       @NotNull Optional<T> result, EmitContext context, Node node, String message, Object... args) {
     return result.map(EmitResult::success).orElseGet(() -> failure(context, node, message, args));
   }
@@ -65,7 +65,8 @@ public sealed interface EmitResult<T> {
   @NotNull
   T get();
 
-  default <U> @NotNull EmitResult<U> map(@NotNull Function<? super T, ? extends U> mapper) {
+  default <U> @NotNull EmitResult<@NonNull U> map(
+      @NotNull Function<? super T, ? extends U> mapper) {
     if (isFailure()) {
       return failure();
     } else {
@@ -73,7 +74,7 @@ public sealed interface EmitResult<T> {
     }
   }
 
-  default <U> @NotNull EmitResult<U> flatMap(
+  default <U> @NotNull EmitResult<@NonNull U> flatMap(
       Function<? super T, ? extends EmitResult<? extends U>> mapper) {
     Objects.requireNonNull(mapper);
     if (isFailure()) {
@@ -85,7 +86,8 @@ public sealed interface EmitResult<T> {
     }
   }
 
-  default @NotNull EmitResult<T> or(@NotNull Supplier<? extends EmitResult<? extends T>> supplier) {
+  default @NotNull EmitResult<@NonNull T> or(
+      @NotNull Supplier<? extends EmitResult<? extends T>> supplier) {
     if (isSuccess()) {
       return this;
     } else {
@@ -95,7 +97,7 @@ public sealed interface EmitResult<T> {
     }
   }
 
-  default @NotNull Stream<T> stream() {
+  default @NotNull Stream<@NonNull T> stream() {
     if (isFailure()) {
       return Stream.empty();
     } else {
@@ -115,7 +117,7 @@ public sealed interface EmitResult<T> {
     return isSuccess() ? Optional.of(get()) : Optional.empty();
   }
 
-  record Success<T>(@NotNull T result) implements EmitResult<T> {
+  record Success<T>(@NotNull T result) implements EmitResult<@NonNull T> {
     @Contract(pure = true)
     @Override
     public boolean isSuccess() {
@@ -135,7 +137,7 @@ public sealed interface EmitResult<T> {
     }
   }
 
-  record Failure<T>() implements EmitResult<T> {
+  record Failure<T>() implements EmitResult<@NonNull T> {
     @Contract(pure = true)
     @Override
     public boolean isSuccess() {

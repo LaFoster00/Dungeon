@@ -37,6 +37,7 @@ import Dungeon.Hero;
 import Dungeon.IO;
 import Dungeon.ItemType;
 import Dungeon.LevelElement;
+import Dungeon.Arrays;
 
 public class Main {
   %s

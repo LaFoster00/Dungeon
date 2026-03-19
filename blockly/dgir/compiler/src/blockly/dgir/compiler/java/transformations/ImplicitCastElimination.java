@@ -1,9 +1,11 @@
 package blockly.dgir.compiler.java.transformations;
 
+import blockly.dgir.compiler.java.ConversionUtils;
 import blockly.dgir.compiler.java.EmitContext;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.types.ResolvedType;
@@ -24,13 +26,50 @@ import static blockly.dgir.compiler.java.CompilerUtils.setTokenRangeFrom;
  * <p>Returns true on failure. Otherwise null
  */
 public class ImplicitCastElimination extends GenericVisitorAdapter<Boolean, EmitContext> {
+  private boolean containsTypeVariable(ResolvedType type) {
+    if (type.isTypeVariable()) return true;
+
+    if (type.isArray()) return containsTypeVariable(type.asArrayType().getComponentType());
+
+    return false;
+  }
+
   private Optional<Expression> createImplicitCastIfValid(
       Node n,
       ResolvedType targetType,
       ResolvedType valueType,
       Expression value,
-      boolean isLiteralExpr) {
+      boolean isLiteralExpr,
+      EmitContext context) {
     if (targetType.describe().equals(valueType.describe())) return Optional.of(value);
+
+    ConversionUtils.Conversion conversion =
+        ConversionUtils.detectImplicitConversion(valueType, targetType);
+    if (!(conversion instanceof ConversionUtils.Conversion.None)) {
+      Type castType;
+      switch (conversion) {
+        case ConversionUtils.Conversion.Boxing boxing -> castType = boxing.to();
+        case ConversionUtils.Conversion.Unboxing unboxing -> castType = unboxing.to();
+        case ConversionUtils.Conversion.Generic generic -> castType = generic.to();
+        case ConversionUtils.Conversion.Invalid invalid -> {
+          context.emitError(
+              n,
+              "Invalid implicit conversion from "
+                  + valueType.describe()
+                  + " to "
+                  + targetType.describe()
+                  + "\n"
+                  + invalid.message());
+          return Optional.empty();
+        }
+        default -> throw new IllegalStateException("Unexpected value: " + conversion);
+      }
+      CastExpr castExpr = new CastExpr(castType, value.clone());
+      setTokenRangeFrom(castExpr, value, n);
+      setTokenRangeFrom(castExpr.getType(), value, n);
+      return Optional.of(castExpr);
+    }
+
     // In case primitive types should get cast to object do nothing for now but warn the user that
     // this is not expected behavior
     if (targetType.describe().equals("java.lang.Object")) {
@@ -73,7 +112,8 @@ public class ImplicitCastElimination extends GenericVisitorAdapter<Boolean, Emit
             default -> false;
           };
     if (targetType.isAssignableBy(valueType) || override) {
-      CastExpr castExpr = new CastExpr(StaticJavaParser.parseType(targetType.describe()), value.clone());
+      CastExpr castExpr =
+          new CastExpr(StaticJavaParser.parseType(targetType.describe()), value.clone());
       setTokenRangeFrom(castExpr, value, n);
       setTokenRangeFrom(castExpr.getType(), value, n);
       return Optional.of(castExpr);
@@ -106,7 +146,7 @@ public class ImplicitCastElimination extends GenericVisitorAdapter<Boolean, Emit
     }
     var castExpr =
         createImplicitCastIfValid(
-            n, targetType, valueType, n.getValue(), n.getValue().isLiteralExpr());
+            n, targetType, valueType, n.getValue(), n.getValue().isLiteralExpr(), arg);
     if (castExpr.isPresent()) {
       if (!Objects.equals(castExpr.get(), n.getValue())) {
         boolean replaced = n.getValue().replace(castExpr.get());
@@ -152,7 +192,8 @@ public class ImplicitCastElimination extends GenericVisitorAdapter<Boolean, Emit
                         targetType,
                         valueType,
                         var.getInitializer().get(),
-                        var.getInitializer().get().isLiteralExpr());
+                        var.getInitializer().get().isLiteralExpr(),
+                        arg);
                 if (castExpr.isPresent()) {
                   if (!Objects.equals(castExpr.get(), var.getInitializer().get())) {
                     boolean replaced = var.getInitializer().get().replace(castExpr.get());
@@ -211,7 +252,8 @@ public class ImplicitCastElimination extends GenericVisitorAdapter<Boolean, Emit
       }
 
       var castExpr =
-          createImplicitCastIfValid(n, targetType, callArgType, n.getArguments().get(i), false);
+          createImplicitCastIfValid(
+              n, targetType, callArgType, n.getArguments().get(i), false, arg);
       if (castExpr.isPresent()) {
         if (!Objects.equals(castExpr.get(), n.getArguments().get(i))) {
           boolean replaced = n.getArgument(i).replace(castExpr.get());

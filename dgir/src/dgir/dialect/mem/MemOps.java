@@ -71,6 +71,7 @@ public sealed interface MemOps {
       if (getArrayType().getWidth().isPresent()) {
         return getArrayType().getWidth();
       }
+      int[] arr = new int[] {0};
       return OptionalInt.empty();
     }
 

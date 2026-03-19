@@ -113,6 +113,82 @@ public class %ClassName {
   }
 
   @Test
+  void genericTargetsKeepNullAssignmentsImplicit() {
+    String code =
+"""
+public class %ClassName<T> {
+  public void test() {
+    T value = null;
+    T[] array = null;
+    java.util.List<T> list = null;
+    value = null;
+    array = null;
+    list = null;
+  }
+}
+""";
+    String expected =
+"""
+public class %ClassName<T> {
+
+    public void test() {
+        T value = null;
+        T[] array = null;
+        java.util.List<T> list = null;
+        value = null;
+        array = null;
+        list = null;
+    }
+}
+""";
+    assertCodeAfterImplicitCastElimination(expected, code);
+  }
+
+  @Test
+  void genericMethodArgumentsKeepNullImplicit() {
+    String code =
+"""
+public class %ClassName<T> {
+  public void test() {
+    consumeValue(null);
+    consumeArray(null);
+    consumeList(null);
+  }
+
+  public void consumeValue(T value) {
+  }
+
+  public void consumeArray(T[] values) {
+  }
+
+  public void consumeList(java.util.List<T> values) {
+  }
+}
+""";
+    String expected =
+"""
+public class %ClassName<T> {
+
+    public void test() {
+        consumeValue(null);
+        consumeArray(null);
+        consumeList(null);
+    }
+
+    public void consumeValue(T value) {
+    }
+
+    public void consumeArray(T[] values) {
+    }
+
+    public void consumeList(java.util.List<T> values) {
+    }
+}
+""";
+    assertCodeAfterImplicitCastElimination(expected, code);
+  }
+
+  @Test
   void generatedCallArgumentCastsKeepSameLineSourceOrder() {
     String code =
         """

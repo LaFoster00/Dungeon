@@ -170,7 +170,7 @@ public final class EmitContext {
     return op;
   }
 
-  <OpT extends Op> @NotNull OpT insert(@NotNull OpT op) {
+  public <OpT extends Op> @NotNull OpT insert(@NotNull OpT op) {
     insert(op.getOperation());
     return op;
   }

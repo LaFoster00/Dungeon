@@ -1,7 +1,6 @@
 package blockly.dgir.compiler.java;
 
 import com.github.javaparser.TokenRange;
-import com.github.javaparser.ast.DataKey;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.Expression;
@@ -11,16 +10,19 @@ import com.github.javaparser.resolution.Resolvable;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.declarations.ResolvedDeclaration;
 import com.github.javaparser.resolution.model.typesystem.LazyType;
+import com.github.javaparser.resolution.types.ResolvedArrayType;
 import com.github.javaparser.resolution.types.ResolvedPrimitiveType;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
 import dgir.core.ir.Type;
 import dgir.dialect.builtin.BuiltinTypes;
+import dgir.dialect.mem.MemTypes;
 import dgir.dialect.str.StrTypes;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.IdentityHashMap;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class CompilerUtils {
@@ -153,6 +155,10 @@ public class CompilerUtils {
                     yield null;
                   }
                 });
+      }
+      case ResolvedArrayType arrayType -> {
+        Optional<Type> componentType = fromAstType(arrayType.getComponentType(), site, context);
+        result = componentType.map(value -> MemTypes.ArrayT.of(value, OptionalInt.empty()));
       }
       default -> {
         context.emitError(site, "Unsupported type: " + type.describe());
