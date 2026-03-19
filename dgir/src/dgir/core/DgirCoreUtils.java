@@ -380,6 +380,9 @@ public class DgirCoreUtils {
           try {
             Type newType = (Type) defaultConstructor.newInstance();
             types.addAll(newType.getDefaultTypeInstances());
+            if (newType.getDefaultTypeInstances().isEmpty()) {
+              types.add(newType);
+            }
           } catch (InstantiationException e) {
             throw new RuntimeException(
                 "Executing default constructor failed for type: " + subclass.getName(), e);

@@ -6,6 +6,7 @@ import dgir.dialect.builtin.BuiltinDialect;
 import dgir.dialect.cf.CfDialect;
 import dgir.dialect.func.FuncDialect;
 import dgir.dialect.io.IoDialect;
+import dgir.dialect.mem.MemoryDialect;
 import dgir.dialect.scf.ScfDialect;
 import dgir.dialect.str.StrDialect;
 import org.jetbrains.annotations.Contract;
@@ -121,6 +122,7 @@ public abstract class Dialect {
             CfDialect.get(),
             FuncDialect.get(),
             IoDialect.get(),
+            MemoryDialect.get(),
             ScfDialect.get(),
             StrDialect.get());
     dialects.forEach(Dialect::register);

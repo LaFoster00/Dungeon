@@ -100,7 +100,7 @@ public sealed interface FuncTypes {
 
     @Override
     public @NotNull @Unmodifiable List<Type> getDefaultTypeInstances() {
-      return List.of(this);
+      return List.of();
     }
 
     @Override

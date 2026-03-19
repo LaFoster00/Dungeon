@@ -137,8 +137,7 @@ public abstract class Type {
    * Returns a list of default type instances for this type. This is used for types that have no
    * parameters. For example, for a simple integer type, this could return a list of all the
    * predefined integer types (e.g. int1, int8, int16, int32, int64). For parameterized types, this
-   * should return a list containing the default instance of the type(this): {@code return
-   * List.of(this); }
+   * should can be an empty list of containing 'this'.
    *
    * @return A list of default type instances.
    */
@@ -149,12 +148,8 @@ public abstract class Type {
   // Constructors
   // =========================================================================
 
-  public Type() {
+  protected Type() {
     details = TypeDetails.get(getClass());
-  }
-
-  public Type(@NotNull TypeDetails typeDetails) {
-    details = typeDetails;
   }
 
   // =========================================================================
