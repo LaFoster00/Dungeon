@@ -14,6 +14,7 @@ import dgir.dialect.builtin.BuiltinTypes;
 import dgir.dialect.func.FuncOps;
 import dgir.dialect.func.FuncTypes;
 import dgir.dialect.io.IoOps;
+import dgir.dialect.mem.MemOps;
 import dgir.dialect.str.StrOps;
 import dgir.dialect.str.StrTypes;
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +28,6 @@ public class Intrinsics {
   public static EmitResult<Optional<Value>> emitIntrinsic(
       MethodCallExpr n, String intrinsicName, List<Value> args, EmitContext context) {
     switch (intrinsicName) {
-
       // Hero Operations
       case "Dungeon.Hero.move()" -> {
         context.insert(new DgOps.MoveOp(context.loc(n)));
@@ -161,6 +161,23 @@ public class Intrinsics {
         var result =
             context.insert(new IoOps.ConsoleInOp(context.loc(n), StrTypes.StringT.INSTANCE));
         return EmitResult.of(Optional.of(result.getResult()));
+      }
+
+      case "Dungeon.Arrays.copyOf(Object[], int)",
+          "Dungeon.Arrays.copyOf(byte[], int)",
+          "Dungeon.Arrays.copyOf(short[], int)",
+          "Dungeon.Arrays.copyOf(char[], int)",
+          "Dungeon.Arrays.copyOf(int[], int)",
+          "Dungeon.Arrays.copyOf(long[], int)",
+          "Dungeon.Arrays.copyOf(float[], int)",
+          "Dungeon.Arrays.copyOf(double[], int)" -> {
+        var result = visitRValueNodeList(n.getArguments(), context);
+        if (result.isFailure() || result.get().size() != 2) return EmitResult.failure();
+        Value arrayValue = result.get().getFirst();
+        Value newLengthValue = result.get().get(1);
+        var op = context.insert(new MemOps.ReallocGcOp(context.loc(n), arrayValue, newLengthValue));
+        op.setOutputValue(arrayValue);
+        return EmitResult.of(Optional.of(op.getResult()));
       }
 
       default -> context.emitError(n, "Intrinsic method " + intrinsicName + " is not supported.");

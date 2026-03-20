@@ -2,9 +2,7 @@ package dgir.dialect.mem;
 
 import dgir.core.Dialect;
 import dgir.core.debug.Location;
-import dgir.core.ir.Op;
-import dgir.core.ir.Operation;
-import dgir.core.ir.Value;
+import dgir.core.ir.*;
 import dgir.core.traits.IHasResult;
 import dgir.core.traits.INoResult;
 import dgir.core.traits.ISingleOperand;
@@ -60,18 +58,31 @@ public sealed interface MemOps {
     private AllocGcOp() {}
 
     public AllocGcOp(
-        @NotNull Location loc,
-        @NotNull MemTypes.ArrayT type,
-        @NotNull Optional<Value> dynamicSize) {
+        @NotNull Location loc, @NotNull Type elementType, int staticSize, boolean explicitBound) {
       setOperation(
-          Operation.Create(loc, this, dynamicSize.map(List::of).orElseGet(List::of), null, type));
+          Operation.Create(
+              loc,
+              this,
+              null,
+              null,
+              MemTypes.ArrayT.of(
+                  elementType, explicitBound ? OptionalInt.of(staticSize) : OptionalInt.empty())));
+    }
+
+    public AllocGcOp(@NotNull Location loc, @NotNull Type elementType, @NotNull Value dynamicSize) {
+      setOperation(
+          Operation.Create(
+              loc,
+              this,
+              List.of(dynamicSize),
+              null,
+              MemTypes.ArrayT.of(elementType, OptionalInt.empty())));
     }
 
     public OptionalInt getStaticSize() {
       if (getArrayType().getWidth().isPresent()) {
         return getArrayType().getWidth();
       }
-      int[] arr = new int[] {0};
       return OptionalInt.empty();
     }
 
@@ -80,6 +91,60 @@ public sealed interface MemOps {
         return Optional.of(getOperand().get().orElseThrow());
       }
       return Optional.empty();
+    }
+
+    public MemTypes.ArrayT getArrayType() {
+      return (MemTypes.ArrayT) getResultType();
+    }
+  }
+
+  final class AllocGcFromElementsOp extends MemOp implements MemOps, IHasResult {
+    @Override
+    public @NotNull String getIdent() {
+      return "mem.alloc_gc_from_elements";
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
+      return operation -> {
+        AllocGcFromElementsOp op = operation.as(AllocGcFromElementsOp.class).orElseThrow();
+        for (ValueOperand operand : op.getOperands()) {
+          Value element = operand.getValue().orElseThrow();
+          if (!element.getType().equals(op.getArrayType().getElementType())) {
+            operation.emitError(
+                "AllocGcFromElementsOp element operand type does not match array element type.\nExpected element type: "
+                    + op.getArrayType().getElementType().getParameterizedIdent()
+                    + "\nProvided element type: "
+                    + element.getType().getParameterizedIdent());
+            return false;
+          }
+        }
+        if (op.getArrayType().getWidth().isPresent()) {
+          if (op.getOperands().size() != op.getArrayType().getWidth().getAsInt()) {
+            operation.emitError(
+                "AllocGcFromElementsOp number of operands does not match array width.\nExpected width: "
+                    + op.getArrayType().getWidth().getAsInt()
+                    + "\nProvided operands: "
+                    + op.getOperands().size());
+          }
+        }
+        return true;
+      };
+    }
+
+    private AllocGcFromElementsOp() {}
+
+    public AllocGcFromElementsOp(
+        Location loc, Type elementType, List<Value> elements, boolean explicitBound) {
+      setOperation(
+          Operation.Create(
+              loc,
+              this,
+              elements,
+              null,
+              MemTypes.ArrayT.of(
+                  elementType,
+                  explicitBound ? OptionalInt.of(elements.size()) : OptionalInt.empty())));
     }
 
     public MemTypes.ArrayT getArrayType() {
@@ -125,17 +190,30 @@ public sealed interface MemOps {
     private ReallocGcOp() {}
 
     public ReallocGcOp(
-        @NotNull Location loc,
-        @NotNull MemTypes.ArrayT type,
-        @NotNull Value array,
-        @NotNull Optional<Value> newSize) {
+        @NotNull Location loc, @NotNull Value array, int newSize, boolean explicitBound) {
+      if (!(array.getType() instanceof MemTypes.ArrayT arrayType)) {
+        throw new IllegalArgumentException(
+            "ReallocGcOp operand must be of type mem.array, but got "
+                + array.getType().getParameterizedIdent());
+      }
       setOperation(
           Operation.Create(
               loc,
               this,
-              newSize.map(value -> List.of(array, value)).orElseGet(() -> List.of(array)),
+              List.of(array),
               null,
-              type));
+              arrayType.withSize(explicitBound ? OptionalInt.of(newSize) : OptionalInt.empty())));
+    }
+
+    public ReallocGcOp(@NotNull Location loc, @NotNull Value array, @NotNull Value newSize) {
+      if (!(array.getType() instanceof MemTypes.ArrayT arrayType)) {
+        throw new IllegalArgumentException(
+            "ReallocGcOp operand must be of type mem.array, but got "
+                + array.getType().getParameterizedIdent());
+      }
+      setOperation(
+          Operation.Create(
+              loc, this, List.of(array, newSize), null, arrayType.withSize(OptionalInt.empty())));
     }
 
     public OptionalInt getStaticSize() {

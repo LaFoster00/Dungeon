@@ -7,9 +7,13 @@ import blockly.dgir.compiler.java.IntrinsicRegistry;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
-import com.github.javaparser.resolution.declarations.*;
+import com.github.javaparser.resolution.declarations.ResolvedEnumConstantDeclaration;
+import com.github.javaparser.resolution.declarations.ResolvedEnumDeclaration;
+import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration;
 import com.github.javaparser.resolution.types.ResolvedType;
+import dgir.core.ir.Op;
 import dgir.core.ir.Type;
 import dgir.core.ir.Value;
 import dgir.dialect.arith.ArithAttrs;
@@ -17,7 +21,6 @@ import dgir.dialect.arith.ArithOps;
 import dgir.dialect.builtin.BuiltinAttrs;
 import dgir.dialect.builtin.BuiltinOps;
 import dgir.dialect.builtin.BuiltinTypes;
-import dgir.dialect.func.FuncOps;
 import dgir.dialect.mem.MemOps;
 import dgir.dialect.scf.ScfOps;
 import dgir.dialect.str.StrOps;
@@ -26,14 +29,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static blockly.dgir.compiler.java.Access.isDeclarationAccessibleFrom;
 import static blockly.dgir.compiler.java.Access.isTypeUseAccessibleFrom;
 import static blockly.dgir.compiler.java.CompilerUtils.*;
-import static blockly.dgir.compiler.java.CompilerUtils.resolve;
 import static blockly.dgir.compiler.java.emission.EmissionUtils.bindName;
-import static blockly.dgir.compiler.java.emission.EmissionUtils.visitRValueNodeList;
-import static blockly.dgir.compiler.java.emission.Intrinsics.emitIntrinsic;
-import static blockly.dgir.compiler.java.emission.Intrinsics.emitStringIntrinsicMethods;
+import static blockly.dgir.compiler.java.emission.EmissionUtils.emitMethodCall;
 
 public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, EmitContext> {
   private static final RValueVisitor INSTANCE = new RValueVisitor();
@@ -45,11 +44,87 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
   static final Map<String, List<String>> intrinsicEnums = new HashMap<>();
 
   @Override
+  public EmitResult<Value> visit(ArrayAccessExpr n, EmitContext context) {
+    EmitResult<Value> array = n.getName().accept(this, context);
+    if (array.isFailure()) return array;
+    EmitResult<Value> index = n.getIndex().accept(this, context);
+    if (array.isFailure()) return array;
+
+    var element = context.insert(new MemOps.GetElementOp(context.loc(n), array.get(), index.get()));
+    return EmitResult.of(element.getResult());
+  }
+
+  @Override
+  public EmitResult<Value> visit(ArrayCreationExpr n, EmitContext context) {
+    Type elementType;
+    {
+      Optional<Type> elementTypeOpt = fromAstType(n.getElementType(), n, context);
+      if (elementTypeOpt.isEmpty()) {
+        return EmitResult.failure();
+      }
+      elementType = elementTypeOpt.get();
+    }
+
+    Op array;
+    {
+      if (n.getLevels().size() != 1) {
+        context.emitError(n, "Only one dimensional array creation is supported.");
+        return EmitResult.failure();
+      }
+      // If the array size is specified, use it as the size of the array.
+      if (n.getLevels().get(0).getDimension().isPresent()) {
+        EmitResult<Value> sizeResult =
+            EmitResult.ofNullable(n.getLevels().get(0).accept(this, context));
+        if (sizeResult.isFailure()) return sizeResult;
+        array = context.insert(new MemOps.AllocGcOp(context.loc(n), elementType, sizeResult.get()));
+      } else if (n.getInitializer().isPresent()) {
+        EmitResult<List<Value>> valuesResult =
+            EmissionUtils.visitRValueNodeList(n.getInitializer().get().getValues(), context);
+        ResolvedType arrayType = n.calculateResolvedType();
+        if (valuesResult.isFailure()) return EmitResult.failure();
+        array =
+            context.insert(
+                new MemOps.AllocGcFromElementsOp(
+                    context.loc(n), elementType, valuesResult.get(), false));
+      } else {
+        context.emitError(
+            n, "Array size must be specified by a constant expression or initializer.");
+        return EmitResult.failure();
+      }
+    }
+
+    return EmitResult.of(array.getOutputValue().orElseThrow());
+  }
+
+  @Override
+  public EmitResult<Value> visit(ArrayInitializerExpr n, EmitContext context) {
+    ResolvedType arrayType = n.calculateResolvedType();
+    if (!arrayType.isArray()) {
+      context.emitError(n, "Array initializer must be used with an array type.");
+      return EmitResult.failure();
+    }
+    Optional<Type> elementType =
+        fromAstType(arrayType.asArrayType().getComponentType(), n, context);
+    if (elementType.isEmpty()) {
+      return EmitResult.failure();
+    }
+    EmitResult<List<Value>> valuesResult =
+        EmissionUtils.visitRValueNodeList(n.getValues(), context);
+    if (valuesResult.isFailure()) return EmitResult.failure();
+    var array =
+        context.insert(
+            new MemOps.AllocGcFromElementsOp(
+                context.loc(n), elementType.get(), valuesResult.get(), false));
+    return EmitResult.success(array.getResult());
+  }
+
+  @Override
   public EmitResult<Value> visit(AssignExpr n, EmitContext context) {
     EmitResult<LValueResult> targetRes;
     {
       targetRes = EmitResult.ofNullable(n.getTarget().accept(LValueVisitor.get(), context));
-      if (targetRes.isFailure()) return EmitResult.failure();
+      if (targetRes.isFailure())
+        return EmitResult.failure(context, n.getTarget(), "Failed to emit target");
     }
 
     EmitResult<Value> valueRes;
@@ -58,7 +133,10 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
       if (valueRes.isFailure()) return valueRes;
     }
 
-    targetRes.get().apply(valueRes.get());
+    EmitResult<Boolean> assignmentResult = targetRes.get().apply(valueRes.get());
+    if (assignmentResult.isFailure()) {
+      return EmitResult.failure();
+    }
     // Return the value of the assignment. (e.g. for use in chained assignments like a = b = 5)
     return EmitResult.of(valueRes.get());
   }
@@ -331,121 +409,17 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
 
   @Override
   public EmitResult<Value> visit(MethodCallExpr n, EmitContext context) {
-    if (n.getTypeArguments().isPresent()) {
-      return EmitResult.failure(
-          context,
-          n,
-          "Method call "
-              + n.getName()
-              + " has type arguments. Method calls with type arguments are not supported. Type arguments: "
-              + n.getTypeArguments().get());
+    EmitResult<Optional<Value>> methodResult = emitMethodCall(n, context);
+    if (methodResult.isFailure()) {
+      return EmitResult.failure();
     }
-
-    Optional<ResolvedMethodDeclaration> targetMethodOpt = resolve(n, context);
-    if (targetMethodOpt.isEmpty()) {
-      return EmitResult.failure(context, n, "Failed to resolve method call " + n.getName());
-    }
-    ResolvedMethodDeclaration targetMethod = targetMethodOpt.get();
-    // If at any point we want to use the string just emit all the methods upfront.
-    if (targetMethod.declaringType().getQualifiedName().equals("java.lang.String")) {
-      emitStringIntrinsicMethods(targetMethod.declaringType(), context);
-    }
-
-    ResolvedReferenceTypeDeclaration callingClass;
-    {
-      // Make sure the target method is accessible from the current context. This also checks that
-      // the method is
-      var callingClassOpt = n.findAncestor(ClassOrInterfaceDeclaration.class);
-      if (callingClassOpt.isEmpty()) {
-        return EmitResult.failure(
-            context,
-            n,
-            "Method call "
-                + n.getName()
-                + " is not in a class or interface. Method calls must be in a class or interface.");
+    if (methodResult.get().isEmpty()) {
+      if (n.getParentNode().isPresent() && n.getParentNode().get() instanceof ExpressionStmt) {
+        return EmitResult.success(Value.DUMMY);
       }
-      var resolvedCallingClassOpt = resolve(callingClassOpt.get(), context);
-      if (resolvedCallingClassOpt.isEmpty()) {
-        return EmitResult.failure(
-            context,
-            n,
-            "Failed to resolve class or interface "
-                + callingClassOpt.get().getNameAsString()
-                + " of method call "
-                + n.getName());
-      }
-      callingClass = resolvedCallingClassOpt.get();
-      if (!isDeclarationAccessibleFrom(callingClass, targetMethod)) {
-        return EmitResult.failure(
-            context,
-            n,
-            "Method callee "
-                + targetMethod.getQualifiedName()
-                + " is not visible from "
-                + callingClass.getQualifiedName());
-      }
+      return EmitResult.failure(context, n, "Method call does not produce a value.");
     }
-
-    EmitResult<Value> scopeResult = null;
-    if (n.getScope().isPresent() && !targetMethod.isStatic()) {
-      scopeResult = EmitResult.ofNullable(n.getScope().get().accept(this, context));
-      if (scopeResult.isFailure())
-        return EmitResult.failure(context, n, "Failed to emit scope of method call " + n.getName());
-    }
-
-    List<Value> args;
-    {
-      EmitResult<List<Value>> argumentsResult;
-      argumentsResult = visitRValueNodeList(n.getArguments(), context);
-      if (argumentsResult.isFailure())
-        return EmitResult.failure(
-            context, n, "Failed to emit arguments of method call " + n.getName());
-
-      args = new ArrayList<>(argumentsResult.get());
-
-      // Check if the caller arguments with the callee param types and emit casts if necessary
-      int varargsIndex = -1;
-      for (int i = 0; i < args.size(); i++) {
-        Value callArg = args.get(i);
-        if (varargsIndex == -1) {
-          if (targetMethod.getParam(i).isVariadic()) {
-            varargsIndex = i;
-          }
-        }
-        args.set(i, callArg);
-      }
-    }
-
-    if (!targetMethod.isStatic()) {
-      if (scopeResult == null)
-        return EmitResult.failure(
-            context,
-            n,
-            "Method call "
-                + n.getName()
-                + " is an instance method call but has no scope. Instance method calls must have a scope.");
-      args.addFirst(scopeResult.get());
-    }
-
-    if (IntrinsicRegistry.intrinsics.contains(targetMethod.getQualifiedSignature())) {
-      context.emitInfo(n, "Intrinsic: " + targetMethod.getQualifiedSignature());
-      return emitIntrinsic(n, targetMethod.getQualifiedSignature(), args, context);
-    }
-
-    String funcName = targetMethod.getQualifiedSignature();
-    Optional<Type> returnType = Optional.empty();
-    if (!targetMethod.getReturnType().isVoid()) {
-      returnType = fromAstType(targetMethod.getReturnType(), n, context);
-      if (returnType.isEmpty()) {
-        return EmitResult.failure(
-            context, n, "Failed to resolve return type of method " + n.getNameAsString());
-      }
-    }
-    FuncOps.CallOp callOp =
-        context.insert(new FuncOps.CallOp(context.loc(n), funcName, args, returnType.orElse(null)));
-
-    // TODO need to handle this with value producing function call and not.
-    return EmitResult.of(callOp.getOutputValue());
+    return EmitResult.of(methodResult.get().get());
   }
 
   @Override
@@ -572,6 +546,6 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
       bindName(varDecl.getName().asString(), initValue, varDecl, context);
     }
 
-    return EmitResult.of(new Value(BuiltinTypes.IntegerT.INT32));
+    return EmitResult.of(Value.DUMMY);
   }
 }

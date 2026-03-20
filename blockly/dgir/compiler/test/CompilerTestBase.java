@@ -17,6 +17,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompilerTestBase {
   public static boolean printSource = false;
@@ -66,7 +67,9 @@ public class CompilerTestBase {
     }
 
     String result = Utils.getMapper(true).writeValueAsString(programOp.get());
-    assert programOp.get().verify(true) : "Verification failed\n" + result;
+    assertTrue(
+        programOp.get().verify(true),
+        "Verification failed for " + callerName + ":\n" + result + "\n");
 
     if (printResult) System.out.println(result);
     if (saveResult) {
@@ -85,7 +88,11 @@ public class CompilerTestBase {
 
     vm.init(programOp.get());
     try {
+      long startTime = System.nanoTime();
       assert vm.run() : "Execution failed";
+      long endTime = System.nanoTime();
+      long duration = (endTime - startTime); // divide by 1000000 to get milliseconds.
+      System.out.println("Execution time: " + duration / 1000000 + "ms");
     } catch (Exception e) {
       throw new RuntimeException("Execution failed", e);
     }

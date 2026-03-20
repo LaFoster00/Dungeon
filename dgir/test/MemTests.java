@@ -6,7 +6,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
 import java.util.OptionalInt;
 
 import static dgir.dialect.arith.ArithOps.ConstantOp;
@@ -45,11 +44,9 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 8), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
 
-    assertEquals(intArray(OptionalInt.empty()), alloc.getArrayType());
+    assertEquals(IntegerT.INT32, alloc.getArrayType());
     assertEquals(size.getResult(), alloc.getDynamicSize().orElseThrow());
     assertTrue(alloc.getStaticSize().isEmpty());
 
@@ -64,8 +61,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var notAnInt = funcMain.addOperation(new ConstantOp(LOC, "oops"), 0);
-    funcMain.addOperation(
-        new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(notAnInt.getResult())), 0);
+    funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, notAnInt.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertFalse(TestUtils.testValidityAndSerialization(programOp));
@@ -78,8 +74,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 8), 0);
-    funcMain.addOperation(
-        new AllocGcOp(LOC, intArray(OptionalInt.of(4)), Optional.of(size.getResult())), 0);
+    funcMain.addOperation(new AllocGcOp(LOC, intArray(OptionalInt.of(4)), size.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertFalse(TestUtils.testValidityAndSerialization(programOp));
@@ -92,16 +87,10 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var dynSize = funcMain.addOperation(new ConstantOp(LOC, 4), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(dynSize.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, dynSize.getResult()), 0);
     var castToStatic =
         funcMain.addOperation(new CastOp(LOC, intArray(OptionalInt.of(4)), alloc.getResult()), 0);
-    var realloc =
-        funcMain.addOperation(
-            new ReallocGcOp(
-                LOC, intArray(OptionalInt.of(4)), castToStatic.getResult(), Optional.empty()),
-            0);
+    var realloc = funcMain.addOperation(new ReallocGcOp(LOC, castToStatic.getResult(), 4, true), 0);
 
     assertEquals(intArray(OptionalInt.of(4)), realloc.getArrayType());
     assertTrue(realloc.getStaticSize().isPresent());
@@ -119,44 +108,13 @@ public class MemTests {
 
     var initialSize = funcMain.addOperation(new ConstantOp(LOC, 4), 0);
     var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(initialSize.getResult())),
-            0);
+        funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, initialSize.getResult()), 0);
     var newSize = funcMain.addOperation(new ConstantOp(LOC, 16), 0);
 
-    funcMain.addOperation(
-        new ReallocGcOp(
-            LOC,
-            intArray(OptionalInt.empty()),
-            alloc.getResult(),
-            Optional.of(newSize.getResult())),
-        0);
+    funcMain.addOperation(new ReallocGcOp(LOC, alloc.getResult(), newSize.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
-  }
-
-  @Test
-  public void reallocGcRejectsStaticAndDynamicSizeTogether() {
-    Pair<ProgramOp, FuncOp> entry = newMain();
-    ProgramOp programOp = entry.getLeft();
-    FuncOp funcMain = entry.getRight();
-
-    var size = funcMain.addOperation(new ConstantOp(LOC, 4), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
-    var fixed =
-        funcMain.addOperation(new CastOp(LOC, intArray(OptionalInt.of(4)), alloc.getResult()), 0);
-    var newSize = funcMain.addOperation(new ConstantOp(LOC, 12), 0);
-
-    funcMain.addOperation(
-        new ReallocGcOp(
-            LOC, intArray(OptionalInt.of(4)), fixed.getResult(), Optional.of(newSize.getResult())),
-        0);
-
-    funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -166,31 +124,9 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var notArray = funcMain.addOperation(new ConstantOp(LOC, 99), 0);
-    funcMain.addOperation(
-        new ReallocGcOp(LOC, intArray(OptionalInt.empty()), notArray.getResult(), Optional.empty()),
-        0);
-
-    funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
-  }
-
-  @Test
-  public void reallocGcRejectsInputOutputTypeMismatch() {
-    Pair<ProgramOp, FuncOp> entry = newMain();
-    ProgramOp programOp = entry.getLeft();
-    FuncOp funcMain = entry.getRight();
-
-    var size = funcMain.addOperation(new ConstantOp(LOC, 4), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
-
-    funcMain.addOperation(
-        new ReallocGcOp(LOC, floatArray(OptionalInt.empty()), alloc.getResult(), Optional.empty()),
-        0);
-
-    funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> funcMain.addOperation(new ReallocGcOp(LOC, notArray.getResult(), 4, true), 0));
   }
 
   @Test
@@ -200,9 +136,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 3), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
     var cast =
         funcMain.addOperation(new CastOp(LOC, intArray(OptionalInt.of(3)), alloc.getResult()), 0);
 
@@ -219,9 +153,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 3), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
     funcMain.addOperation(new CastOp(LOC, intArray(OptionalInt.empty()), alloc.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
@@ -235,9 +167,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 3), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
     funcMain.addOperation(new CastOp(LOC, floatArray(OptionalInt.empty()), alloc.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
@@ -251,9 +181,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 3), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
     var fixed =
         funcMain.addOperation(new CastOp(LOC, intArray(OptionalInt.of(3)), alloc.getResult()), 0);
     funcMain.addOperation(new CastOp(LOC, intArray(OptionalInt.of(4)), fixed.getResult()), 0);
@@ -269,9 +197,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 5), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
     var sizeof = funcMain.addOperation(new SizeofOp(LOC, alloc.getResult()), 0);
 
     assertEquals(IntegerT.INT64, sizeof.getResult().getType());
@@ -300,9 +226,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 6), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
     var index = funcMain.addOperation(new ConstantOp(LOC, 2), 0);
     var getElement =
         funcMain.addOperation(new GetElementOp(LOC, alloc.getResult(), index.getResult()), 0);
@@ -334,9 +258,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 6), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
     var index = funcMain.addOperation(new ConstantOp(LOC, "bad index"), 0);
     funcMain.addOperation(new GetElementOp(LOC, alloc.getResult(), index.getResult()), 0);
 
@@ -359,13 +281,12 @@ public class MemTests {
 
   @Test
   public void setElementVerifierAcceptsValidValueTyping() {
-    var arrayType = intArray(OptionalInt.empty());
+    var arrayType = IntegerT.INT32;
     var arrayValue =
         new AllocGcOp(
                 LOC,
                 arrayType,
-                Optional.of(
-                    new ConstantOp(LOC, new IntegerAttribute(4, IntegerT.INT64)).getResult()))
+                new ConstantOp(LOC, new IntegerAttribute(4, IntegerT.INT64)).getResult())
             .getResult();
     var index = new ConstantOp(LOC, 0).getResult();
     var value = new ConstantOp(LOC, 42).getResult();
@@ -386,13 +307,12 @@ public class MemTests {
 
   @Test
   public void setElementVerifierRejectsNonIntegerIndex() {
-    var arrayType = intArray(OptionalInt.empty());
+    var arrayType = IntegerT.INT32;
     var arrayValue =
         new AllocGcOp(
                 LOC,
                 arrayType,
-                Optional.of(
-                    new ConstantOp(LOC, new IntegerAttribute(4, IntegerT.INT64)).getResult()))
+                new ConstantOp(LOC, new IntegerAttribute(4, IntegerT.INT64)).getResult())
             .getResult();
     var badIndex = new ConstantOp(LOC, "x").getResult();
     var value = new ConstantOp(LOC, 42).getResult();
@@ -403,13 +323,12 @@ public class MemTests {
 
   @Test
   public void setElementVerifierRejectsValueWithWrongType() {
-    var arrayType = intArray(OptionalInt.empty());
+    var arrayType = IntegerT.INT32;
     var arrayValue =
         new AllocGcOp(
                 LOC,
                 arrayType,
-                Optional.of(
-                    new ConstantOp(LOC, new IntegerAttribute(4, IntegerT.INT64)).getResult()))
+                new ConstantOp(LOC, new IntegerAttribute(4, IntegerT.INT64)).getResult())
             .getResult();
     var index = new ConstantOp(LOC, 0).getResult();
     var badValue = new ConstantOp(LOC, "not an int").getResult();
@@ -425,9 +344,7 @@ public class MemTests {
     FuncOp funcMain = entry.getRight();
 
     var size = funcMain.addOperation(new ConstantOp(LOC, 2), 0);
-    var alloc =
-        funcMain.addOperation(
-            new AllocGcOp(LOC, intArray(OptionalInt.empty()), Optional.of(size.getResult())), 0);
+    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
     var index = funcMain.addOperation(new ConstantOp(LOC, 0), 0);
     var value = funcMain.addOperation(new ConstantOp(LOC, 9), 0);
     funcMain.addOperation(

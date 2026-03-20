@@ -8,15 +8,12 @@ import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static blockly.dgir.compiler.java.CompilerUtils.mergeTokenRanges;
-import static blockly.dgir.compiler.java.CompilerUtils.setTokenRange;
-import static blockly.dgir.compiler.java.CompilerUtils.setTokenRangeFrom;
+import static blockly.dgir.compiler.java.CompilerUtils.*;
 
 /**
  * A JavaParser {@link ModifierVisitor} that rewrites:
@@ -480,7 +477,7 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
     @NotNull BlockStmt body;
     @NotNull Optional<TokenRange> sourceRange = Optional.empty();
 
-    public CaseGroup(@NotNull BlockStmt body) {
+    CaseGroup(@NotNull BlockStmt body) {
       this.body = body;
     }
   }

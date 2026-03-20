@@ -1,6 +1,8 @@
 package dgir.vm.dialect.mem;
 
 import dgir.core.ir.Operation;
+import dgir.core.ir.Type;
+import dgir.dialect.builtin.BuiltinTypes;
 import dgir.dialect.mem.MemOps;
 import dgir.dialect.mem.MemTypes;
 import dgir.vm.api.Action;
@@ -12,6 +14,24 @@ import java.util.Arrays;
 import java.util.Optional;
 
 public sealed interface MemRunners {
+  static Object[] fillArrayWithDefaultValues(Object[] array, Type elementType) {
+    for (int i = 0; i < array.length; i++) {
+      if (array[i] == null) {
+        switch (elementType) {
+          case BuiltinTypes.IntegerT integerT -> array[i] = integerT.convertToValidNumber(0);
+          case BuiltinTypes.FloatT floatT -> array[i] = floatT.convertToValidNumber(0.0);
+          default -> array[i] = null;
+        }
+      }
+    }
+    return array;
+  }
+
+  static Object[] arrayWithDefaultValues(int size, Type elementType) {
+    Object[] array = new Object[size];
+    return fillArrayWithDefaultValues(array, elementType);
+  }
+
   final class AllocGcRunner extends OpRunner implements MemRunners {
     public AllocGcRunner() {
       super(MemOps.AllocGcOp.class);
@@ -26,7 +46,24 @@ public sealed interface MemRunners {
       } else {
         size = state.getValueAsOrThrow(op.getOperandOrThrow(0), Integer.class);
       }
-      state.setValueForOutput(op, new Object[size]);
+      state.setValueForOutput(op, arrayWithDefaultValues(size, type.getElementType()));
+      return Action.Next();
+    }
+  }
+
+  final class AllocGcFromElementsRunner extends OpRunner implements MemRunners {
+    public AllocGcFromElementsRunner() {
+      super(MemOps.AllocGcFromElementsOp.class);
+    }
+
+    @Override
+    protected @NotNull Action runImpl(@NotNull Operation op, @NotNull State state) {
+      MemTypes.ArrayT type = (MemTypes.ArrayT) op.getOutputOrThrow().getType();
+      Object[] elements = new Object[op.getOperands().size()];
+      for (int i = 0; i < elements.length; i++) {
+        elements[i] = state.getValueOrThrow(op.getOperandOrThrow(i));
+      }
+      state.setValueForOutput(op, elements);
       return Action.Next();
     }
   }
@@ -47,7 +84,7 @@ public sealed interface MemRunners {
       }
       Object[] oldArray = state.getValueAsOrThrow(op.getOperandOrThrow(0), Object[].class);
       Object[] newArray = Arrays.copyOf(oldArray, newSize);
-      state.setValueForOutput(op, newArray);
+      state.setValueForOutput(op, fillArrayWithDefaultValues(newArray, type.getElementType()));
       return Action.Next();
     }
   }

@@ -5,6 +5,7 @@ import dgir.core.IRObjectWithUseList;
 import dgir.core.debug.Location;
 import dgir.core.debug.ValueDebugInfo;
 import dgir.core.serialization.ValueIdGenerator;
+import dgir.dialect.builtin.BuiltinTypes;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +25,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
  */
 @JsonIdentityInfo(generator = ValueIdGenerator.class)
 public final class Value extends IRObjectWithUseList<Value, ValueOperand> implements Serializable {
+  public static final Value DUMMY = new Value(BuiltinTypes.IntegerT.INT32);
 
   // =========================================================================
   // Members

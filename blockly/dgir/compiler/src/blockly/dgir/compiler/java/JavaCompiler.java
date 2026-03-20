@@ -1,22 +1,18 @@
 package blockly.dgir.compiler.java;
 
+import blockly.dgir.compiler.java.emission.NonValueVisitor;
 import blockly.dgir.compiler.java.transformations.*;
 import blockly.dgir.dialect.dg.DungeonDialect;
 import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import dgir.core.Dialect;
-import dgir.core.debug.ValueDebugInfo;
-import dgir.core.ir.Value;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -97,8 +93,7 @@ public class JavaCompiler {
     Dialect.registerAllDialects();
     DungeonDialect.get().register();
 
-    JavaAstEmitter emitter = new JavaAstEmitter();
-    EmitResult<Optional<Value>> emitResult = emitter.visit(result, context);
+    EmitResult<Boolean> emitResult = NonValueVisitor.get().visit(result, context);
     context.printDiagnostics();
     if (emitResult.isFailure()) {
       return Optional.empty();

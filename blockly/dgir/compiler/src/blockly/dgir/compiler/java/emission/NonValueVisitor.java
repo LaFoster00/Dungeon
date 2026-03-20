@@ -41,6 +41,7 @@ import java.util.Optional;
 
 import static blockly.dgir.compiler.java.CompilerUtils.*;
 import static blockly.dgir.compiler.java.emission.EmissionUtils.visitNonValueNodeList;
+import static blockly.dgir.compiler.java.emission.EmissionUtils.visitRValueNodeList;
 
 public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, EmitContext> {
   private static final NonValueVisitor INSTANCE = new NonValueVisitor();
@@ -117,10 +118,10 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
           context.program = program;
         } else {
           String incompleteProgram = Utils.getMapper(true).writeValueAsString(program);
-          context.emitError(n, "Incorrect program", incompleteProgram);
+          return EmitResult.failure(context, n, "Incorrect program", incompleteProgram);
         }
       }
-      return context.compilationSuccessful() ? EmitResult.success(true) : EmitResult.failure();
+      return EmitResult.success(true);
     }
   }
 
@@ -378,14 +379,15 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
     EmitResult<Value> checkResult;
     {
       checkResult = EmitResult.ofNullable(n.getCheck().accept(RValueVisitor.get(), context));
-      if (checkResult.isFailure()) return EmitResult.failure();
+      if (checkResult.isFailure()) return EmitResult.failure(context, n, "Failed to emit check");
     }
 
     EmitResult<Value> messageResult = null;
     if (n.getMessage().isPresent()) {
       messageResult =
           EmitResult.ofNullable(n.getMessage().get().accept(RValueVisitor.get(), context));
-      if (messageResult.isFailure()) return EmitResult.failure();
+      if (messageResult.isFailure())
+        return EmitResult.failure(context, n, "Failed to emit message");
     }
 
     if (messageResult != null) {
@@ -490,7 +492,8 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
           {
             conditionResult =
                 EmitResult.ofNullable(n.getCondition().accept(RValueVisitor.get(), context));
-            if (conditionResult.isFailure()) return EmitResult.failure();
+            if (conditionResult.isFailure())
+              return EmitResult.failure(context, n, "Failed to emit condition");
             Value compareValue = conditionResult.get();
             context.insert(
                 new CfOps.BranchCondOp(
@@ -524,8 +527,8 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
 
   @Override
   public EmitResult<Boolean> visit(ExpressionStmt n, EmitContext context) {
-    var result = EmitResult.ofNullable(n.getExpression().accept(this, context));
-    if (result.isFailure()) return result;
+    var result = EmitResult.ofNullable(n.getExpression().accept(RValueVisitor.get(), context));
+    if (result.isFailure()) return EmitResult.failure(context, n, "Failed to emit expression");
     return EmitResult.success(true);
   }
 
@@ -538,9 +541,9 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
   public EmitResult<Boolean> visit(ForStmt n, EmitContext context) {
     // First emit the initialization outside the for loop.
     {
-      EmitResult<Boolean> initResult;
+      EmitResult<List<Value>> initResult;
       {
-        initResult = visitNonValueNodeList(n.getInitialization(), context);
+        initResult = visitRValueNodeList(n.getInitialization(), context);
         if (initResult.isFailure()) return EmitResult.failure();
       }
     }
@@ -560,7 +563,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
           EmitResult<Value> compareResult =
               EmitResult.ofNullable(n.getCompare().get().accept(RValueVisitor.get(), context));
           if (compareResult.isFailure()) {
-            return EmitResult.failure();
+            return EmitResult.failure(context, n, "Failed to emit compare expression");
           }
           Value compareValue = compareResult.get();
           context.insert(
@@ -595,7 +598,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
             // body.
             Block updateBlock = whileOp.getBodyRegion().addBlock(new Block());
             try (var updateInsertion = context.setInsertionPoint(updateBlock, -1)) {
-              EmitResult<Boolean> updateResult = visitNonValueNodeList(n.getUpdate(), context);
+              EmitResult<List<Value>> updateResult = visitRValueNodeList(n.getUpdate(), context);
               if (updateResult.isFailure()) {
                 return EmitResult.failure();
               }
@@ -620,7 +623,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
                     breakBlock,
                     updateBlock));
           } else {
-            EmitResult<Boolean> updateResult = visitNonValueNodeList(n.getUpdate(), context);
+            EmitResult<List<Value>> updateResult = visitRValueNodeList(n.getUpdate(), context);
             if (updateResult.isFailure()) {
               return EmitResult.failure();
             }
@@ -640,7 +643,8 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
     {
       conditionResult =
           EmitResult.ofNullable(n.getCondition().accept(RValueVisitor.get(), context));
-      if (conditionResult.isFailure()) return EmitResult.failure();
+      if (conditionResult.isFailure())
+        return EmitResult.failure(context, n, "Failed to emit condition");
     }
     var ifOp =
         context.insert(new ScfOps.IfOp(context.loc(n), conditionResult.get(), n.hasElseBlock()));
@@ -745,7 +749,8 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
         {
           conditionResult =
               EmitResult.ofNullable(n.getCondition().accept(RValueVisitor.get(), context));
-          if (conditionResult.isFailure()) return EmitResult.failure();
+          if (conditionResult.isFailure())
+            return EmitResult.failure(context, n, "Failed to emit condition");
           Value compareValue = conditionResult.get();
           context.insert(
               new CfOps.BranchCondOp(

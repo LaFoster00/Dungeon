@@ -91,8 +91,8 @@ public sealed interface MemTypes {
       return TypeUniquer.uniqueInstance(new ArrayT(elementType, width.orElse(-1)));
     }
 
-    public @NotNull ArrayT withSize(int size) {
-      return ArrayT.of(elementType, OptionalInt.of(size));
+    public @NotNull ArrayT withSize(@NotNull OptionalInt size) {
+      return ArrayT.of(elementType, size);
     }
 
     public @NotNull ArrayT withElementType(@NotNull Type elementType) {
