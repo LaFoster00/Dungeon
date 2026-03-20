@@ -127,6 +127,9 @@ public final class Value extends IRObjectWithUseList<Value, ValueOperand> implem
 
   @Override
   public String toString() {
+    if (debugInfo.equals(ValueDebugInfo.UNKNOWN)) {
+      return getClass().getSimpleName() + "@" + Integer.toHexString(hashCode()) + ": " + type;
+    }
     return debugInfo.name() + ": " + type;
   }
 }

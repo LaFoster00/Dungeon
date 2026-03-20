@@ -717,6 +717,22 @@ public final class Operation implements Serializable {
   }
 
   /**
+   * Get the previous operation in the same block as this operation.
+   *
+   * @return The previous operation, or empty if there is none.
+   */
+  @Contract(pure = true)
+  public @NotNull Optional<Operation> getPrevious() {
+    return getParent()
+        .map(
+            block -> {
+              int index = block.getOperationsRaw().indexOf(this);
+              if (index == -1 || index == 0) return null;
+              return block.getOperationsRaw().get(index - 1);
+            });
+  }
+
+  /**
    * Get the next operation in the same block as this operation, throwing if there is none.
    *
    * @return The next operation, never {@code null}.
@@ -779,13 +795,13 @@ public final class Operation implements Serializable {
     sb.append(" (");
     sb.append(
         operands.stream()
-            .map(op -> op.getType().orElseThrow().getParameterizedIdent())
+            .map(op -> op.getValue().map(Value::toString).orElse("null"))
             .collect(Collectors.joining(", ")));
     sb.append(")");
 
     sb.append(" -> (");
     if (output != null) {
-      sb.append(output.getValue().getType().getParameterizedIdent());
+      sb.append(output.getValue());
     }
     sb.append(")");
 
