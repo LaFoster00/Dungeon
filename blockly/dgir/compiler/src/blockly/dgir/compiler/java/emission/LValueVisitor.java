@@ -49,7 +49,19 @@ public class LValueVisitor extends GenericVisitorAdapter<LValueResult, EmitConte
       if (resolved.isEmpty())
         return EmitResult.failure(context, n, "Failed to resolve name " + n.getNameAsString());
       // Copy the value to the resolved location.
-      context.insert(new BuiltinOps.IdOp(context.loc(n), value, resolved.get()));
+      var id = context.insert(new BuiltinOps.IdOp(context.loc(n), value, resolved.get()));
+      var previousOpt = id.getPrevious();
+      if (previousOpt.isPresent()) {
+        if (previousOpt.get().getOutput().map(v -> v.getValue().equals(value)).orElse(false)) {
+          // If the previous operation produced the value we are assigning to the name, we can just
+          // set the output value
+          // of the previous operation to the value we are assigning.
+          previousOpt.get().setOutputValue(resolved.get());
+          // Remove the id operation since it is not needed anymore.
+          id.getParent().orElseThrow().removeOperation(id.getOperation());
+          return EmitResult.success(true);
+        }
+      }
       return EmitResult.success(true);
     };
   }

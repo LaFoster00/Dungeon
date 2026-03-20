@@ -61,7 +61,19 @@ public sealed interface MemRunners {
       MemTypes.ArrayT type = (MemTypes.ArrayT) op.getOutputOrThrow().getType();
       Object[] elements = new Object[op.getOperands().size()];
       for (int i = 0; i < elements.length; i++) {
-        elements[i] = state.getValueOrThrow(op.getOperandOrThrow(i));
+        Object element = state.getValueOrThrow(op.getOperandOrThrow(i));
+        if (type.getElementType().validate(element)) {
+          elements[i] = element;
+        } else {
+          return Action.Abort(
+              Optional.empty(),
+              "Element at index "
+                  + i
+                  + " with value "
+                  + element
+                  + " is not valid for array of type "
+                  + type);
+        }
       }
       state.setValueForOutput(op, elements);
       return Action.Next();

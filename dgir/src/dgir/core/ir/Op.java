@@ -353,6 +353,16 @@ public abstract class Op {
   }
 
   /**
+   * Get the previous operation in the same block.
+   *
+   * @see Operation#getPrevious()
+   */
+  @Contract(pure = true)
+  public @NotNull Optional<Operation> getPrevious() {
+    return getOperation().getPrevious();
+  }
+
+  /**
    * Get the source location of this operation.
    *
    * @see Operation#getLocation()

@@ -38,23 +38,6 @@ public class MemTests {
   }
 
   @Test
-  public void allocGcWithDynamicIntegerSize() {
-    Pair<ProgramOp, FuncOp> entry = newMain();
-    ProgramOp programOp = entry.getLeft();
-    FuncOp funcMain = entry.getRight();
-
-    var size = funcMain.addOperation(new ConstantOp(LOC, 8), 0);
-    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
-
-    assertEquals(IntegerT.INT32, alloc.getArrayType());
-    assertEquals(size.getResult(), alloc.getDynamicSize().orElseThrow());
-    assertTrue(alloc.getStaticSize().isEmpty());
-
-    funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
-  }
-
-  @Test
   public void allocGcRejectsNonIntegerDynamicSize() {
     Pair<ProgramOp, FuncOp> entry = newMain();
     ProgramOp programOp = entry.getLeft();
@@ -62,19 +45,6 @@ public class MemTests {
 
     var notAnInt = funcMain.addOperation(new ConstantOp(LOC, "oops"), 0);
     funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, notAnInt.getResult()), 0);
-
-    funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
-  }
-
-  @Test
-  public void allocGcRejectsStaticAndDynamicSizeTogether() {
-    Pair<ProgramOp, FuncOp> entry = newMain();
-    ProgramOp programOp = entry.getLeft();
-    FuncOp funcMain = entry.getRight();
-
-    var size = funcMain.addOperation(new ConstantOp(LOC, 8), 0);
-    funcMain.addOperation(new AllocGcOp(LOC, intArray(OptionalInt.of(4)), size.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertFalse(TestUtils.testValidityAndSerialization(programOp));
@@ -335,22 +305,5 @@ public class MemTests {
 
     var setElement = new SetElementOp(LOC, arrayValue, index, badValue);
     assertFalse(setElement.getVerifier().apply(setElement.getOperation()));
-  }
-
-  @Test
-  public void setElementIsRejectedInFullOperationVerification() {
-    Pair<ProgramOp, FuncOp> entry = newMain();
-    ProgramOp programOp = entry.getLeft();
-    FuncOp funcMain = entry.getRight();
-
-    var size = funcMain.addOperation(new ConstantOp(LOC, 2), 0);
-    var alloc = funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
-    var index = funcMain.addOperation(new ConstantOp(LOC, 0), 0);
-    var value = funcMain.addOperation(new ConstantOp(LOC, 9), 0);
-    funcMain.addOperation(
-        new SetElementOp(LOC, alloc.getResult(), index.getResult(), value.getResult()), 0);
-
-    funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
   }
 }

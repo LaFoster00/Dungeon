@@ -80,7 +80,6 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
       } else if (n.getInitializer().isPresent()) {
         EmitResult<List<Value>> valuesResult =
             EmissionUtils.visitRValueNodeList(n.getInitializer().get().getValues(), context);
-        ResolvedType arrayType = n.calculateResolvedType();
         if (valuesResult.isFailure()) return EmitResult.failure();
         array =
             context.insert(

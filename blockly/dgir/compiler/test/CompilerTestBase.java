@@ -91,8 +91,10 @@ public class CompilerTestBase {
       long startTime = System.nanoTime();
       assert vm.run() : "Execution failed";
       long endTime = System.nanoTime();
-      long duration = (endTime - startTime); // divide by 1000000 to get milliseconds.
-      System.out.println("Execution time: " + duration / 1000000 + "ms");
+      double durationMs = (endTime - startTime) / 1000000.0;
+      double operationsPerMs = vm.getState().orElseThrow().instructionCount / durationMs;
+      System.out.println(
+          "Execution time: " + durationMs + "ms : " + operationsPerMs + " instructions/ms");
     } catch (Exception e) {
       throw new RuntimeException("Execution failed", e);
     }
