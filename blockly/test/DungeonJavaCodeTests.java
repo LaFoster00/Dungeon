@@ -163,13 +163,13 @@ public class DungeonJavaCodeTests extends DungeonCompilerTestBase {
               Hero.rotate(Direction.LEFT);
               Hero.move();
 
-              if (Hero.active(Direction.LEFT)) {
+              if (Hero.isActive(Direction.LEFT)) {
                 Hero.move();
               }
 
               Hero.interact(Direction.LEFT);
 
-              if (!Hero.active(Direction.LEFT)) {
+              if (!Hero.isActive(Direction.LEFT)) {
                 Hero.move();
               }
 
