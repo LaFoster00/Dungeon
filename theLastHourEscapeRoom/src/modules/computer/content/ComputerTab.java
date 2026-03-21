@@ -8,9 +8,7 @@ import modules.computer.ComputerDialog;
 import modules.computer.ComputerStateComponent;
 import modules.computer.ComputerStateLocal;
 
-/**
- * Abstract base class for tabs in the ComputerDialog.
- */
+/** Abstract base class for tabs in the ComputerDialog. */
 public abstract class ComputerTab extends Table {
 
   private final String key;
@@ -25,14 +23,14 @@ public abstract class ComputerTab extends Table {
    * Constructs a new ComputerTab with the specified parameters.
    *
    * @param sharedState The shared ComputerStateComponent that this tab will use to display and
-   *                    update computer state.
-   * @param key         A unique key identifying this tab, used for tab management in ComputerDialog
-   * @param title       The title of the tab to be displayed in the ComputerDialog's tab header
-   * @param closeable   Whether this tab can be closed by the user (if true, a close button will be
-   *                    shown on the tab header)
+   *     update computer state.
+   * @param key A unique key identifying this tab, used for tab management in ComputerDialog
+   * @param title The title of the tab to be displayed in the ComputerDialog's tab header
+   * @param closeable Whether this tab can be closed by the user (if true, a close button will be
+   *     shown on the tab header)
    */
   public ComputerTab(
-    ComputerStateComponent sharedState, String key, String title, boolean closeable) {
+      ComputerStateComponent sharedState, String key, String title, boolean closeable) {
     this.sharedState = sharedState;
     this.key = key;
     this.title = title;
@@ -125,9 +123,7 @@ public abstract class ComputerTab extends Table {
     return ComputerStateLocal.getInstance();
   }
 
-  /**
-   * Creates and adds the actors to the tab.
-   */
+  /** Creates and adds the actors to the tab. */
   protected abstract void createActors();
 
   /**
@@ -156,9 +152,9 @@ public abstract class ComputerTab extends Table {
     return ctx;
   }
 
-  /**
-   * Called when the tab is removed from the dialog.
-   */
-  public void onRemove() {
-  }
+  /** Called when the tab becomes the active (visible) tab in the dialog. */
+  public void onShow() {}
+
+  /** Called when the tab is removed from the dialog. */
+  public void onRemove() {}
 }

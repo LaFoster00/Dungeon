@@ -15,14 +15,12 @@ import modules.computer.ComputerStateComponent;
 import util.LastHourSounds;
 import util.Lore;
 
-/**
- * Tab for logging into the computer, containing username and password fields and feedback.
- */
+/** Tab for logging into the computer, containing username and password fields and feedback. */
 public class LoginTab extends ComputerTab {
 
   // Password feedback
   private static final String WRONG_FEEDBACK = "Invalid username or password.";
-  private static final String CORRECT_FEEDBACK = "Login successful!\nWelcome Mr. So-And-So";
+  private static final String CORRECT_FEEDBACK = "Login successful!\nWelcome Dr. Mertens";
   private static final Color WRONG_COLOR = Color.RED;
   private static final Color CORRECT_COLOR = new Color(0, 0.5f, 0, 1);
 
@@ -48,13 +46,13 @@ public class LoginTab extends ComputerTab {
     }
 
     Image companyLogo = new Image(skin, Lore.CompanyDrawable);
-    this.add(companyLogo).width(200).height(200).center().padBottom(20).row();
+    this.add(companyLogo).width(200).height(200).center().padBottom(5).row();
 
     Label label = Scene2dElementFactory.createLabel(Lore.CompanyName, 64, Color.BLACK);
     this.add(label).center().padBottom(10).row();
     Label flavor =
-      Scene2dElementFactory.createLabel(
-        "At the frontlines of science since 1984", 24, Color.GRAY);
+        Scene2dElementFactory.createLabel(
+            "At the frontlines of science since 1984", 24, Color.GRAY);
     this.add(flavor).center().padBottom(20).row();
 
     loginFeedback = Scene2dElementFactory.createLabel("", 24, Color.WHITE);
@@ -64,51 +62,52 @@ public class LoginTab extends ComputerTab {
     usernameField = Scene2dElementFactory.createTextField(localState().username());
     usernameField.setMessageText("Email");
     Scene2dElementFactory.addTextFieldChangeListener(
-      usernameField,
-      (text) -> {
-        localState().username(usernameField.getText());
-      });
+        usernameField,
+        (text) -> {
+          localState().username(usernameField.getText());
+        });
 
     passwordField = Scene2dElementFactory.createTextField(localState().password());
     passwordField.setMessageText("Password");
     passwordField.setPasswordMode(true);
     passwordField.setPasswordCharacter('*');
     passwordField.setText(
-      ""); // Clear + set again because changing to password mode breaks the cache
+        ""); // Clear + set again because changing to password mode breaks the cache
     passwordField.setText(localState().password());
     Scene2dElementFactory.addTextFieldChangeListener(
-      passwordField,
-      (text) -> {
-        localState().password(passwordField.getText());
-      });
+        passwordField,
+        (text) -> {
+          localState().password(passwordField.getText());
+        });
 
     loginButton = Scene2dElementFactory.createButton("Login", "clean-green");
     loginButton.addListener(
-      new ChangeListener() {
-        @Override
-        public void changed(ChangeEvent event, Actor actor) {
-          String username = localState().username();
-          String password = localState().password();
-          if ((username.equalsIgnoreCase(Lore.LoginEmail)
-            && password.equalsIgnoreCase(Lore.LoginPassword))
-            || username.equals("skipp")) {
-            DialogCallbackResolver.createButtonCallback(
-                context().dialogId(), ComputerFactory.UPDATE_STATE_KEY)
-              .accept(
-                ComputerStateComponent.getState()
-                  .orElseThrow()
-                  .withState(ComputerProgress.LOGGED_IN));
-            ComputerDialog.getInstance()
-              .ifPresent(
-                computer -> {
-                  computer.addTabsForState(ComputerProgress.LOGGED_IN);
-                });
-            onLoginSuccess(false);
-          } else {
-            onWrongCredentials();
+        new ChangeListener() {
+          @Override
+          public void changed(ChangeEvent event, Actor actor) {
+            String username = localState().username();
+            String password = localState().password();
+            if ((username.equalsIgnoreCase(Lore.LoginEmail)
+                    && password.equalsIgnoreCase(Lore.LoginPassword))
+                || username.equals("skipp")) {
+              DialogCallbackResolver.createButtonCallback(
+                      context().dialogId(), ComputerFactory.UPDATE_STATE_KEY)
+                  .accept(
+                      ComputerStateComponent.getState()
+                          .orElseThrow()
+                          .withState(ComputerProgress.LOGGED_IN)
+                          .withTimestampOfLogin((int) (System.currentTimeMillis() / 1000L)));
+              ComputerDialog.getInstance()
+                  .ifPresent(
+                      computer -> {
+                        computer.addTabsForState(ComputerProgress.LOGGED_IN);
+                      });
+              onLoginSuccess(false);
+            } else {
+              onWrongCredentials();
+            }
           }
-        }
-      });
+        });
 
     if (completed) {
       onLoginSuccess(true);

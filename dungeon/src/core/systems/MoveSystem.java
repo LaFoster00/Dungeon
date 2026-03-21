@@ -14,7 +14,6 @@ import core.utils.Direction;
 import core.utils.Point;
 import core.utils.Vector2;
 import core.utils.components.MissingComponentException;
-
 import java.util.*;
 
 /**
@@ -28,9 +27,7 @@ import java.util.*;
  */
 public class MoveSystem extends System {
 
-  /**
-   * Distance to snap next to a wall (e.g. when trying to enter a 1-tile wide tunnel)
-   */
+  /** Distance to snap next to a wall (e.g. when trying to enter a 1-tile wide tunnel) */
   public static final float CORNER_CORRECT_DISTANCE = 0.1f;
 
   private static final float CORNER_CORRECT_COOLDOWN = 0.2f;
@@ -58,7 +55,7 @@ public class MoveSystem extends System {
   @Override
   public void execute() {
     filteredEntityStream()
-      .map(MSData::of)
+        .map(MSData::of)
         .peek(this::updatePosition)
         .map(MSData::e)
         .forEach(PositionSync::syncPosition);
@@ -125,11 +122,8 @@ public class MoveSystem extends System {
 
       // If corner correction not possible, hit wall
       if (!triggeredXCC) {
-        float wallX = fromWall(newPos.x(), sv.x() > 0);
-        if (hasCollider) {
-          float xOffset = collider.offset().x();
-          wallX += sv.x() > 0 ? xOffset : -xOffset;
-        }
+        float colliderEdge = hasCollider ? scaledXEdge(collider, sv.x() > 0) : 0f;
+        float wallX = snapToWall(newPos.x(), sv.x() > 0, colliderEdge);
         newPos = new Point(wallX, newPos.y());
         hasHitWall = true;
       }
@@ -160,11 +154,8 @@ public class MoveSystem extends System {
 
       // If corner correction not possible, hit wall
       if (!triggeredYCC) {
-        float wallY = fromWall(newPos.y(), sv.y() > 0);
-        if (hasCollider) {
-          float yOffset = collider.offset().y();
-          wallY += sv.y() > 0 ? yOffset : -yOffset;
-        }
+        float colliderEdge = hasCollider ? scaledYEdge(collider, sv.y() > 0) : 0f;
+        float wallY = snapToWall(newPos.y(), sv.y() > 0, colliderEdge);
         newPos = new Point(newPos.x(), wallY);
         hasHitWall = true;
       }
@@ -175,8 +166,8 @@ public class MoveSystem extends System {
       cornerCorrectTimers.put(data.e, CORNER_CORRECT_COOLDOWN);
     } else {
       cornerCorrectTimers.put(
-        data.e,
-        Math.max(0, cornerCorrectTimers.getOrDefault(data.e, 0f) - 1f / Game.frameRate()));
+          data.e,
+          Math.max(0, cornerCorrectTimers.getOrDefault(data.e, 0f) - 1f / Game.frameRate()));
     }
 
     // Final check if newPos is accessible. If no, abort to oldPos.
@@ -190,29 +181,30 @@ public class MoveSystem extends System {
     }
   }
 
-  /**
-   * Returns either the lower or upper edge position of a wall. Adds a small epsilon to avoid
-   * floating point precision issues.
-   *
-   * @param position the current position
-   * @param lower    whether to return the lower edge (true) or upper edge (false)
-   * @return the wall edge position
-   */
-  private float fromWall(float position, boolean lower) {
-    if (lower) {
-      return (float) Math.floor(position)
-        - CollisionSystem.COLLIDE_SET_DISTANCE; // Lower edge + a bit of distance in -x direction
-    } else {
-      return (float) Math.ceil(position)
-        + CollisionSystem.COLLIDE_SET_DISTANCE; // Upper edge + a bit of distance in +x direction
-    }
+  private float snapToWall(float position, boolean positiveDirection, float colliderEdge) {
+    float absoluteEdge = position + colliderEdge;
+    float wallEdge =
+        positiveDirection ? (float) Math.floor(absoluteEdge) : (float) Math.ceil(absoluteEdge);
+    float distance =
+        positiveDirection
+            ? -CollisionSystem.COLLIDE_SET_DISTANCE
+            : CollisionSystem.COLLIDE_SET_DISTANCE;
+    return wallEdge - colliderEdge + distance;
+  }
+
+  private float scaledXEdge(Collider collider, boolean positiveDirection) {
+    return (positiveDirection ? collider.right() : collider.left()) * collider.scale().x();
+  }
+
+  private float scaledYEdge(Collider collider, boolean positiveDirection) {
+    return (positiveDirection ? collider.top() : collider.bottom()) * collider.scale().y();
   }
 
   private Optional<Point> closestAvailablePos(
-    Point start, Vector2 dir, Collider collider, VelocityComponent vc) {
+      Point start, Vector2 dir, Collider collider, VelocityComponent vc) {
     int stepCount = 10;
     float distance =
-      Math.max(CORNER_CORRECT_DISTANCE, collider != null ? collider.size().x() / 3 : 0);
+        Math.max(CORNER_CORRECT_DISTANCE, collider != null ? collider.size().x() / 3 : 0);
     Vector2 step = dir.normalize().scale(distance / stepCount);
     Point testPos = start;
     for (int i = 0; i < stepCount; i++) {
@@ -251,12 +243,12 @@ public class MoveSystem extends System {
      */
     public static MSData of(Entity e) {
       VelocityComponent vc =
-        e.fetch(VelocityComponent.class)
-          .orElseThrow(() -> MissingComponentException.build(e, VelocityComponent.class));
+          e.fetch(VelocityComponent.class)
+              .orElseThrow(() -> MissingComponentException.build(e, VelocityComponent.class));
 
       PositionComponent pc =
-        e.fetch(PositionComponent.class)
-          .orElseThrow(() -> MissingComponentException.build(e, PositionComponent.class));
+          e.fetch(PositionComponent.class)
+              .orElseThrow(() -> MissingComponentException.build(e, PositionComponent.class));
 
       CollideComponent cc = e.fetch(CollideComponent.class).orElse(null);
 

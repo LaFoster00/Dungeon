@@ -1,37 +1,25 @@
 package core.utils.settings;
 
 import com.badlogic.gdx.Input;
-import contrib.entities.CharacterClass;
-import contrib.entities.deco.Deco;
-
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.function.BiConsumer;
 
-/**
- * Manages client-side settings for the game, such as volume levels and control bindings.
- */
+/** Manages client-side settings for the game, such as volume levels and control bindings. */
 public class ClientSettings {
 
-  /**
-   * Key for master volume setting.
-   */
+  /** Key for master volume setting. */
   public static final String MASTER_VOLUME = "masterVolume";
 
-  /**
-   * Key for effects volume setting.
-   */
+  /** Key for effects volume setting. */
   public static final String EFFECTS_VOLUME = "effectsVolume";
 
-  /**
-   * Key for music volume setting.
-   */
+  /** Key for music volume setting. */
   public static final String MUSIC_VOLUME = "musicVolume";
 
   private static ClientSettings instance = null;
   private final HashMap<String, SettingValue<?>> settings;
-  private BiConsumer<String, Integer> onVolumeChange = (key, value) -> {
-  };
+  private BiConsumer<String, Integer> onVolumeChange = (key, value) -> {};
 
   private ClientSettings() {
     settings = new LinkedHashMap<>();
@@ -56,7 +44,7 @@ public class ClientSettings {
    * the key of the changed setting and its new value.
    *
    * @param onChange a BiConsumer that takes a String key and an Integer value, to be called on
-   *                 volume change
+   *     volume change
    */
   public static void setOnVolumeChange(BiConsumer<String, Integer> onChange) {
     getInstance().onVolumeChange = onChange;
@@ -65,30 +53,15 @@ public class ClientSettings {
   private void init() {
     IntSliderSetting masterVolume = new IntSliderSetting("Master Volume", 70, 0, 100, 5);
     IntSliderSetting effectsVolume = new IntSliderSetting("Effects Volume", 70, 0, 100, 5);
-    IntSliderSetting musicVolume = new IntSliderSetting("Music Volume", 0, 0, 100, 5);
+    IntSliderSetting musicVolume = new IntSliderSetting("Music Volume", 5, 0, 100, 5);
 
     masterVolume.onChange((v) -> onVolumeChange.accept(MASTER_VOLUME, v));
     effectsVolume.onChange((v) -> onVolumeChange.accept(EFFECTS_VOLUME, v));
     musicVolume.onChange((v) -> onVolumeChange.accept(MUSIC_VOLUME, v));
 
-    EnumSetting<CharacterClass> heroClassSetting =
-      new EnumSetting<>(
-        "Hero Class",
-        CharacterClass.WIZARD,
-        CharacterClass.values(),
-        ClientSettings::formatEnumTitle);
-
     registerSetting(MASTER_VOLUME, masterVolume);
     registerSetting(EFFECTS_VOLUME, effectsVolume);
     registerSetting(MUSIC_VOLUME, musicVolume);
-
-    registerSetting("hero", heroClassSetting);
-    registerSetting(
-      "deco",
-      new EnumSetting<>(
-        "Selected Deco", Deco.Desk, Deco.values(), ClientSettings::formatEnumTitle));
-
-    registerSetting("colorblind", new BoolSetting("Colorblind Mode", false));
 
     registerSetting("section1", new SectionDividerSetting("Controls"));
     registerSetting("controls1", new ButtonBindingSetting("Pause", Input.Keys.P, false));
@@ -126,7 +99,7 @@ public class ClientSettings {
    * Registers a new setting with the given key. If a setting with the same key already exists, it
    * will be overwritten.
    *
-   * @param key     the unique identifier for the setting
+   * @param key the unique identifier for the setting
    * @param setting the SettingValue object representing the setting to be registered
    */
   public static void registerSetting(String key, SettingValue<?> setting) {
@@ -150,7 +123,7 @@ public class ClientSettings {
    *
    * @param name the unique identifier for the setting to retrieve
    * @param type the Class object representing the expected type of the setting's value
-   * @param <T>  the expected type of the setting's value
+   * @param <T> the expected type of the setting's value
    * @return the value of the setting cast to the specified type, or null if not found
    * @throws ClassCastException if the setting's value cannot be cast to the specified type
    */
@@ -169,7 +142,7 @@ public class ClientSettings {
    * Returns the entire map of settings, allowing for iteration or bulk operations.
    *
    * @return a HashMap containing all registered settings, where keys are setting identifiers and
-   * values are SettingValue objects
+   *     values are SettingValue objects
    */
   public static HashMap<String, SettingValue<?>> getSettings() {
     return getInstance().settings;

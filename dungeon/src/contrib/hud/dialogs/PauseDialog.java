@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import contrib.components.UIComponent;
 import contrib.hud.UIUtils;
+import core.Entity;
 import core.Game;
 import core.sound.CoreSounds;
 import core.sound.Sounds;
@@ -14,7 +15,6 @@ import core.utils.BaseContainerUI;
 import core.utils.FontSpec;
 import core.utils.Scene2dElementFactory;
 import core.utils.settings.ClientSettings;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,19 +54,47 @@ public class PauseDialog extends Table {
   }
 
   /**
-   * Shows the pause menu dialog for the given target entity IDs.
+   * Shows the pause menu dialog for the given target entity.
    *
-   * @param targetIds The target entity IDs for which the dialog is displayed
+   * @param caller the entity for which the pause menu should be shown.
    * @return The {@link UIComponent} containing the dialog
    */
-  public static UIComponent showPauseDialog(int... targetIds) {
-    DialogContext ctx = DialogContext.builder().type(DialogType.DefaultTypes.PAUSE_MENU).build();
+  public static UIComponent showPauseDialog(Entity caller) {
+    boolean isInInput = Game.stage().map(s -> s.getKeyboardFocus() != null).orElse(false);
+    if (isInInput) return null;
 
-    UIComponent ui = DialogFactory.show(ctx, targetIds);
+    // Find if the player has any open pause menu dialog already:
+    boolean hasClosed =
+        caller
+            .fetch(UIComponent.class)
+            .map(
+                uic -> {
+                  if (uic.dialogContext().dialogType() == DialogType.DefaultTypes.PAUSE_MENU) {
+                    UIUtils.closeDialog(uic);
+                    return true;
+                  }
+                  return false;
+                })
+            .orElse(false);
+
+    if (hasClosed) return null;
+
+    DialogContext ctx = DialogContext.builder().type(DialogType.DefaultTypes.PAUSE_MENU).build();
+    ctx.owner(caller.id());
+
+    UIComponent ui = DialogFactory.show(ctx, caller.id());
 
     // Register callback
-    ui.registerCallback(DialogContextKeys.ON_RESUME, data -> UIUtils.closeDialog(ui));
-    ui.registerCallback(DialogContextKeys.ON_QUIT, data -> Game.exit("Quit from pause menu"));
+    ui.registerCallback(
+        DialogContextKeys.ON_RESUME,
+        data -> {
+          UIUtils.closeDialog(ui);
+        });
+    ui.registerCallback(
+        DialogContextKeys.ON_QUIT,
+        data -> {
+          Game.exit("Quit from pause menu");
+        });
 
     return ui;
   }
@@ -90,40 +118,38 @@ public class PauseDialog extends Table {
 
   private Table createMainView(DialogContext ctx) {
     Label label =
-      Scene2dElementFactory.createLabel(
-        "PAUSED", FontSpec.of("fonts/Roboto-Bold.ttf", 48, Color.BLACK));
+        Scene2dElementFactory.createLabel(
+            "PAUSED", FontSpec.of("fonts/Roboto-Bold.ttf", 48, Color.BLACK));
     TextButton resumeBtn = Scene2dElementFactory.createButton("Resume", "clean-green", 32);
     TextButton settingsBtn =
-      Scene2dElementFactory.createButton("Settings", "clean-blue-outline", 32);
+        Scene2dElementFactory.createButton("Settings", "clean-blue-outline", 32);
     TextButton quitBtn =
-      Scene2dElementFactory.createButton("Quit to Desktop", "clean-red-outline", 32);
+        Scene2dElementFactory.createButton("Quit to Desktop", "clean-red-outline", 32);
 
     resumeBtn.addListener(
-      new ChangeListener() {
-        @Override
-        public void changed(ChangeEvent event, Actor actor) {
-          DialogCallbackResolver.createButtonCallback(ctx.dialogId(), DialogContextKeys.ON_RESUME)
-            .accept(null);
-          Sounds.play(CoreSounds.INTERFACE_DIALOG_CLOSED);
-        }
-      });
+        new ChangeListener() {
+          @Override
+          public void changed(ChangeEvent event, Actor actor) {
+            Game.player().orElseThrow().fetch(UIComponent.class).ifPresent(UIUtils::closeDialog);
+            Sounds.play(CoreSounds.INTERFACE_DIALOG_CLOSED);
+          }
+        });
     settingsBtn.addListener(
-      new ChangeListener() {
-        @Override
-        public void changed(ChangeEvent event, Actor actor) {
-          showSettings();
-          Sounds.play(CoreSounds.INTERFACE_BUTTON_CLICKED);
-        }
-      });
+        new ChangeListener() {
+          @Override
+          public void changed(ChangeEvent event, Actor actor) {
+            showSettings();
+            Sounds.play(CoreSounds.INTERFACE_BUTTON_CLICKED);
+          }
+        });
     quitBtn.addListener(
-      new ChangeListener() {
-        @Override
-        public void changed(ChangeEvent event, Actor actor) {
-          DialogCallbackResolver.createButtonCallback(ctx.dialogId(), DialogContextKeys.ON_QUIT)
-            .accept(null);
-          Sounds.play(CoreSounds.INTERFACE_DIALOG_CLOSED);
-        }
-      });
+        new ChangeListener() {
+          @Override
+          public void changed(ChangeEvent event, Actor actor) {
+            Game.exit("Quit from pause menu");
+            Sounds.play(CoreSounds.INTERFACE_DIALOG_CLOSED);
+          }
+        });
 
     Table menu = new Table();
     menu.add(label).padBottom(30).align(Align.center).row();
@@ -135,24 +161,24 @@ public class PauseDialog extends Table {
 
   private Table createSettingsView(DialogContext ctx) {
     Label label =
-      Scene2dElementFactory.createLabel(
-        "SETTINGS", FontSpec.of("fonts/Roboto-Bold.ttf", 48, Color.BLACK));
+        Scene2dElementFactory.createLabel(
+            "SETTINGS", FontSpec.of("fonts/Roboto-Bold.ttf", 48, Color.BLACK));
     TextButton backBtn = Scene2dElementFactory.createButton("Back", "clean-green", 32);
     backBtn.addListener(
-      new ChangeListener() {
-        @Override
-        public void changed(ChangeEvent event, Actor actor) {
-          showMainView();
-          Sounds.play(CoreSounds.INTERFACE_BUTTON_CLICKED);
-        }
-      });
+        new ChangeListener() {
+          @Override
+          public void changed(ChangeEvent event, Actor actor) {
+            showMainView();
+            Sounds.play(CoreSounds.INTERFACE_BUTTON_CLICKED);
+          }
+        });
     List<Actor> settingsActors = new ArrayList<>();
 
     ClientSettings.getSettings()
-      .forEach(
-        (s, setting) -> {
-          settingsActors.add(setting.toUIActor());
-        });
+        .forEach(
+            (s, setting) -> {
+              settingsActors.add(setting.toUIActor());
+            });
 
     Table menu = new Table();
     menu.add(label).padBottom(15).align(Align.center).row();
@@ -161,19 +187,19 @@ public class PauseDialog extends Table {
 
     Table settingsTable = new Table();
     settingsActors.forEach(
-      actor -> {
-        actor.addListener(
-          new InputListener() {
-            @Override
-            public void enter(
-              InputEvent event, float x, float y, int pointer, Actor fromActor) {
-              if (fromActor != null && fromActor.isDescendantOf(actor) || pointer != -1) return;
-              Sounds.play(CoreSounds.INTERFACE_ITEM_HOVERED, 1, 0.6f);
-              super.enter(event, x, y, pointer, fromActor);
-            }
-          });
-        settingsTable.add(actor).width(500).align(Align.center).pad(0, 10, 20, 10).row();
-      });
+        actor -> {
+          actor.addListener(
+              new InputListener() {
+                @Override
+                public void enter(
+                    InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                  if (fromActor != null && fromActor.isDescendantOf(actor) || pointer != -1) return;
+                  Sounds.play(CoreSounds.INTERFACE_ITEM_HOVERED, 1, 0.6f);
+                  super.enter(event, x, y, pointer, fromActor);
+                }
+              });
+          settingsTable.add(actor).width(500).align(Align.center).pad(0, 10, 20, 10).row();
+        });
 
     ScrollPane scrollPane = Scene2dElementFactory.createScrollPane(settingsTable, false, true);
     scrollPane.setFlickScroll(false);

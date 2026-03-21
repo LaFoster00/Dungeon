@@ -2,6 +2,7 @@ package core.network.codec;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import contrib.entities.CharacterClass;
 import core.network.codec.converters.c2s.ConnectRequestConverter;
 import core.network.codec.converters.c2s.DialogResponseConverter;
 import core.network.codec.converters.c2s.InputMessageConverter;
@@ -16,36 +17,32 @@ import core.network.messages.c2s.RequestEntitySpawn;
 import core.network.messages.c2s.SoundFinishedMessage;
 import core.utils.Point;
 import core.utils.Vector2;
-
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
-/**
- * Tests for c2s message converters.
- */
+/** Tests for c2s message converters. */
 public class C2SConverterTest {
 
   private static final float DELTA = 1e-6f;
   private static final ConnectRequestConverter CONNECT_REQUEST_CONVERTER =
-    new ConnectRequestConverter();
+      new ConnectRequestConverter();
   private static final InputMessageConverter INPUT_MESSAGE_CONVERTER = new InputMessageConverter();
   private static final DialogResponseConverter DIALOG_RESPONSE_CONVERTER =
-    new DialogResponseConverter();
+      new DialogResponseConverter();
   private static final RegisterUdpConverter REGISTER_UDP_CONVERTER = new RegisterUdpConverter();
   private static final RequestEntitySpawnConverter REQUEST_ENTITY_SPAWN_CONVERTER =
-    new RequestEntitySpawnConverter();
+      new RequestEntitySpawnConverter();
   private static final SoundFinishedConverter SOUND_FINISHED_CONVERTER =
-    new SoundFinishedConverter();
+      new SoundFinishedConverter();
 
-  /**
-   * Verifies connect request conversion with session data.
-   */
+  /** Verifies connect request conversion with session data. */
   @Test
   public void testConnectRequestRoundTripWithSession() {
-    byte[] token = new byte[]{1, 2, 3};
-    ConnectRequest request = new ConnectRequest((short) 3, "Alice", 42, token);
+    byte[] token = new byte[] {1, 2, 3};
+    ConnectRequest request =
+        new ConnectRequest((short) 3, "Alice", 42, token, Optional.of(CharacterClass.HUNTER));
 
     core.network.proto.c2s.ConnectRequest proto = CONNECT_REQUEST_CONVERTER.toProto(request);
     assertEquals(3, proto.getProtocolVersion());
@@ -54,17 +51,18 @@ public class C2SConverterTest {
     assertEquals(42, proto.getSessionId());
     assertTrue(proto.hasSessionToken());
     assertArrayEquals(token, proto.getSessionToken().toByteArray());
+    assertTrue(proto.hasCharacterClassId());
+    assertEquals(CharacterClass.HUNTER.ordinal(), proto.getCharacterClassId());
 
     ConnectRequest roundTrip = CONNECT_REQUEST_CONVERTER.fromProto(proto);
     assertEquals(request.protocolVersion(), roundTrip.protocolVersion());
     assertEquals(request.playerName(), roundTrip.playerName());
     assertEquals(request.sessionId(), roundTrip.sessionId());
     assertArrayEquals(request.sessionToken(), roundTrip.sessionToken());
+    assertEquals(request.characterClass(), roundTrip.characterClass());
   }
 
-  /**
-   * Verifies connect request conversion without session data.
-   */
+  /** Verifies connect request conversion without session data. */
   @Test
   public void testConnectRequestRoundTripWithoutSession() {
     ConnectRequest request = new ConnectRequest((short) 1, "Bob");
@@ -74,24 +72,24 @@ public class C2SConverterTest {
     assertEquals("Bob", proto.getPlayerName());
     assertFalse(proto.hasSessionId());
     assertFalse(proto.hasSessionToken());
+    assertFalse(proto.hasCharacterClassId());
 
     ConnectRequest roundTrip = CONNECT_REQUEST_CONVERTER.fromProto(proto);
     assertEquals(0, roundTrip.sessionId());
     assertArrayEquals(new byte[0], roundTrip.sessionToken());
+    assertTrue(roundTrip.characterClass().isEmpty());
   }
 
-  /**
-   * Verifies move action conversion.
-   */
+  /** Verifies move action conversion. */
   @Test
   public void testInputMessageMoveRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        5,
-        10,
-        (short) 7,
-        InputMessage.Action.MOVE,
-        new InputMessage.Move(Vector2.of(1.5f, -2.0f)));
+        new InputMessage(
+            5,
+            10,
+            (short) 7,
+            InputMessage.Action.MOVE,
+            new InputMessage.Move(Vector2.of(1.5f, -2.0f)));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(core.network.proto.c2s.InputMessage.ActionCase.MOVE, proto.getActionCase());
@@ -105,18 +103,16 @@ public class C2SConverterTest {
     assertEquals(-2.0f, move.direction().y(), DELTA);
   }
 
-  /**
-   * Verifies cast skill action conversion.
-   */
+  /** Verifies cast skill action conversion. */
   @Test
   public void testInputMessageCastSkillRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        1,
-        2,
-        (short) 3,
-        InputMessage.Action.CAST_SKILL,
-        new InputMessage.CastSkill(new Point(3.0f, 4.0f), true));
+        new InputMessage(
+            1,
+            2,
+            (short) 3,
+            InputMessage.Action.CAST_SKILL,
+            new InputMessage.CastSkill(new Point(3.0f, 4.0f), true));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(core.network.proto.c2s.InputMessage.ActionCase.CAST_SKILL, proto.getActionCase());
@@ -130,18 +126,16 @@ public class C2SConverterTest {
     assertEquals(4.0f, castSkill.target().y(), DELTA);
   }
 
-  /**
-   * Verifies interact action conversion.
-   */
+  /** Verifies interact action conversion. */
   @Test
   public void testInputMessageInteractRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        9,
-        8,
-        (short) 7,
-        InputMessage.Action.INTERACT,
-        new InputMessage.Interact(new Point(-1.0f, 2.5f)));
+        new InputMessage(
+            9,
+            8,
+            (short) 7,
+            InputMessage.Action.INTERACT,
+            new InputMessage.Interact(new Point(-1.0f, 2.5f)));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(core.network.proto.c2s.InputMessage.ActionCase.INTERACT, proto.getActionCase());
@@ -155,22 +149,20 @@ public class C2SConverterTest {
     assertEquals(2.5f, interact.target().y(), DELTA);
   }
 
-  /**
-   * Verifies next skill action conversion.
-   */
+  /** Verifies next skill action conversion. */
   @Test
   public void testInputMessageNextSkillRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        1,
-        1,
-        (short) 1,
-        InputMessage.Action.NEXT_SKILL,
-        new InputMessage.SkillChange(true, true));
+        new InputMessage(
+            1,
+            1,
+            (short) 1,
+            InputMessage.Action.NEXT_SKILL,
+            new InputMessage.SkillChange(true, true));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(
-      core.network.proto.c2s.InputMessage.ActionCase.SKILL_CHANGE, proto.getActionCase());
+        core.network.proto.c2s.InputMessage.ActionCase.SKILL_CHANGE, proto.getActionCase());
     assertTrue(proto.getSkillChange().getNextSkill());
 
     InputMessage roundTrip = INPUT_MESSAGE_CONVERTER.fromProto(proto);
@@ -179,22 +171,20 @@ public class C2SConverterTest {
     assertTrue(change.nextSkill());
   }
 
-  /**
-   * Verifies previous skill action conversion.
-   */
+  /** Verifies previous skill action conversion. */
   @Test
   public void testInputMessagePrevSkillRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        2,
-        3,
-        (short) 4,
-        InputMessage.Action.PREV_SKILL,
-        new InputMessage.SkillChange(false, true));
+        new InputMessage(
+            2,
+            3,
+            (short) 4,
+            InputMessage.Action.PREV_SKILL,
+            new InputMessage.SkillChange(false, true));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(
-      core.network.proto.c2s.InputMessage.ActionCase.SKILL_CHANGE, proto.getActionCase());
+        core.network.proto.c2s.InputMessage.ActionCase.SKILL_CHANGE, proto.getActionCase());
     assertFalse(proto.getSkillChange().getNextSkill());
 
     InputMessage roundTrip = INPUT_MESSAGE_CONVERTER.fromProto(proto);
@@ -203,14 +193,12 @@ public class C2SConverterTest {
     assertFalse(change.nextSkill());
   }
 
-  /**
-   * Verifies inventory drop action conversion.
-   */
+  /** Verifies inventory drop action conversion. */
   @Test
   public void testInputMessageInventoryDropRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        3, 4, (short) 5, InputMessage.Action.INV_DROP, new InputMessage.InventoryDrop(2));
+        new InputMessage(
+            3, 4, (short) 5, InputMessage.Action.INV_DROP, new InputMessage.InventoryDrop(2));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(core.network.proto.c2s.InputMessage.ActionCase.INV_DROP, proto.getActionCase());
@@ -222,14 +210,12 @@ public class C2SConverterTest {
     assertEquals(2, drop.slotIndex());
   }
 
-  /**
-   * Verifies inventory move action conversion.
-   */
+  /** Verifies inventory move action conversion. */
   @Test
   public void testInputMessageInventoryMoveRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        3, 4, (short) 5, InputMessage.Action.INV_MOVE, new InputMessage.InventoryMove(-1, 4));
+        new InputMessage(
+            3, 4, (short) 5, InputMessage.Action.INV_MOVE, new InputMessage.InventoryMove(-1, 4));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(core.network.proto.c2s.InputMessage.ActionCase.INV_MOVE, proto.getActionCase());
@@ -243,14 +229,12 @@ public class C2SConverterTest {
     assertEquals(4, move.toSlot());
   }
 
-  /**
-   * Verifies inventory use action conversion.
-   */
+  /** Verifies inventory use action conversion. */
   @Test
   public void testInputMessageInventoryUseRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        3, 4, (short) 5, InputMessage.Action.INV_USE, new InputMessage.InventoryUse(7));
+        new InputMessage(
+            3, 4, (short) 5, InputMessage.Action.INV_USE, new InputMessage.InventoryUse(7));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(core.network.proto.c2s.InputMessage.ActionCase.INV_USE, proto.getActionCase());
@@ -262,41 +246,37 @@ public class C2SConverterTest {
     assertEquals(7, use.slotIndex());
   }
 
-  /**
-   * Verifies toggle inventory action conversion.
-   */
+  /** Verifies toggle inventory action conversion. */
   @Test
   public void testInputMessageToggleInventoryRoundTrip() {
     InputMessage message =
-      new InputMessage(
-        1,
-        1,
-        (short) 1,
-        InputMessage.Action.TOGGLE_INVENTORY,
-        new InputMessage.ToggleInventory());
+        new InputMessage(
+            1,
+            1,
+            (short) 1,
+            InputMessage.Action.TOGGLE_INVENTORY,
+            new InputMessage.ToggleInventory());
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(
-      core.network.proto.c2s.InputMessage.ActionCase.TOGGLE_INVENTORY, proto.getActionCase());
+        core.network.proto.c2s.InputMessage.ActionCase.TOGGLE_INVENTORY, proto.getActionCase());
 
     InputMessage roundTrip = INPUT_MESSAGE_CONVERTER.fromProto(proto);
     assertEquals(InputMessage.Action.TOGGLE_INVENTORY, roundTrip.action());
     roundTrip.payloadAs(InputMessage.ToggleInventory.class);
   }
 
-  /**
-   * Verifies custom action conversion.
-   */
+  /** Verifies custom action conversion. */
   @Test
   public void testInputMessageCustomRoundTrip() {
-    byte[] payload = new byte[]{4, 5, 6};
+    byte[] payload = new byte[] {4, 5, 6};
     InputMessage message =
-      new InputMessage(
-        10,
-        20,
-        (short) 30,
-        InputMessage.Action.CUSTOM,
-        new InputMessage.Custom("escapeRoom:hint_log.open", payload, 2));
+        new InputMessage(
+            10,
+            20,
+            (short) 30,
+            InputMessage.Action.CUSTOM,
+            new InputMessage.Custom("escapeRoom:hint_log.open", payload, 2));
 
     core.network.proto.c2s.InputMessage proto = INPUT_MESSAGE_CONVERTER.toProto(message);
     assertEquals(core.network.proto.c2s.InputMessage.ActionCase.CUSTOM, proto.getActionCase());
@@ -312,21 +292,19 @@ public class C2SConverterTest {
     assertEquals(2, custom.schemaVersion());
   }
 
-  /**
-   * Verifies fallback defaults for custom action metadata.
-   */
+  /** Verifies fallback defaults for custom action metadata. */
   @Test
   public void testInputMessageCustomFromProtoDefaults() {
     core.network.proto.c2s.InputMessage proto =
-      core.network.proto.c2s.InputMessage.newBuilder()
-        .setSessionId(3)
-        .setClientTick(4)
-        .setSequence(5)
-        .setCustom(
-          core.network.proto.c2s.CustomAction.newBuilder()
-            .setCommandId("escapeRoom:hint_log.open")
-            .build())
-        .build();
+        core.network.proto.c2s.InputMessage.newBuilder()
+            .setSessionId(3)
+            .setClientTick(4)
+            .setSequence(5)
+            .setCustom(
+                core.network.proto.c2s.CustomAction.newBuilder()
+                    .setCommandId("escapeRoom:hint_log.open")
+                    .build())
+            .build();
 
     InputMessage roundTrip = INPUT_MESSAGE_CONVERTER.fromProto(proto);
     assertEquals(InputMessage.Action.CUSTOM, roundTrip.action());
@@ -336,29 +314,25 @@ public class C2SConverterTest {
     assertEquals(1, custom.schemaVersion());
   }
 
-  /**
-   * Ensures input message actions are required.
-   */
+  /** Ensures input message actions are required. */
   @Test
   public void testInputMessageActionRequired() {
     core.network.proto.c2s.InputMessage proto =
-      core.network.proto.c2s.InputMessage.newBuilder()
-        .setSessionId(1)
-        .setClientTick(2)
-        .setSequence(3)
-        .build();
+        core.network.proto.c2s.InputMessage.newBuilder()
+            .setSessionId(1)
+            .setClientTick(2)
+            .setSequence(3)
+            .build();
 
     assertThrows(IllegalArgumentException.class, () -> INPUT_MESSAGE_CONVERTER.fromProto(proto));
   }
 
-  /**
-   * Verifies dialog response conversion with custom data and closed callback.
-   */
+  /** Verifies dialog response conversion with custom data and closed callback. */
   @Test
   public void testDialogResponseClosedRoundTrip() {
     DialogResponseMessage message =
-      new DialogResponseMessage(
-        "dialog-1", null, new DialogResponseMessage.StringValue("payload"));
+        new DialogResponseMessage(
+            "dialog-1", null, new DialogResponseMessage.StringValue("payload"));
 
     core.network.proto.c2s.DialogResponseMessage proto = DIALOG_RESPONSE_CONVERTER.toProto(message);
     assertEquals("dialog-1", proto.getDialogId());
@@ -369,13 +343,11 @@ public class C2SConverterTest {
     assertEquals("dialog-1", roundTrip.dialogId());
     assertNull(roundTrip.callbackKey());
     DialogResponseMessage.StringValue payload =
-      roundTrip.payloadAs(DialogResponseMessage.StringValue.class);
+        roundTrip.payloadAs(DialogResponseMessage.StringValue.class);
     assertEquals("payload", payload.value());
   }
 
-  /**
-   * Verifies dialog response conversion without custom data.
-   */
+  /** Verifies dialog response conversion without custom data. */
   @Test
   public void testDialogResponseRoundTrip() {
     DialogResponseMessage message = new DialogResponseMessage("dialog-2", "onConfirm", null);
@@ -384,8 +356,8 @@ public class C2SConverterTest {
     assertEquals("dialog-2", proto.getDialogId());
     assertEquals("onConfirm", proto.getCallbackKey());
     assertEquals(
-      core.network.proto.c2s.DialogResponseMessage.PayloadCase.PAYLOAD_NOT_SET,
-      proto.getPayloadCase());
+        core.network.proto.c2s.DialogResponseMessage.PayloadCase.PAYLOAD_NOT_SET,
+        proto.getPayloadCase());
 
     DialogResponseMessage roundTrip = DIALOG_RESPONSE_CONVERTER.fromProto(proto);
     assertEquals("dialog-2", roundTrip.dialogId());
@@ -393,45 +365,43 @@ public class C2SConverterTest {
     assertNull(roundTrip.payload());
   }
 
-  /**
-   * Verifies custom payload codec roundtrip via CUSTOM_VALUE.
-   */
+  /** Verifies custom payload codec roundtrip via CUSTOM_VALUE. */
   @Test
   public void testDialogResponseCustomPayloadRoundTrip() {
     DialogValueCodecRegistry registry = DialogValueCodecRegistry.global();
     if (registry.byTypeId("C2SConverterTestPayload").isEmpty()) {
       registry.register(
-        new DialogValueCodec<TestPayload>() {
-          @Override
-          public String typeId() {
-            return "C2SConverterTestPayload";
-          }
+          new DialogValueCodec<TestPayload>() {
+            @Override
+            public String typeId() {
+              return "C2SConverterTestPayload";
+            }
 
-          @Override
-          public Class<TestPayload> type() {
-            return TestPayload.class;
-          }
+            @Override
+            public Class<TestPayload> type() {
+              return TestPayload.class;
+            }
 
-          @Override
-          public byte[] encode(TestPayload value) {
-            return (value.label() + "|" + value.count()).getBytes(StandardCharsets.UTF_8);
-          }
+            @Override
+            public byte[] encode(TestPayload value) {
+              return (value.label() + "|" + value.count()).getBytes(StandardCharsets.UTF_8);
+            }
 
-          @Override
-          public TestPayload decode(byte[] data) {
-            String[] parts = new String(data, StandardCharsets.UTF_8).split("\\|");
-            return new TestPayload(parts[0], Integer.parseInt(parts[1]));
-          }
-        });
+            @Override
+            public TestPayload decode(byte[] data) {
+              String[] parts = new String(data, StandardCharsets.UTF_8).split("\\|");
+              return new TestPayload(parts[0], Integer.parseInt(parts[1]));
+            }
+          });
     }
 
     DialogResponseMessage message =
-      new DialogResponseMessage("dialog-custom", "onCustom", new TestPayload("hello", 17));
+        new DialogResponseMessage("dialog-custom", "onCustom", new TestPayload("hello", 17));
 
     core.network.proto.c2s.DialogResponseMessage proto = DIALOG_RESPONSE_CONVERTER.toProto(message);
     assertEquals(
-      core.network.proto.c2s.DialogResponseMessage.PayloadCase.CUSTOM_VALUE,
-      proto.getPayloadCase());
+        core.network.proto.c2s.DialogResponseMessage.PayloadCase.CUSTOM_VALUE,
+        proto.getPayloadCase());
     assertEquals("C2SConverterTestPayload", proto.getCustomValue().getTypeId());
 
     DialogResponseMessage roundTrip = DIALOG_RESPONSE_CONVERTER.fromProto(proto);
@@ -440,65 +410,61 @@ public class C2SConverterTest {
     assertEquals(17, payload.count());
   }
 
-  /**
-   * Verifies custom codec decode fallback to {@link DialogResponseMessage.CustomPayload}.
-   */
+  /** Verifies custom codec decode fallback to {@link DialogResponseMessage.CustomPayload}. */
   @Test
   public void testDialogResponseCustomPayloadWrapperRoundTrip() {
     DialogValueCodecRegistry registry = DialogValueCodecRegistry.global();
     if (registry.byTypeId("C2SConverterTestData").isEmpty()) {
       registry.register(
-        new DialogValueCodec<TestData>() {
-          @Override
-          public String typeId() {
-            return "C2SConverterTestData";
-          }
+          new DialogValueCodec<TestData>() {
+            @Override
+            public String typeId() {
+              return "C2SConverterTestData";
+            }
 
-          @Override
-          public Class<TestData> type() {
-            return TestData.class;
-          }
+            @Override
+            public Class<TestData> type() {
+              return TestData.class;
+            }
 
-          @Override
-          public byte[] encode(TestData value) {
-            return (value.label() + "|" + value.count()).getBytes(StandardCharsets.UTF_8);
-          }
+            @Override
+            public byte[] encode(TestData value) {
+              return (value.label() + "|" + value.count()).getBytes(StandardCharsets.UTF_8);
+            }
 
-          @Override
-          public TestData decode(byte[] data) {
-            String[] parts = new String(data, StandardCharsets.UTF_8).split("\\|");
-            return new TestData(parts[0], Integer.parseInt(parts[1]));
-          }
-        });
+            @Override
+            public TestData decode(byte[] data) {
+              String[] parts = new String(data, StandardCharsets.UTF_8).split("\\|");
+              return new TestData(parts[0], Integer.parseInt(parts[1]));
+            }
+          });
     }
 
     core.network.proto.c2s.DialogResponseMessage proto =
-      core.network.proto.c2s.DialogResponseMessage.newBuilder()
-        .setDialogId("dialog-wrapper")
-        .setCallbackKey("onWrapper")
-        .setCustomValue(
-          core.network.proto.common.CustomValue.newBuilder()
-            .setTypeId("C2SConverterTestData")
-            .setData(
-              com.google.protobuf.ByteString.copyFrom(
-                "wrapped|99".getBytes(StandardCharsets.UTF_8))))
-        .build();
+        core.network.proto.c2s.DialogResponseMessage.newBuilder()
+            .setDialogId("dialog-wrapper")
+            .setCallbackKey("onWrapper")
+            .setCustomValue(
+                core.network.proto.common.CustomValue.newBuilder()
+                    .setTypeId("C2SConverterTestData")
+                    .setData(
+                        com.google.protobuf.ByteString.copyFrom(
+                            "wrapped|99".getBytes(StandardCharsets.UTF_8))))
+            .build();
 
     DialogResponseMessage roundTrip = DIALOG_RESPONSE_CONVERTER.fromProto(proto);
     DialogResponseMessage.CustomPayload wrapped =
-      roundTrip.payloadAs(DialogResponseMessage.CustomPayload.class);
+        roundTrip.payloadAs(DialogResponseMessage.CustomPayload.class);
     assertTrue(wrapped.value() instanceof TestData);
     TestData value = (TestData) wrapped.value();
     assertEquals("wrapped", value.label());
     assertEquals(99, value.count());
   }
 
-  /**
-   * Verifies UDP registration conversion.
-   */
+  /** Verifies UDP registration conversion. */
   @Test
   public void testRegisterUdpRoundTrip() {
-    byte[] token = new byte[]{5, 6};
+    byte[] token = new byte[] {5, 6};
     RegisterUdp message = new RegisterUdp(12, token, (short) 4);
 
     core.network.proto.c2s.RegisterUdp proto = REGISTER_UDP_CONVERTER.toProto(message);
@@ -512,24 +478,20 @@ public class C2SConverterTest {
     assertEquals(4, roundTrip.clientId());
   }
 
-  /**
-   * Verifies entity spawn request conversion.
-   */
+  /** Verifies entity spawn request conversion. */
   @Test
   public void testRequestEntitySpawnRoundTrip() {
     RequestEntitySpawn message = new RequestEntitySpawn(99);
 
     core.network.proto.c2s.RequestEntitySpawn proto =
-      REQUEST_ENTITY_SPAWN_CONVERTER.toProto(message);
+        REQUEST_ENTITY_SPAWN_CONVERTER.toProto(message);
     assertEquals(99, proto.getEntityId());
 
     RequestEntitySpawn roundTrip = REQUEST_ENTITY_SPAWN_CONVERTER.fromProto(proto);
     assertEquals(99, roundTrip.entityId());
   }
 
-  /**
-   * Verifies sound finished message conversion.
-   */
+  /** Verifies sound finished message conversion. */
   @Test
   public void testSoundFinishedRoundTrip() {
     SoundFinishedMessage message = new SoundFinishedMessage(123L);
@@ -541,9 +503,7 @@ public class C2SConverterTest {
     assertEquals(123L, roundTrip.soundInstanceId());
   }
 
-  private record TestPayload(String label, int count) implements DialogResponseMessage.Payload {
-  }
+  private record TestPayload(String label, int count) implements DialogResponseMessage.Payload {}
 
-  private record TestData(String label, int count) implements Serializable {
-  }
+  private record TestData(String label, int count) implements Serializable {}
 }

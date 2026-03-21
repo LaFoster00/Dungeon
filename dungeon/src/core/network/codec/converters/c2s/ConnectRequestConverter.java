@@ -5,20 +5,19 @@ import com.google.protobuf.Parser;
 import core.network.codec.CommonProtoConverters;
 import core.network.codec.MessageConverter;
 import core.network.messages.c2s.ConnectRequest;
+import java.util.Optional;
 
-/**
- * Converter for client-to-server connect request messages.
- */
+/** Converter for client-to-server connect request messages. */
 public final class ConnectRequestConverter
-  implements MessageConverter<ConnectRequest, core.network.proto.c2s.ConnectRequest> {
+    implements MessageConverter<ConnectRequest, core.network.proto.c2s.ConnectRequest> {
   private static final byte WIRE_TYPE_ID = 1;
 
   @Override
   public core.network.proto.c2s.ConnectRequest toProto(ConnectRequest request) {
     core.network.proto.c2s.ConnectRequest.Builder builder =
-      core.network.proto.c2s.ConnectRequest.newBuilder()
-        .setProtocolVersion(request.protocolVersion())
-        .setPlayerName(request.playerName());
+        core.network.proto.c2s.ConnectRequest.newBuilder()
+            .setProtocolVersion(request.protocolVersion())
+            .setPlayerName(request.playerName());
     if (request.sessionId() != 0) {
       builder.setSessionId(request.sessionId());
     }
@@ -26,6 +25,9 @@ public final class ConnectRequestConverter
     if (token != null && token.length > 0) {
       builder.setSessionToken(ByteString.copyFrom(token));
     }
+    request
+        .characterClass()
+        .ifPresent(characterClass -> builder.setCharacterClassId(characterClass.ordinal()));
     return builder.build();
   }
 
@@ -34,10 +36,16 @@ public final class ConnectRequestConverter
     int sessionId = proto.hasSessionId() ? proto.getSessionId() : 0;
     byte[] token = proto.hasSessionToken() ? proto.getSessionToken().toByteArray() : new byte[0];
     return new ConnectRequest(
-      CommonProtoConverters.toShortExact(proto.getProtocolVersion(), "protocol_version"),
-      proto.getPlayerName(),
-      sessionId,
-      token);
+        CommonProtoConverters.toShortExact(proto.getProtocolVersion(), "protocol_version"),
+        proto.getPlayerName(),
+        sessionId,
+        token,
+        proto.hasCharacterClassId()
+            ? Optional.of(
+                contrib.entities.CharacterClass.fromByteId(
+                    CommonProtoConverters.toByteExact(
+                        proto.getCharacterClassId(), "character_class_id")))
+            : Optional.empty());
   }
 
   @Override
