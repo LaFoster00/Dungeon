@@ -1,7 +1,6 @@
 package dgir.dialect.builtin;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
@@ -11,9 +10,10 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
-import static dgir.dialect.builtin.BuiltinOps.*;
 import static dgir.dialect.builtin.BuiltinAttrs.*;
-import static dgir.dialect.builtin.BuiltinTypes.*;
+import static dgir.dialect.builtin.BuiltinOps.ProgramOp;
+import static dgir.dialect.builtin.BuiltinTypes.FloatT;
+import static dgir.dialect.builtin.BuiltinTypes.IntegerT;
 
 /**
  * The {@code builtin} dialect provides the fundamental building blocks shared by all other
@@ -65,18 +65,18 @@ public class BuiltinDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return DgirCoreUtils.Dialect.allOps(BuiltinDialect.class, BuiltinOps.class);
+    return allOps(BuiltinOps.class);
   }
 
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Type> allTypes() {
-    return DgirCoreUtils.Dialect.allTypes(BuiltinDialect.class, BuiltinTypes.class);
+    return allTypes(BuiltinTypes.class);
   }
 
   @Contract(pure = true)
   @Override
   public @Unmodifiable @NotNull List<Attribute> allAttributes() {
-    return DgirCoreUtils.Dialect.allAttributes(BuiltinDialect.class, BuiltinAttrs.class);
+    return allAttributes(BuiltinAttrs.class);
   }
 }

@@ -1,7 +1,6 @@
 package dgir.dialect.scf;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
@@ -52,7 +51,7 @@ public class ScfDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return DgirCoreUtils.Dialect.allOps(ScfDialect.class, ScfOps.class);
+    return allOps(ScfOps.class);
   }
 
   @Contract(pure = true)

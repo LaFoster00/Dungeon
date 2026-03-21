@@ -1,7 +1,6 @@
 package dgir.dialect.func;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
@@ -12,7 +11,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 
 import static dgir.dialect.func.FuncOps.*;
-import static dgir.dialect.func.FuncTypes.*;
+import static dgir.dialect.func.FuncTypes.FuncType;
 
 /**
  * The {@code func} dialect provides function-definition and call operations.
@@ -56,13 +55,13 @@ public class FuncDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return DgirCoreUtils.Dialect.allOps(FuncDialect.class, FuncOps.class);
+    return allOps(FuncOps.class);
   }
 
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Type> allTypes() {
-    return DgirCoreUtils.Dialect.allTypes(FuncDialect.class, FuncTypes.class);
+    return allTypes(FuncTypes.class);
   }
 
   @Contract(pure = true)

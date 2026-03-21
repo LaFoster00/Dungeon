@@ -1,7 +1,6 @@
 package dgir.dialect.str;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
@@ -31,16 +30,16 @@ public class StrDialect extends Dialect {
 
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return DgirCoreUtils.Dialect.allOps(StrDialect.class, StrOps.class);
+    return allOps(StrOps.class);
   }
 
   @Override
   public @NotNull @Unmodifiable List<Type> allTypes() {
-    return DgirCoreUtils.Dialect.allTypes(StrDialect.class, StrTypes.class);
+    return allTypes(StrTypes.class);
   }
 
   @Override
   public @NotNull @Unmodifiable List<Attribute> allAttributes() {
-    return DgirCoreUtils.Dialect.allAttributes(StrDialect.class, StrAttrs.class);
+    return allAttributes(StrAttrs.class);
   }
 }

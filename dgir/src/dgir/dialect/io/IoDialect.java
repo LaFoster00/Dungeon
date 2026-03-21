@@ -1,7 +1,6 @@
 package dgir.dialect.io;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
@@ -11,7 +10,8 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
-import static dgir.dialect.io.IoOps.*;
+import static dgir.dialect.io.IoOps.ConsoleInOp;
+import static dgir.dialect.io.IoOps.PrintOp;
 
 /**
  * The {@code io} dialect provides basic console input/output operations.
@@ -48,7 +48,7 @@ public class IoDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return DgirCoreUtils.Dialect.allOps(IoDialect.class, IoOps.class);
+    return allOps(IoOps.class);
   }
 
   @Contract(pure = true)

@@ -1,7 +1,6 @@
 package dgir.dialect.cf;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
@@ -11,7 +10,8 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
-import static dgir.dialect.cf.CfOps.*;
+import static dgir.dialect.cf.CfOps.BranchCondOp;
+import static dgir.dialect.cf.CfOps.BranchOp;
 
 /**
  * The {@code cf} dialect provides low-level control-flow operations.
@@ -48,7 +48,7 @@ public class CfDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return DgirCoreUtils.Dialect.allOps(CfDialect.class, CfOps.class);
+    return allOps(CfOps.class);
   }
 
   @Contract(pure = true)
