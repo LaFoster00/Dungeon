@@ -1,6 +1,6 @@
 package blockly.dgir.compiler.java.transformations;
 
-import blockly.dgir.compiler.java.ConversionUtils;
+import blockly.dgir.compiler.java.ImplicitConversionUtils;
 import blockly.dgir.compiler.java.EmitContext;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Node;
@@ -43,15 +43,19 @@ public class ImplicitCastElimination extends GenericVisitorAdapter<Boolean, Emit
       EmitContext context) {
     if (targetType.describe().equals(valueType.describe())) return Optional.of(value);
 
-    ConversionUtils.Conversion conversion =
-        ConversionUtils.detectImplicitConversion(valueType, targetType);
-    if (!(conversion instanceof ConversionUtils.Conversion.None)) {
+    ImplicitConversionUtils.Conversion conversion =
+        ImplicitConversionUtils.detectImplicitConversion(valueType, targetType);
+    if (!(conversion instanceof ImplicitConversionUtils.Conversion.None)) {
       Type castType;
       switch (conversion) {
-        case ConversionUtils.Conversion.Boxing boxing -> castType = boxing.to();
-        case ConversionUtils.Conversion.Unboxing unboxing -> castType = unboxing.to();
-        case ConversionUtils.Conversion.Generic generic -> castType = generic.to();
-        case ConversionUtils.Conversion.Invalid invalid -> {
+        case ImplicitConversionUtils.Conversion.Boxing boxing -> castType = boxing.to();
+        case ImplicitConversionUtils.Conversion.Unboxing unboxing -> castType = unboxing.to();
+        case ImplicitConversionUtils.Conversion.Generic generic ->
+            castType = StaticJavaParser.parseType("Object");
+        case ImplicitConversionUtils.Conversion.Direct direct -> {
+          return Optional.of(value);
+        }
+        case ImplicitConversionUtils.Conversion.Invalid invalid -> {
           context.emitError(
               n,
               "Invalid implicit conversion from "

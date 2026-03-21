@@ -9,18 +9,48 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
-public class ConversionUtils {
-  private ConversionUtils() {}
+public class ImplicitConversionUtils {
+  private ImplicitConversionUtils() {}
 
   public sealed interface Conversion {
+    /**
+     * Indicates that the conversion is boxing a primitive (e.g. primitive -> box)
+     *
+     * @param from the primitive type to convert from.
+     * @param to the boxed type to convert to.
+     */
     record Boxing(ResolvedPrimitiveType from, Type to) implements Conversion {}
 
+    /**
+     * Indicates that the conversion is unboxing a primitive (e.g. box -> primitive)
+     *
+     * @param from the boxed type to convert from.
+     * @param to the primitive type to convert to.
+     */
     record Unboxing(ResolvedReferenceType from, Type to) implements Conversion {}
 
-    record Generic(ResolvedType from, Type to) implements Conversion {}
+    /**
+     * Indicates that the conversion is implicit and requires no transformation (e.g. primitive ->
+     * object)
+     *
+     * @param from the type to convert from.
+     */
+    record Generic(ResolvedType from) implements Conversion {}
 
-    record None(ResolvedType from, ResolvedType to) implements Conversion {}
+    /**
+     * Indicates that the conversion is implicit but no transformation is necessary (e.g. null ->
+     * reference type).
+     */
+    record Direct() implements Conversion {}
 
+    /** Indicates that no implicit conversion is necessary. */
+    record None() implements Conversion {}
+
+    /**
+     * Indicates that the conversion is invalid and cannot be performed.
+     *
+     * @param message the reason for the invalid conversion.
+     */
     record Invalid(String message) implements Conversion {}
   }
 
@@ -36,7 +66,7 @@ public class ConversionUtils {
       // Generic: primitive -> object (e.g. generic function argument)
       else if (to.isTypeVariable()) {
         if (to.isAssignableBy(from)) {
-          return new Conversion.Generic(from, StaticJavaParser.parseType("Object"));
+          return new Conversion.Generic(from);
         }
       }
     }
@@ -53,7 +83,7 @@ public class ConversionUtils {
       // Generic: explicitType -> object
       else if (to.isTypeVariable()) {
         if (to.isAssignableBy(from)) {
-          return new Conversion.Generic(from, StaticJavaParser.parseType("Object"));
+          return new Conversion.Generic(from);
         }
       }
     }
@@ -70,12 +100,20 @@ public class ConversionUtils {
                   + " to "
                   + to.describe());
         if (to.isAssignableBy(from)) {
-          return new Conversion.Generic(from, StaticJavaParser.parseType("Object"));
+          return new Conversion.Generic(from);
         }
       }
     }
 
-    return new Conversion.None(from, to);
+    if (from.isNull()) {
+      if (to.isPrimitive()) {
+        return new Conversion.Invalid(
+            "Cannot convert from null type to primitive type " + to.describe());
+      }
+      return new Conversion.Direct();
+    }
+
+    return new Conversion.None();
   }
 
   /**
