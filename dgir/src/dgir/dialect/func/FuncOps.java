@@ -286,7 +286,13 @@ public sealed interface FuncOps {
    * }</pre>
    */
   final class FuncOp extends FuncBaseOp
-      implements FuncOps, ImplicitTerminator, ISymbol, IIsolatedFromAbove, IGlobal, ISingleRegion {
+      implements FuncOps,
+          ImplicitTerminator,
+          ISymbol,
+          IIsolatedFromAbove,
+          IGlobal,
+          ISingleRegion,
+          INoResult {
 
     // =========================================================================
     // Type Info
@@ -346,8 +352,7 @@ public sealed interface FuncOps {
      * @param type the function signature.
      */
     public FuncOp(@NotNull Location location, @NotNull String name, @NotNull FuncType type) {
-      setOperation(
-          true, Operation.Create(location, this, null, null, type.getOutput(), type.getInputs()));
+      setOperation(true, Operation.Create(location, this, null, null, null, type.getInputs()));
       getFuncNameAttribute().setValue(name);
       getTypeAttribute().setType(type);
     }

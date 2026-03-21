@@ -1,8 +1,9 @@
 package dgir.core.ir;
 
-import dgir.core.OperationVerifier;
 import dgir.core.DgirCoreUtils;
+import dgir.core.OperationVerifier;
 import dgir.core.debug.Location;
+import dgir.core.debug.ValueDebugInfo;
 import dgir.core.serialization.OperationDeserializer;
 import dgir.core.serialization.OperationSerializer;
 import dgir.core.traits.IOpTrait;
@@ -790,6 +791,19 @@ public final class Operation implements Serializable {
   @Override
   public @NotNull String toString() {
     StringBuilder sb = new StringBuilder();
+
+    if (output != null) {
+      sb.append("%");
+      if (output.getValue().getDebugInfo().equals(ValueDebugInfo.UNKNOWN)) {
+        sb.append(output.getValue().getType());
+      } else {
+        sb.append(output.getValue().getDebugInfo().name());
+      }
+      sb.append(" :");
+      sb.append(output.getValue().getType());
+      sb.append(" = ");
+    }
+
     sb.append(getDetails().ident());
 
     sb.append(" (");
@@ -805,11 +819,6 @@ public final class Operation implements Serializable {
     }
     sb.append(")");
 
-    if (!location.equals(Location.UNKNOWN)) {
-      sb.append(" @ ");
-      sb.append(location);
-    }
-
     if (!attributes.isEmpty()) {
       String attrs =
           attributes.values().stream()
@@ -824,6 +833,22 @@ public final class Operation implements Serializable {
         sb.append(" ]");
       }
     }
+
+    if (!getSuccessors().isEmpty()) {
+      sb.append("==> [");
+      sb.append(
+          getSuccessors().stream()
+              .map(Block::getIndex)
+              .map(Objects::toString)
+              .collect(Collectors.joining(", ")));
+      sb.append("]");
+    }
+
+    if (!location.equals(Location.UNKNOWN)) {
+      sb.append(" @ ");
+      sb.append(location);
+    }
+
     sb.append(
         regions.stream()
             .map(region -> "{ [" + region.getIndex() + "] {" + region.getBlocks().size() + "} }")

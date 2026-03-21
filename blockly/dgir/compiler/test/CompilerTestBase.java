@@ -1,6 +1,7 @@
 import blockly.dgir.compiler.java.JavaCompiler;
 import blockly.dgir.vm.dialect.dg.DungeonDialectRunner;
 import dgir.core.DgirCoreUtils;
+import dgir.core.IrToText;
 import dgir.core.serialization.Utils;
 import dgir.dialect.builtin.BuiltinOps;
 import dgir.vm.api.DialectRunner;
@@ -22,8 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CompilerTestBase {
   public static boolean printSource = false;
   public static boolean saveSource = true;
-  public static boolean printResult = true;
-  public static boolean saveResult = true;
+  public static boolean printJsonResult = true;
+  public static boolean saveJsonResult = true;
+  public static boolean printDgirResult = true;
+  public static boolean saveDgirResult = true;
   public static String savePath = "test_results/";
   public static VM vm = new VM();
 
@@ -67,12 +70,9 @@ public class CompilerTestBase {
     }
 
     String result = Utils.getMapper(true).writeValueAsString(programOp.get());
-    assertTrue(
-        programOp.get().verify(true),
-        "Verification failed for " + callerName + ":\n" + result + "\n");
 
-    if (printResult) System.out.println(result);
-    if (saveResult) {
+    if (printJsonResult) System.out.println(result);
+    if (saveJsonResult) {
       String filePath = savePath + callerName + ".json";
       try {
         BufferedWriter writer = Files.newBufferedWriter(Paths.get(filePath), UTF_8);
@@ -83,6 +83,23 @@ public class CompilerTestBase {
         System.out.println("Failed to save result to " + filePath + ": " + e);
       }
     }
+
+    if (printDgirResult) System.out.println(IrToText.toText(programOp.get().getOperation()));
+    if (saveDgirResult) {
+      String filePath = savePath + callerName + ".dgir";
+      try {
+        BufferedWriter writer = Files.newBufferedWriter(Paths.get(filePath), UTF_8);
+        writer.write(IrToText.toText(programOp.get().getOperation()));
+        writer.close();
+        System.out.println("Saved result to " + filePath);
+      } catch (IOException e) {
+        System.out.println("Failed to save result to " + filePath + ": " + e);
+      }
+    }
+
+    assertTrue(
+        programOp.get().verify(true),
+        "Verification failed for " + callerName + ":\n" + result + "\n");
 
     if (!run) return;
 
