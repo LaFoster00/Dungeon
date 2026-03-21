@@ -44,6 +44,6 @@ public class Hero {
   public static native boolean isNearComponent(Class<? extends Component>  component, Direction direction);
    */
 
-  @Intrinsic("Dungeon.Hero.active(Dungeon.Direction)")
-  public static native boolean active(Direction direction);
+  @Intrinsic("Dungeon.Hero.isActive(Dungeon.Direction)")
+  public static native boolean isActive(Direction direction);
 }

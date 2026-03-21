@@ -39,7 +39,7 @@ public class %ClassName {
 
     boolean nearTile = Hero.isNearTile(LevelElement.WALL, Direction.INFRONT);
     boolean matchesTile = Hero.matchesTile(LevelElement.FLOOR, LevelElement.FLOOR);
-    boolean active = Hero.active(Direction.LEFT);
+    boolean active = Hero.isActive(Direction.LEFT);
   }
 }
 """;

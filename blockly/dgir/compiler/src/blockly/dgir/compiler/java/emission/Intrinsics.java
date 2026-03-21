@@ -98,7 +98,7 @@ public class Intrinsics {
                     ArithAttrs.BinModeAttr.BinMode.EQ));
         return EmitResult.of(Optional.of(op.getResult()));
       }
-      case "Dungeon.Hero.active(Dungeon.Direction)" -> {
+      case "Dungeon.Hero.isActive(Dungeon.Direction)" -> {
         EmitResult<List<Value>> arguments = visitRValueNodeList(n.getArguments(), context);
         if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
         Value directionValue = arguments.get().getFirst();
