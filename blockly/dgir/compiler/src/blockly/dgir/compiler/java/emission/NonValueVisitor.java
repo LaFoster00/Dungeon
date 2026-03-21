@@ -554,12 +554,12 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
     try (var conditionSymScope = new EmitContext.SymbolScope(context, false)) {
       try (var conditionInsertion =
           context.setInsertionPoint(whileOp.getConditionRegion().getEntryBlock(), -1)) {
-        Block conditionContinueBlock = whileOp.getConditionRegion().addBlock(new Block());
-        conditionContinueBlock.addOperation(new ScfOps.ContinueOp(context.loc(n)));
-        Block conditionBreakBlock = whileOp.getConditionRegion().addBlock(new Block());
-        conditionBreakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
-
         if (n.getCompare().isPresent()) {
+          Block conditionContinueBlock = whileOp.getConditionRegion().addBlock(new Block());
+          conditionContinueBlock.addOperation(new ScfOps.ContinueOp(context.loc(n)));
+          Block conditionBreakBlock = whileOp.getConditionRegion().addBlock(new Block());
+          conditionBreakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
+
           EmitResult<Value> compareResult =
               EmitResult.ofNullable(n.getCompare().get().accept(RValueVisitor.get(), context));
           if (compareResult.isFailure()) {
@@ -586,50 +586,45 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
           return EmitResult.failure();
         }
 
-        if (n.getBody().isBlockStmt()) {
-          BlockStmt blockStmt = n.getBody().asBlockStmt();
-          // If there was a call to break or continue the skip and break flags are added
-          // In case they exists we need to create a block for the update and one for the
-          // terminate condition
-          // Otherwise, just emit the update result.
-          if (containsLocalFlag(blockStmt, "skip")) {
-            // Create the update block. This is only called if there are no break statements in
-            // the loop
-            // body.
-            Block updateBlock = whileOp.getBodyRegion().addBlock(new Block());
-            try (var updateInsertion = context.setInsertionPoint(updateBlock, -1)) {
-              EmitResult<List<Value>> updateResult = visitRValueNodeList(n.getUpdate(), context);
-              if (updateResult.isFailure()) {
-                return EmitResult.failure();
-              }
-            }
-
-            // Create the break block. This is called if there was a break statement in the loop
-            // body.
-            Block breakBlock = whileOp.getBodyRegion().addBlock(new Block());
-            breakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
-
-            // Create the branch to break or continue
-            // The second operation is the constant op defining the skip flag
-            context.insert(
-                new CfOps.BranchCondOp(
-                    context.loc(n),
-                    whileOp
-                        .getBodyRegion()
-                        .getEntryBlock()
-                        .getOperations()
-                        .get(1)
-                        .getOutputValueOrThrow(),
-                    breakBlock,
-                    updateBlock));
-          } else {
+        // If there was a call to break or continue the skip and break flags are added
+        // In case they exists we need to create a block for the update and one for the
+        // terminate condition
+        // Otherwise, just emit the update result.
+        if (containsLocalFlag(n.getBody(), "skip")) {
+          // Create the update block. This is only called if there are no break statements in
+          // the loop
+          // body.
+          Block updateBlock = whileOp.getBodyRegion().addBlock(new Block());
+          try (var updateInsertion = context.setInsertionPoint(updateBlock, -1)) {
             EmitResult<List<Value>> updateResult = visitRValueNodeList(n.getUpdate(), context);
             if (updateResult.isFailure()) {
               return EmitResult.failure();
             }
           }
+
+          // Create the break block. This is called if there was a break statement in the loop
+          // body.
+          Block breakBlock = whileOp.getBodyRegion().addBlock(new Block());
+          breakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
+
+          // Create the branch to break or continue
+          // The second operation is the constant op defining the skip flag
+          context.insert(
+              new CfOps.BranchCondOp(
+                  context.loc(n),
+                  whileOp
+                      .getBodyRegion()
+                      .getEntryBlock()
+                      .getOperations()
+                      .get(1)
+                      .getOutputValueOrThrow(),
+                  breakBlock,
+                  updateBlock));
         } else {
-          return EmitResult.failure(context, n, "Failed to emit body of for loop");
+          EmitResult<List<Value>> updateResult = visitRValueNodeList(n.getUpdate(), context);
+          if (updateResult.isFailure()) {
+            return EmitResult.failure();
+          }
         }
       }
     }
@@ -794,8 +789,6 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
                       .getOutputValueOrThrow(),
                   breakBlock,
                   continueBlock));
-        } else {
-          return EmitResult.failure(context, n, "Failed to emit body of for loop");
         }
       }
     }

@@ -493,6 +493,23 @@ public class %ClassName {
   }
 
   @Test
+  void scfWhile() {
+    String code =
+"""
+public class %ClassName {
+  public static void main() {
+    int x = 0;
+    while (x < 10) {
+      x++;
+    }
+    assert x == 10 : "Expected x to be 10, but got " + x;
+  }
+}
+""";
+    testSource(code);
+  }
+
+  @Test
   void scfWhileWithBreak() {
     String code =
 """
