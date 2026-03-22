@@ -7,9 +7,9 @@ dependencies {
     api project(':dungeon')
 
     // JUnit and Mockito for testing
-    testImplementation supportDependencies.junit
-    testRuntimeOnly supportDependencies.junitLauncher
-    testImplementation supportDependencies.mockito_core
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.mockito.core
 }
 
 sourceSets.main.java.srcDirs = ['src/']

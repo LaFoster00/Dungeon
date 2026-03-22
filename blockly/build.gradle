@@ -1,5 +1,8 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     id 'application'
+    alias(libs.plugins.shadow)
 }
 
 repositories {
@@ -27,18 +30,17 @@ dependencies {
     implementation project(':dgir:vm')
     implementation project(':blockly:dgir:compiler')
     implementation project(':blockly:dgir:dialect')
-    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.28.0'
+    implementation libs.javaparser.symbol.solver.core
 
     // JUnit Jupiter for testing
-    testImplementation supportDependencies.junit
-    testRuntimeOnly supportDependencies.junitLauncher
-    testImplementation 'org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0'
-    testImplementation 'org.eclipse.lsp4j:org.eclipse.lsp4j.debug:1.0.0'
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
 }
 
 tasks.withType(Jar).configureEach {
     // Exclude development or large source assets from packaged jars.
-    exclude('**/*.xcf', '**/debug/**', '**/*.pdf')
+    // Note: We can"t exclude '**/debug/**' since 'org/eclipse/lsp4j/debug/**' is needed for the debugger protocol
+    exclude('**/*.xcf', '**/*.pdf')
 }
 
 def npmCommand = System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm'
@@ -58,12 +60,20 @@ tasks.register("npmBuild", Exec) {
     dependsOn(tasks.named('npmInstall'))
 }
 
-tasks.register('runJar', JavaExec) {
+tasks.register('runDesktop', JavaExec) {
     group = 'application'
-    description = 'Run the packaged Blockly fat jar.'
+    description = 'Start Blockly Dungeon with desktop-specific settings (default). Same as running "run" task without arguments.'
     mainClass = 'client.Client'
-    classpath = files(tasks.named('jar', Jar).flatMap { it.archiveFile })
-    dependsOn(tasks.named('jar'))
+    classpath = sourceSets.main.runtimeClasspath
+    workingDir = rootProject.projectDir
+}
+
+tasks.register('runShadowDesktop', JavaExec) {
+    group = 'application'
+    description = 'Start Blockly Dungeon with all dependencies included in the classpath (for testing the shadow jar).'
+    mainClass = 'client.Client'
+    classpath = sourceSets.main.runtimeClasspath + files(tasks.named('shadowJar').flatMap { it.archiveFile })
+    workingDir = rootProject.projectDir
 }
 
 tasks.register('runWeb', JavaExec) {
@@ -75,6 +85,14 @@ tasks.register('runWeb', JavaExec) {
     workingDir = rootProject.projectDir
 }
 
+tasks.register('runShadowWeb', JavaExec) {
+    group = 'application'
+    description = 'Start Blockly Dungeon with web-specific settings and all dependencies included in the classpath (for testing the shadow jar).'
+    mainClass = 'client.Client'
+    classpath = sourceSets.main.runtimeClasspath + files(tasks.named('shadowJar').flatMap { it.archiveFile })
+    args '--web'
+    workingDir = rootProject.projectDir
+}
 
 tasks.register('runDebug', JavaExec) {
     group = 'application'
@@ -85,11 +103,29 @@ tasks.register('runDebug', JavaExec) {
     workingDir = rootProject.projectDir
 }
 
+tasks.register('runShadowDebug', JavaExec) {
+    group = 'application'
+    description = 'Start Blockly Dungeon with debug systems active and all dependencies included in the classpath (for testing the shadow jar).'
+    mainClass = 'client.Client'
+    classpath = sourceSets.main.runtimeClasspath + files(tasks.named('shadowJar').flatMap { it.archiveFile })
+    args '--debug'
+    workingDir = rootProject.projectDir
+}
+
 tasks.register('runSandbox', JavaExec) {
     group = 'application'
     description = 'Start Blockly Dungeon in sandbox mode: empty level, no popups, all blocks unlocked, debug systems active (--sandbox).'
     mainClass = 'client.Client'
     classpath = sourceSets.main.runtimeClasspath
+    args '--sandbox', '--debug'
+    workingDir = rootProject.projectDir
+}
+
+tasks.register('runShadowSandbox', JavaExec) {
+    group = 'application'
+    description = 'Start Blockly Dungeon in sandbox mode with all dependencies included in the classpath (for testing the shadow jar).'
+    mainClass = 'client.Client'
+    classpath = sourceSets.main.runtimeClasspath + files(tasks.named('shadowJar').flatMap { it.archiveFile })
     args '--sandbox', '--debug'
     workingDir = rootProject.projectDir
 }
@@ -107,23 +143,9 @@ def configureBaseJar(jar) {
             attributes 'Main-Class': 'client.Client'
         }
 
-        // Bundle runtime classpath into the fat jar so all jar dependencies are included.
-        from {
-            configurations.runtimeClasspath.collect {
-                it.isDirectory() ? it : zipTree(it)
-            }
-        }
-
-        // Source files for language server integration.
-        from(project(':dungeon').projectDir) {
-            include 'src/core/level/utils/LevelElement.java'
-            eachFile { it.path = it.path.replaceFirst('src/', '') }
-            includeEmptyDirs = false
-        }
         from(project(':blockly:dgir:compiler').projectDir) {
-            include 'assets/imports/Dungeon/Intrinsic.java'
-            include 'assets/imports/Dungeon/Hero.java'
-            include 'assets/imports/Dungeon/IO.java'
+            include 'assets/imports/Dungeon/**'
+            exclude 'assets/imports/Dungeon/_index.txt' // Generated at runtime, not needed in the jar.
             eachFile { it.path = it.path.replaceFirst('assets/', '') }
             includeEmptyDirs = false
         }
@@ -131,12 +153,22 @@ def configureBaseJar(jar) {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
         into('assets') {
-            from project(':dungeon').file('assets')
             from projectDir.toPath().resolve('frontend/dist').toFile()
         }
+    }
+}
 
-        // Exclude signature metadata from shaded dependencies
-        exclude('META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
+def configureVariantJar(jarTask, String variant, boolean isWeb) {
+    jarTask.with {
+        archiveFileName.set("Blockly-${variant}.jar")
+        archiveClassifier = variant
+        configureBaseJar(it)
+
+        if (isWeb) {
+            from(resources.text.fromString("--web")) {
+                rename { "application.properties" }
+            }
+        }
     }
 }
 
@@ -148,19 +180,22 @@ tasks.named("jar", Jar) {
 
 tasks.register("jarWeb", Jar) {
     group = 'build'
-    archiveFileName.set('Blockly-web.jar')
-    archiveClassifier = 'web'
-    configureBaseJar(it)
-    from(resources.text.fromString("--web")) {
-        rename { "application.properties" }
-    }
+    configureVariantJar(it, 'web', true)
 }
 
 tasks.register("jarDesktop", Jar) {
     group = 'build'
-    archiveFileName.set('Blockly-desktop.jar')
-    archiveClassifier = 'desktop'
-    configureBaseJar(it)
+    configureVariantJar(it, 'desktop', false)
+}
+
+tasks.register('shadowJarWeb', ShadowJar) {
+    group = 'build'
+    configureVariantJar(it, 'web-shadow', true)
+}
+
+tasks.register('shadowJarDesktop', ShadowJar) {
+    group = 'build'
+    configureVariantJar(it, 'desktop-shadow', false)
 }
 
 tasks.named('assemble') {
@@ -170,4 +205,7 @@ tasks.named('assemble') {
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
     failOnNoDiscoveredTests = false
+    // Ensure the debug server jar is built before running tests, since some tests depend on it.
+    dependsOn project(':dgir:vm').tasks.named('jarDgirDebugServer')
 }
+

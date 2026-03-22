@@ -7,7 +7,6 @@ import dgir.dialect.scf.ScfOps;
 import dgir.vm.api.Action;
 import dgir.vm.api.OpRunner;
 import dgir.vm.api.State;
-import io.arxila.javatuples.Quartet;
 import org.jetbrains.annotations.NotNull;
 
 public sealed interface ScfRunners {
@@ -39,16 +38,13 @@ public sealed interface ScfRunners {
     }
 
     public Action handleForOp(Operation forOp, State state) {
-      Quartet<Long, Long, Long, Long> bounds = ForRunner.getBounds(forOp, state);
-      long lowerBoundNum = bounds.value1();
-      long upperBoundNum = bounds.value2();
-      long stepNum = bounds.value3();
+      ForRunner.ForBounds bounds = ForRunner.getBounds(forOp, state);
 
       Value induction = forOp.getRegionOrThrow(0).getBodyValue(0).orElseThrow();
       long inductionValue = state.getValueAsOrThrow(induction, Number.class).longValue();
 
-      inductionValue += stepNum;
-      if (inductionValue < upperBoundNum && inductionValue >= lowerBoundNum) {
+      inductionValue += bounds.step;
+      if (inductionValue < bounds.upperBound && inductionValue >= bounds.lowerBound) {
         return Action.JumpToRegion(
             forOp.getRegionOrThrow(0),
             ((BuiltinTypes.IntegerT)
@@ -87,23 +83,22 @@ public sealed interface ScfRunners {
 
     @Override
     protected @NotNull Action runImpl(@NotNull Operation forOp, @NotNull State state) {
-      Quartet<Long, Long, Long, Long> bounds = getBounds(forOp, state);
-      long initialValueNum = bounds.value0();
-      long lowerBoundNum = bounds.value1();
-      long upperBoundNum = bounds.value2();
+      ForBounds bounds = getBounds(forOp, state);
 
-      if (initialValueNum < upperBoundNum && initialValueNum >= lowerBoundNum) {
+      if (bounds.initialValue < bounds.upperBound && bounds.initialValue >= bounds.lowerBound) {
         return Action.StepIntoRegion(
             forOp.getRegionOrThrow(0),
             false,
             ((BuiltinTypes.IntegerT) forOp.getOperandValueOrThrow(0).getType())
-                .convertToValidNumber(initialValueNum));
+                .convertToValidNumber(bounds.initialValue));
       } else {
         return Action.Next();
       }
     }
 
-    public static Quartet<Long, Long, Long, Long> getBounds(Operation forOp, State state) {
+    public record ForBounds(long initialValue, long lowerBound, long upperBound, long step) {}
+
+    public static ForBounds getBounds(Operation forOp, State state) {
       Value initialValue = forOp.getOperandValueOrThrow(0);
       Value lowerBound = forOp.getOperandValueOrThrow(1);
       Value upperBound = forOp.getOperandValueOrThrow(2);
@@ -114,7 +109,7 @@ public sealed interface ScfRunners {
       long upperBoundNum = state.getValueAsOrThrow(upperBound, Number.class).longValue();
       long stepNum = state.getValueAsOrThrow(step, Number.class).longValue();
 
-      return new Quartet<>(initialValueNum, lowerBoundNum, upperBoundNum, stepNum);
+      return new ForBounds(initialValueNum, lowerBoundNum, upperBoundNum, stepNum);
     }
   }
 

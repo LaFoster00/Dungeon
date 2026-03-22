@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id "net.ltgt.errorprone" version "4.4.0"
+    alias(libs.plugins.errorprone)
 }
 
 sourceSets.main.java.srcDirs = ['src/']
@@ -10,17 +10,17 @@ sourceSets.test.java.srcDirs = ['test/']
 sourceSets.test.resources.srcDirs = ['test_assets/']
 
 dependencies {
-    implementation "org.apache.commons:commons-lang3:3.20.0"
+    implementation libs.commons.lang3
     api 'tools.jackson.core:jackson-databind:3.0.3'
     implementation 'guru.nidi:graphviz-java-all-j2v8:0.18.1'
     implementation 'org.eclipse.collections:eclipse-collections-api:13.0.0'
     implementation 'org.eclipse.collections:eclipse-collections:13.0.0'
-    api 'org.jetbrains:annotations:24.1.0'
+    api libs.jetbrains.annotations
 
-    errorprone "com.google.errorprone:error_prone_core:2.46.0"
+    errorprone libs.errorprone.core
 
-    testImplementation supportDependencies.junit
-    testRuntimeOnly supportDependencies.junitLauncher
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
 }
 
 tasks.register('testDgirAndVm', Test) {

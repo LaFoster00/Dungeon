@@ -1,25 +1,30 @@
 plugins {
     id 'java-library'
-    id "net.ltgt.errorprone" version "4.4.0"
+    alias(libs.plugins.errorprone)
 }
 
-sourceSets.main.java.srcDirs = ['src/']
-sourceSets.main.resources.srcDirs = ['assets/']
-
-sourceSets.test.java.srcDirs = ['test/']
-sourceSets.test.resources.srcDirs = ['test_assets/']
+sourceSets {
+    main {
+        java.srcDirs = ['src']
+        resources.srcDirs = ['assets']
+    }
+    test {
+        java.srcDirs = ['test']
+        resources.srcDirs = ['test_assets']
+    }
+}
 
 dependencies {
     api project(':dgir')
     api project(':blockly:dgir:dialect')
-    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.27.1'
+    implementation libs.javaparser.symbol.solver.core
 
-    errorprone "com.google.errorprone:error_prone_core:2.46.0"
+    errorprone libs.errorprone.core
 
     testImplementation project(':dgir:vm')
     // JUnit 4 and Mockito for testing
-    testImplementation supportDependencies.junit
-    testRuntimeOnly supportDependencies.junitLauncher
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
 }
 
 tasks.withType(Test).configureEach {

@@ -312,7 +312,7 @@ public sealed interface DgOps {
                   + op.getOperandValue(1).orElseThrow().getType());
           return false;
         }
-        if (!(op.getResultType().equals(BuiltinTypes.IntegerT.BOOL))) {
+        if (!op.getResultType().equals(BuiltinTypes.IntegerT.BOOL)) {
           operation.emitError(
               "Expected result to be of type Bool, got " + op.getResult().getType());
           return false;
@@ -344,7 +344,7 @@ public sealed interface DgOps {
           operation.emitError("Expected operand of type Integer, got " + op.getOperand().getType());
           return false;
         }
-        if (!(op.getResultType().equals(BuiltinTypes.IntegerT.BOOL))) {
+        if (!op.getResultType().equals(BuiltinTypes.IntegerT.BOOL)) {
           operation.emitError(
               "Expected result to be of type Bool, got " + op.getResult().getType());
           return false;

@@ -1,42 +1,42 @@
 plugins {
     id 'java-library'
-    id 'com.google.protobuf'
+    alias(libs.plugins.protobuf)
 }
 
 
 dependencies {
     // LibGDX: expose this API to users because of core.level.elements.ILevel
-    api supportDependencies.gdx
-    api supportDependencies.gdx_platform
-    api supportDependencies.gdx_backend_lwjgl3
-    api supportDependencies.gdx_lwjgl3_glfw_awt_macos
-    api supportDependencies.gdx_ai
-    api supportDependencies.gdx_freetype
-    api supportDependencies.gdx_freetype_platform
-    api supportDependencies.gdx_backend_headless
-    api supportDependencies.gdx_controllers
-    api supportDependencies.gdx_controllers_desktop
+    api libs.gdx.core
+    api(variantOf(libs.gdx.platform.desktop) { classifier('natives-desktop') })
+    api libs.gdx.backend.lwjgl3
+    api libs.gdx.lwjgl3.glfw.awt.macos
+    api libs.gdx.ai
+    api libs.gdx.freetype
+    api(variantOf(libs.gdx.freetype.platform.desktop) { classifier('natives-desktop') })
+    api libs.gdx.backend.headless
+    api libs.gdx.controllers.core
+    api libs.gdx.controllers.desktop
 
     // Netty for server-client communication
-    implementation supportDependencies.netty_all
+    implementation libs.netty.all
 
     // Protobuf for network serialization
-    api supportDependencies.protobuf_java
-    implementation supportDependencies.protobuf_java_util
+    api libs.protobuf.java
+    implementation libs.protobuf.java.util
 
     // JUnit and Mockito for testing
-    testImplementation supportDependencies.junit
-    testImplementation supportDependencies.junitLauncher
-    testRuntimeOnly supportDependencies.junitLauncher
-    testImplementation supportDependencies.mockito_core
+    testImplementation libs.junit.jupiter
+    testImplementation libs.junit.platform.launcher
+    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.mockito.core
     testImplementation "com.badlogicgames.gdx:gdx-backend-lwjgl:1.14.0"
-    testImplementation("com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion")
-    testImplementation("com.badlogicgames.gdx:gdx:$gdxVersion")
+    testImplementation libs.gdx.backend.headless
+    testImplementation libs.gdx.core
 }
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+        artifact = "com.google.protobuf:protoc:${libs.versions.protobuf.get()}"
     }
     generateProtoTasks {
         all().configureEach { task ->

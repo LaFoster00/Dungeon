@@ -1,13 +1,7 @@
-import com.github.jk1.license.render.*
-
-buildscript {
-    apply from: 'dependencies.gradle'
-}
-
 plugins {
-    id 'com.diffplug.spotless' version "${spotlessVersion}"
-    id 'com.google.protobuf' version "${protobufGradlePluginVersion}" apply false
-    id 'com.github.jk1.dependency-license-report' version "${jk1licenseVersion}"
+    alias(libs.plugins.spotless)
+    alias(libs.plugins.protobuf) apply false
+    alias(libs.plugins.jk1license)
 }
 
 licenseReport {

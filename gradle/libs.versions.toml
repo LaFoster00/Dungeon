@@ -1,0 +1,72 @@
+[versions]
+spotless = "8.3.0"
+
+protobuf = "4.34.0"
+protobufGradlePlugin = "0.9.6"
+
+errorprone = "2.46.0"
+errorproneGradlePlugin = "4.4.0"
+
+shadow = "9.4.0"
+
+gdx = "1.12.1"
+gdxControllers = "2.2.4"
+gdxAi = "1.8.2"
+
+junit = "6.0.3"
+junitLauncher = "6.0.3"
+
+mockito = "5.23.0"
+
+javaparser = "3.28.0"
+
+jk1license = "3.1.1"
+
+netty = "4.2.10.Final"
+commonsLang3 = "3.20.0"
+jetbrainsAnnotations = "24.1.0"
+
+
+[plugins]
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufGradlePlugin" }
+errorprone = { id = "net.ltgt.errorprone", version.ref = "errorproneGradlePlugin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+jk1license = { id = "com.github.jk1.dependency-license-report", version.ref = "jk1license" }
+
+[libraries]
+# LibGDX
+gdx-core = { group = "com.badlogicgames.gdx", name = "gdx", version.ref = "gdx" }
+gdx-platform-desktop = { group = "com.badlogicgames.gdx", name = "gdx-platform", version.ref = "gdx" }
+gdx-backend-lwjgl3 = { group = "com.badlogicgames.gdx", name = "gdx-backend-lwjgl3", version.ref = "gdx" }
+gdx-lwjgl3-glfw-awt-macos = { group = "com.badlogicgames.gdx", name = "gdx-lwjgl3-glfw-awt-macos", version.ref = "gdx" }
+gdx-ai = { group = "com.badlogicgames.gdx", name = "gdx-ai", version.ref = "gdxAi" }
+gdx-freetype = { group = "com.badlogicgames.gdx", name = "gdx-freetype", version.ref = "gdx" }
+gdx-freetype-platform-desktop = { group = "com.badlogicgames.gdx", name = "gdx-freetype-platform", version.ref = "gdx" }
+gdx-backend-headless = { group = "com.badlogicgames.gdx", name = "gdx-backend-headless", version.ref = "gdx" }
+gdx-controllers-core = { group = "com.badlogicgames.gdx-controllers", name = "gdx-controllers-core", version.ref = "gdxControllers" }
+gdx-controllers-desktop = { group = "com.badlogicgames.gdx-controllers", name = "gdx-controllers-desktop", version.ref = "gdxControllers" }
+
+# Testing
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junitLauncher" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+
+# Protobuf
+protobuf-java = { group = "com.google.protobuf", name = "protobuf-java", version.ref = "protobuf" }
+protobuf-java-util = { group = "com.google.protobuf", name = "protobuf-java-util", version.ref = "protobuf" }
+
+# JavaParser
+javaparser-symbol-solver-core = { group = "com.github.javaparser", name = "javaparser-symbol-solver-core", version.ref = "javaparser" }
+
+# Static analysis
+errorprone-core = { group = "com.google.errorprone", name = "error_prone_core", version.ref = "errorprone" }
+
+# Netty
+netty-all = { group = "io.netty", name = "netty-all", version.ref = "netty" }
+
+# Shared utility libraries
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commonsLang3" }
+jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrainsAnnotations" }
+
+
