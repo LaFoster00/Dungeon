@@ -37,12 +37,12 @@ jk1license = { id = "com.github.jk1.dependency-license-report", version.ref = "j
 [libraries]
 # LibGDX
 gdx-core = { group = "com.badlogicgames.gdx", name = "gdx", version.ref = "gdx" }
-gdx-platform-desktop = { group = "com.badlogicgames.gdx", name = "gdx-platform", version.ref = "gdx" }
+gdx-platform = { group = "com.badlogicgames.gdx", name = "gdx-platform", version.ref = "gdx" }
 gdx-backend-lwjgl3 = { group = "com.badlogicgames.gdx", name = "gdx-backend-lwjgl3", version.ref = "gdx" }
 gdx-lwjgl3-glfw-awt-macos = { group = "com.badlogicgames.gdx", name = "gdx-lwjgl3-glfw-awt-macos", version.ref = "gdx" }
 gdx-ai = { group = "com.badlogicgames.gdx", name = "gdx-ai", version.ref = "gdxAi" }
 gdx-freetype = { group = "com.badlogicgames.gdx", name = "gdx-freetype", version.ref = "gdx" }
-gdx-freetype-platform-desktop = { group = "com.badlogicgames.gdx", name = "gdx-freetype-platform", version.ref = "gdx" }
+gdx-freetype-platform = { group = "com.badlogicgames.gdx", name = "gdx-freetype-platform", version.ref = "gdx" }
 gdx-backend-headless = { group = "com.badlogicgames.gdx", name = "gdx-backend-headless", version.ref = "gdx" }
 gdx-controllers-core = { group = "com.badlogicgames.gdx-controllers", name = "gdx-controllers-core", version.ref = "gdxControllers" }
 gdx-controllers-desktop = { group = "com.badlogicgames.gdx-controllers", name = "gdx-controllers-desktop", version.ref = "gdxControllers" }

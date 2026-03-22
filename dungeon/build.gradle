@@ -7,12 +7,12 @@ plugins {
 dependencies {
     // LibGDX: expose this API to users because of core.level.elements.ILevel
     api libs.gdx.core
-    api(variantOf(libs.gdx.platform.desktop) { classifier('natives-desktop') })
+    api(variantOf(libs.gdx.platform) { classifier('natives-desktop') })
     api libs.gdx.backend.lwjgl3
     api libs.gdx.lwjgl3.glfw.awt.macos
     api libs.gdx.ai
     api libs.gdx.freetype
-    api(variantOf(libs.gdx.freetype.platform.desktop) { classifier('natives-desktop') })
+    api(variantOf(libs.gdx.freetype.platform) { classifier('natives-desktop') })
     api libs.gdx.backend.headless
     api libs.gdx.controllers.core
     api libs.gdx.controllers.desktop
