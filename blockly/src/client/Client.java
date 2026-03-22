@@ -134,7 +134,13 @@ public class Client {
     }
 
     if (runInWeb) {
-      FrontendServer.run();
+      try {
+        FrontendServer.run();
+      } catch (IOException e) {
+        runInWeb = false;
+        java.lang.System.out.println("[FrontendServer] Failed to start: " + e.getMessage());
+        java.lang.System.out.println("[FrontendServer] Continuing without web frontend.");
+      }
     }
 
     StateMachine.setResetFrame(false);
