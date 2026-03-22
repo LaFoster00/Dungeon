@@ -41,9 +41,9 @@ import java.util.stream.Collectors;
  * <p>Each action is scheduled on the libGDX render (game) thread via {@code
  * Gdx.app.postRunnable(Runnable)}. Component-based actions attach the appropriate {@link
  * HeroActionComponent} to the hero entity and pass {@code onComplete} as its completion callback;
- * the callback fires from inside {@link HeroActionComponent#endAction()} once the action finishes,
- * which in turn releases the {@link java.util.concurrent.CountDownLatch} that is blocking the VM
- * thread.
+ * the callback fires from inside {@link HeroActionComponent#destroyVmManagedComponent()} once the
+ * action finishes, which in turn releases the {@link java.util.concurrent.CountDownLatch} that is
+ * blocking the VM thread.
  *
  * <p>For instant, component-less actions (e.g. {@link #use}) the interaction logic runs directly in
  * the {@code postRunnable} and {@code onComplete} is called immediately afterwards.

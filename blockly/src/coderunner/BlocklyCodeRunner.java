@@ -1,6 +1,8 @@
 package coderunner;
 
 import blockly.dgir.compiler.java.JavaCompiler;
+import components.VmManagedComponent;
+import core.Game;
 import core.utils.logging.DungeonLogger;
 import dgir.vm.api.DapServerUtils;
 import dgir.vm.dap.DapServer;
@@ -85,6 +87,27 @@ public class Main {
    */
   public void stopExecution() {
     dapServer.stopVm();
+    while (dapServer.isVmRunning()) {
+      try {
+        Thread.sleep(10);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    // Remove the vm managed components from the player. These might not be removed as they
+    // might rely on a
+    // vm operation to finish execution and thus might not be removed in time. This can lead
+    // to issues when the player is teleported to another level while vm operations are still
+    // pending.
+    Game.player()
+        .ifPresent(
+            e ->
+                e.componentStream()
+                    .filter(VmManagedComponent.class::isInstance)
+                    // Make sure we have a copy of the components before iterating over them.
+                    // Otherwise, the iterator might change during removal.
+                    .toList()
+                    .forEach(c -> ((VmManagedComponent) c).destroyVmManagedComponent()));
   }
 
   public void compileAndRunCode(

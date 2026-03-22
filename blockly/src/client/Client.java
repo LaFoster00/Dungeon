@@ -48,14 +48,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class Client {
 
-  /**
-   * The name of the blockly player.
-   */
+  /** The name of the blockly player. */
   public static final String WIZARD_NAME = "Algorim";
 
-  /**
-   * Force to apply for movement of all entities.
-   */
+  /** Force to apply for movement of all entities. */
   public static float MOVEMENT_FORCE = 7.5f;
 
   private static final AtomicBoolean restartQueued = new AtomicBoolean(false);
@@ -166,7 +162,7 @@ public class Client {
 
   private static void onSetup() {
     Game.userOnSetup(
-      () -> {
+        () -> {
           if (sandboxMode) {
             // Sandbox: only expose the empty sandbox level – no story progression, no popups.
             DungeonLoader.addLevel(Tuple.of("sandbox", SandboxLevel.class));
@@ -200,35 +196,35 @@ public class Client {
             DungeonLoader.addLevel(Tuple.of("level022", Level022.class));
           }
 
-        createHero();
-        createSystems();
+          createHero();
+          createSystems();
 
-        startServer();
-      });
+          startServer();
+        });
   }
 
   private static void onLevelLoad() {
     Game.userOnLevelLoad(
-      (firstLoad) -> {
+        (firstLoad) -> {
           BlocklyCodeRunner.instance().stopExecution();
-        Game.player()
-          .flatMap(e -> e.fetch(VelocityComponent.class))
-          .ifPresent(
-            vc -> {
-              vc.clearForces();
-              vc.currentVelocity(Vector2.ZERO);
-            });
-        Game.player()
-          .flatMap(e -> e.fetch(AmmunitionComponent.class))
-          .map(AmmunitionComponent::resetCurrentAmmunition);
-      });
+          Game.player()
+              .flatMap(e -> e.fetch(VelocityComponent.class))
+              .ifPresent(
+                  vc -> {
+                    vc.clearForces();
+                    vc.currentVelocity(Vector2.ZERO);
+                  });
+          Game.player()
+              .flatMap(e -> e.fetch(AmmunitionComponent.class))
+              .map(AmmunitionComponent::resetCurrentAmmunition);
+        });
   }
 
   private static void configGame() throws IOException {
     Game.loadConfig(
-      new SimpleIPath("dungeon_config.json"),
-      contrib.configuration.KeyboardConfig.class,
-      core.configuration.KeyboardConfig.class);
+        new SimpleIPath("dungeon_config.json"),
+        contrib.configuration.KeyboardConfig.class,
+        core.configuration.KeyboardConfig.class);
     Game.frameRate(30);
     Game.disableAudio(true);
     Game.resizeable(true);

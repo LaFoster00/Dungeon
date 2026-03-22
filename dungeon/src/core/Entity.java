@@ -4,7 +4,9 @@ import core.game.ECSManagement;
 import core.utils.EntityIdProvider;
 import core.utils.logging.DungeonLogger;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -167,6 +169,15 @@ public final class Entity implements Comparable<Entity> {
     return false;
   }
 
+  public boolean removeIf(Predicate<Component> condition) {
+    boolean removedAny = components.values().removeIf(condition);
+    if (removedAny) {
+      ECSManagement.informAboutChanges(this);
+      LOGGER.debug("Components from " + name + " were removed based on condition.");
+    }
+    return removedAny;
+  }
+
   /**
    * Get the component.
    *
@@ -189,6 +200,18 @@ public final class Entity implements Comparable<Entity> {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * Fetch all components of the given type. Also returns subclasses of the given type.
+   *
+   * @param klass the class of the components to fetch
+   * @return a list of components of the given type
+   * @param <T> the type of the components to fetch
+   */
+  public <T> Optional<List<T>> fetchAllOfType(final Class<T> klass) {
+    return Optional.of(
+        components.values().stream().filter(klass::isInstance).map(klass::cast).toList());
   }
 
   /**
