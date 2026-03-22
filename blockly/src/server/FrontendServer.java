@@ -4,10 +4,12 @@ import com.sun.net.httpserver.HttpServer;
 import core.utils.logging.DungeonLogLevel;
 import core.utils.logging.DungeonLogger;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -79,6 +81,9 @@ public class FrontendServer {
     LOGGER.info("Started successfully.");
     LOGGER.info("Connect via: http://localhost:" + PORT);
     LOGGER.info("Dev asset directory: " + devDistDir.toAbsolutePath());
+    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+      Desktop.getDesktop().browse(URI.create("http://localhost:" + PORT));
+    }
   }
 
   private static String guessMime(String name) {
