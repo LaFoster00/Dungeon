@@ -176,7 +176,7 @@ class DgirDebugConfigurationProvider implements vscode.DebugConfigurationProvide
       if (workspaceRoot) {
         config.jarPath = path.join(
           workspaceRoot,
-          "dgir-vm-dap.jar"
+            "DgirDebugServer.jar"
         );
       }
     }

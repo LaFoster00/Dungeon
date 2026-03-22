@@ -7,7 +7,6 @@ import dgir.core.ir.Operation;
 import dgir.core.ir.Region;
 import dgir.core.ir.Value;
 
-import java.text.MessageFormat;
 import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -55,21 +54,20 @@ public class IrToText {
     }
 
     sb.append(operation.getDetails().ident());
-    sb.append(" ( ");
+    sb.append(" (");
+    if (!operation.getOperands().isEmpty()) sb.append(' ');
     sb.append(
         operation.getOperands().stream()
             .map(operand -> operand.getValue().map(IrToText::getValueName).orElse("null"))
-            .collect(Collectors.joining(", ")));
-    sb.append(" )");
+            .collect(Collectors.joining(" , ")));
+    if (!operation.getOperands().isEmpty()) sb.append(' ');
+    sb.append(")");
 
     if (!operation.getNamedAttributes().isEmpty()) {
       String attrs =
           operation.getNamedAttributes().stream()
-              .map(
-                  attr ->
-                      MessageFormat.format(
-                          "{0} = ({1})", attr.getName(), attr.getAttribute().getStorage()))
-              .collect(Collectors.joining(", "));
+              .map(attr -> "%s = {%s}".formatted(attr.getName(), attr.getAttribute().getStorage()))
+              .collect(Collectors.joining(" , "));
       if (!attrs.isEmpty()) {
         sb.append(" [ ");
         sb.append(attrs);
@@ -78,11 +76,13 @@ public class IrToText {
     }
 
     if (!operation.getSuccessors().isEmpty()) {
-      sb.append("==> [");
+      sb.append(" ==> [");
+      if (!operation.getSuccessors().isEmpty()) sb.append(' ');
       sb.append(
           operation.getSuccessors().stream()
               .map(IrToText::getBlockName)
-              .collect(Collectors.joining(", ")));
+              .collect(Collectors.joining(" , ")));
+      if (!operation.getSuccessors().isEmpty()) sb.append(' ');
       sb.append("]");
     }
 
@@ -105,7 +105,7 @@ public class IrToText {
       sb.append(
           region.getBodyValues().stream()
               .map(IrToText::getValueName)
-              .collect(Collectors.joining(", ")));
+              .collect(Collectors.joining(" , ")));
       sb.append(" ) ");
     }
     sb.append("{");

@@ -31,7 +31,7 @@ Create `.vscode/launch.json` in your workspace:
       "name": "Debug DGIR Program",
       "request": "launch",
       "program": "${workspaceFolder}/dgir/vm/test_assets/HelloWorld.json",
-      "jarPath": "${workspaceFolder}/dgir/vm/build/libs/dgir-vm-dap.jar",
+        "jarPath": "${workspaceFolder}/dgir/vm/build/libs/DgirDebugServer.jar",
       "dapPort": 4711,
       "stopOnEntry": true
     }
@@ -44,7 +44,7 @@ Then press F5.
 ## Configuration
 
 - `program`: Path to the compiled DGIR JSON program (required).
-- `jarPath`: Path to `dgir-vm-dap.jar` (built via `:dgir:vm:dapJar`).
+- `jarPath`: Path to `DgirDebugServer.jar` (built via `:dgir:vm:jarDgirDebugServer`).
 - `javaPath`: Java executable to launch the server (default: `java`).
 - `dapPort`: Port used by the DAP server (default: `4711`).
 - `host`: DAP host (default: `127.0.0.1`).

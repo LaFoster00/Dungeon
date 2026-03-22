@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/SimpleAssignment.json",
             "dapPort": 4711,
-            "jarPath": "${workspaceFolder}/../build/libs/dgir-vm-dap.jar",
+            "jarPath": "${workspaceFolder}/../build/libs/DgirDebugServer.jar",
             "stopOnEntry": true,
             "useTerminal": true,
             "stopServerOnExit": true
