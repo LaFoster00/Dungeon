@@ -103,12 +103,13 @@ export function hasIncompleteLogicalOperator(code: string): boolean {
  * @param fullProgram
  @returns a message with the variable that is not declared
  */
+// TODO this needs updating so that it can handle functions.
 export const checkIfVariablesAreDeclared = (fullProgram: string) => {
 
   const scopes = [new Set()];
   const codeLines = fullProgram.split("\n");
 
-  const keywords = new Set(["if", "else", "while", "for", "return", "let", "var", "const", "int", "true", "false", "hero", "move"]);
+  const keywords = new Set(["if", "else", "while", "for", "return", "let", "var", "const", "int", "true", "false", "hero", "move", "public", "class", "void", "static", "new"]);
 
   for (let line of codeLines) {
     line = line.trim();

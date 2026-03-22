@@ -85,7 +85,7 @@ public class Server {
     clearContext.setHandler(this::handleClearRequest);
     HttpContext levelsContext = server.createContext("/levels");
     levelsContext.setHandler(this::handleLevelsRequest);
-    HttpContext levelContext = server.createContext("/src/level");
+    HttpContext levelContext = server.createContext("/level");
     levelContext.setHandler(this::handleLevelRequest);
     HttpContext codeContext = server.createContext("/code");
     codeContext.setHandler(this::handleCodeRequest);

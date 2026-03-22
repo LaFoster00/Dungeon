@@ -10,7 +10,7 @@ import {
 import {completeLevel, getCurrentLevel} from "./level.ts";
 import {updatePopup} from "./popup.ts";
 import {
-  checkIfVariablesAreDeclared, hasMissingIterationCount,
+  hasMissingIterationCount,
   hasEmptyWhileLoopHead,
   hasIncompleteIfComparison, isHeroActiveWithoutParameters, isHeroInteractWithoutParameters,
   isMissingDirectionInIsNearComponent, isMissingDirectionInIsNearTile, containsString, hasMissingBossDirection,
@@ -70,7 +70,7 @@ interface FlyoutItem {
   hidden?: string;
 }
 
-export const resetBlocksAndCategories = (allBlocks: FlyoutItem[], allCategories: FlyoutItem[], blockReason:string)=> {
+export const resetBlocksAndCategories = (allBlocks: FlyoutItem[], allCategories: FlyoutItem[], blockReason: string) => {
   // Enable all blocks
   allBlocks.forEach((block) => {
     block["disabledReasons"] = (block["disabledReasons"] || []).filter((reason: string) => reason !== blockReason);
@@ -85,7 +85,7 @@ export const resetBlocksAndCategories = (allBlocks: FlyoutItem[], allCategories:
   });
 }
 
-export const blockElementsFromToolbox = (toolbox: unknown, blockedElements: string[], reason:string)=> {
+export const blockElementsFromToolbox = (toolbox: unknown, blockedElements: string[], reason: string) => {
   const allBlocks = getAllBlocksFromToolboxDefinition(toolbox);
   const allCategories = getAllCategoriesFromToolboxDefinition(toolbox);
 
@@ -257,7 +257,7 @@ const setupStartButton = (buttons: Buttons, workspace: Blockly.WorkspaceSvg, del
       } else if (status === "completed") {
         console.log("code execution completed");
         codeRunning = false;
-      } else if (status === "error"){
+      } else if (status === "error") {
         console.error("Error while running code: " + codeRunning);
         codeRunning = false;
       }
@@ -333,7 +333,7 @@ const validateProgram = (fullProgram: string) => {
     },
     {check: () => hasEmptyNotCondition(fullProgram), msg: "Der Nicht-Befehl braucht eine Bedingung"},
     {check: () => hasIncompleteLogicalOperator(fullProgram), msg: "Und/Oder block nicht richtig benutzt"},
-    {check: () => checkIfVariablesAreDeclared(fullProgram), msg: checkIfVariablesAreDeclared(fullProgram)}
+    //{check: () => checkIfVariablesAreDeclared(fullProgram), msg: checkIfVariablesAreDeclared(fullProgram)}
   ];
 
   // 2. Den ersten Fehler finden
