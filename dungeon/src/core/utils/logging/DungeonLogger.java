@@ -1,6 +1,5 @@
 package core.utils.logging;
 
-import java.util.logging.FileHandler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
@@ -46,6 +45,11 @@ public final class DungeonLogger {
    */
   public static DungeonLogger getLogger(String name) {
     return new DungeonLogger(Logger.getLogger(name), name);
+  }
+
+  // ===== Access =====
+  public Logger getBaseLogger() {
+    return baseLogger;
   }
 
   // ===== TRACE =====
@@ -419,14 +423,5 @@ public final class DungeonLogger {
     }
 
     return result.toString();
-  }
-
-  /**
-   * Add a FileHandler to the logger.
-   *
-   * @param fileHandler The FileHandler to add.
-   */
-  public void addHandler(FileHandler fileHandler) {
-    baseLogger.addHandler(fileHandler);
   }
 }
