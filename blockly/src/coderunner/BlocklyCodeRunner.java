@@ -86,12 +86,14 @@ public class Main {
    * <p>This is a no-op when nothing is running.
    */
   public void stopExecution() {
-    dapServer.stopVm();
-    while (dapServer.isVmRunning()) {
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+    if (dapServer.isVmRunning()) {
+      dapServer.stopVm();
+      while (dapServer.isVmRunning()) {
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
       }
     }
     // Remove the vm managed components from the player. These might not be removed as they

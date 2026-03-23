@@ -26,8 +26,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Controls communication between the Blockly frontend and the dungeon game. Provides HTTP endpoints
@@ -38,10 +36,6 @@ import java.util.logging.Logger;
 public class Server {
 
   private static final DungeonLogger LOGGER = DungeonLogger.getLogger(Server.class);
-
-  static {
-    Logger.getLogger("").setLevel(Level.FINEST);
-  }
 
   // Singleton
   private static Server instance;

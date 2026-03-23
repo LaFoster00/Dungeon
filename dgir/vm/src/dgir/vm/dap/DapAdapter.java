@@ -207,6 +207,8 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
    * program. The VM thread will terminate asynchronously.
    */
   public void stopVm() {
+    // Do not call stop() if the VM is already stopped.
+    if (vmThreadRef.get() == null || !vmThreadRef.get().isAlive() || vm.isStopRequested()) return;
     vm.stop();
     Thread t = vmThreadRef.get();
     if (t != null && t.isAlive()) {
