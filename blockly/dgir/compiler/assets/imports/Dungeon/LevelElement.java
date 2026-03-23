@@ -1,9 +1,11 @@
 package Dungeon;
 
-import Intrinsic;
-
+/**
+ * This enum represents the different types of level elements that can be found
+ * in the dungeon.
+ */
 @Intrinsic("Dungeon.LevelElement")
-public enum LevelElement{
+public enum LevelElement {
   /** This field is a blank. */
   SKIP,
   /** This field is a floor-field. */

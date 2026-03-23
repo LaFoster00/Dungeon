@@ -1,7 +1,9 @@
 package Dungeon;
 
-import Intrinsic;
-
+/**
+ * This enum represents the different directions that can be used for movement
+ * and interaction in the dungeon game.
+ */
 @Intrinsic("Dungeon.Direction")
 public enum Direction {
   /**

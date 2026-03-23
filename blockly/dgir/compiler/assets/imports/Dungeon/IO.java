@@ -1,7 +1,9 @@
 package Dungeon;
 
-import Instrinsic;
-
+/**
+ * This class provides methods for input and output operations in the dungeon
+ * game.
+ */
 public class IO {
   /**
    * Prints a string to standard output.
@@ -9,9 +11,7 @@ public class IO {
    * @param s The string to print.
    */
   @Intrinsic("Dungeon.IO.print(java.lang.String)")
-  public static native void print(String s) {
-    System.out.print(s);
-  }
+  public static native void print(String s);
 
   /**
    * Prints a string to standard output and adds a newline character.
@@ -22,17 +22,20 @@ public class IO {
   public static native void println(String s);
 
   /**
-   * Prints a formatted string to standard output using the specified format string and arguments.
+   * Prints a formatted string to standard output using the specified format
+   * string and arguments.
    *
-   * @param format The format string, which may contain format specifiers that are replaced by the
-   *     arguments.
-   * @param args The arguments to be inserted into the format string.
+   * @param format The format string, which may contain format specifiers that are
+   *               replaced by the
+   *               arguments.
+   * @param args   The arguments to be inserted into the format string.
    */
   @Intrinsic("Dungeon.IO.printf(java.lang.String, java.lang.Object...)")
   public static native void printf(String format, Object... args);
 
   /**
-   * Reads a boolean value from standard input. The input should be "true" or "false" (case
+   * Reads a boolean value from standard input. The input should be "true" or
+   * "false" (case
    * insensitive).
    *
    * @return true if the input is "true", false otherwise.
@@ -58,6 +61,7 @@ public class IO {
 
   /**
    * Reads an integer value from standard input.
+   * 
    * @return integer value
    */
   @Intrinsic("Dungeon.IO.nextInt()")
@@ -65,6 +69,7 @@ public class IO {
 
   /**
    * Reads a long value from standard input.
+   * 
    * @return long value
    */
   @Intrinsic("Dungeon.IO.nextLong()")
@@ -72,6 +77,7 @@ public class IO {
 
   /**
    * Reads a float value from standard input.
+   * 
    * @return float value
    */
   @Intrinsic("Dungeon.IO.nextFloat()")
@@ -79,6 +85,7 @@ public class IO {
 
   /**
    * Reads a double value from standard input.
+   * 
    * @return double value
    */
   @Intrinsic("Dungeon.IO.nextDouble()")
@@ -86,6 +93,7 @@ public class IO {
 
   /**
    * Reads a line of text from standard input.
+   * 
    * @return line of text
    */
   @Intrinsic("Dungeon.IO.nextLine()")
