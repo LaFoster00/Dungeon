@@ -22,6 +22,7 @@
   ],
   "activationEvents": [
       "onLanguage:java",
+      "onCommand:blockly-code-runner.createBlocklyJavaProject",
       "onCommand:blockly-code-runner.debugBlocklyFile",
       "onDebugResolve:blockly-dap"
   ],
@@ -40,6 +41,12 @@
         "category": "Blockly",
         "icon": "$(debug-stop)"
       },
+        {
+            "command": "blockly-code-runner.createBlocklyJavaProject",
+            "title": "Create Blockly Java Project",
+            "category": "Blockly",
+            "icon": "$(new-folder)"
+        },
         {
             "command": "blockly-code-runner.debugBlocklyFile",
             "title": "Debug Blockly-Code",
@@ -158,9 +165,10 @@
     }
   },
   "scripts": {
+      "copy:intrinsics": "node ./scripts/copy-intrinsics.mjs",
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+      "compile": "npm run copy:intrinsics && tsc -p ./",
+      "watch": "npm run copy:intrinsics && tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { fetchLanguageConfig, BlocklyCompletionItem } from './handlers/languageProvider';
 import * as path from 'path';
 import sendBlocklyFile, {SendBlocklyFileOptions, stopBlocklyExecution} from './handlers/sendBlocklyFile';
+import createBlocklyJavaProject from './handlers/createBlocklyJavaProject';
 
 export const BLOCKLY_URL = () => vscode.workspace.getConfiguration('blocklyServer').get('url', 'http://localhost:8080');
 export const SLEEP_AFTER_EACH_LINE = () => vscode.workspace.getConfiguration('blocklyServer').get('sleepAfterEachLine', 1000);
@@ -76,6 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register the command
     const runCommandDisposable = vscode.commands.registerCommand('blockly-code-runner.sendBlocklyFile', () => sendBlocklyFile());
+    const createProjectCommandDisposable = vscode.commands.registerCommand('blockly-code-runner.createBlocklyJavaProject', () => createBlocklyJavaProject(context));
     const debugCommandDisposable = vscode.commands.registerCommand('blockly-code-runner.debugBlocklyFile', async () => {
         const editor = vscode.window.activeTextEditor;
         const options: SendBlocklyFileOptions = {
@@ -199,6 +201,7 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(runCommandDisposable);
+    context.subscriptions.push(createProjectCommandDisposable);
     context.subscriptions.push(debugCommandDisposable);
     context.subscriptions.push(stopCommandDisposable);
     context.subscriptions.push(completionProvider);
