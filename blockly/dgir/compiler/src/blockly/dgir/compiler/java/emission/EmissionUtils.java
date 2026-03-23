@@ -178,7 +178,6 @@ public class EmissionUtils {
     }
 
     if (IntrinsicRegistry.intrinsics.contains(targetMethod.getQualifiedSignature())) {
-      context.emitInfo(n, "Intrinsic: " + targetMethod.getQualifiedSignature());
       var resultOpt = emitIntrinsic(n, targetMethod.getQualifiedSignature(), args, context);
       if (resultOpt.isFailure()) {
         return EmitResult.failure();

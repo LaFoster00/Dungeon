@@ -21,7 +21,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:java"
+      "onLanguage:java",
+      "onCommand:blockly-code-runner.debugBlocklyFile",
+      "onDebugResolve:blockly-dap"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -37,6 +39,67 @@
         "title": "Stop Blockly-Code",
         "category": "Blockly",
         "icon": "$(debug-stop)"
+      },
+        {
+            "command": "blockly-code-runner.debugBlocklyFile",
+            "title": "Debug Blockly-Code",
+            "category": "Blockly",
+            "icon": "$(debug-alt)"
+        }
+    ],
+      "debuggers": [
+          {
+              "type": "blockly-dap",
+              "label": "Blockly DAP",
+              "languages": [
+                  "java"
+              ],
+              "configurationAttributes": {
+                  "attach": {
+                      "required": [],
+                      "properties": {
+                          "host": {
+                              "type": "string",
+                              "default": "127.0.0.1",
+                              "description": "Host of the Blockly DAP server"
+                          },
+                          "dapPort": {
+                              "type": "number",
+                              "default": 4711,
+                              "description": "Port of the Blockly DAP server"
+                          },
+                          "sourceFileMap": {
+                              "type": "object",
+                              "description": "Optional mapping between editor source paths and debugger source paths",
+                              "additionalProperties": {
+                                  "type": "string"
+                              }
+                          },
+                          "completeProgram": {
+                              "type": "boolean",
+                              "default": false,
+                              "description": "Set true when your source is sent as a complete Java program and no wrapper line remap is needed."
+                          },
+                          "wrapperLineOffset": {
+                              "type": "number",
+                              "default": 9,
+                              "description": "Line offset added by server-side wrapping for non-complete programs."
+                          }
+                      }
+                  }
+              },
+              "initialConfigurations": [
+                  {
+                      "type": "blockly-dap",
+                      "request": "attach",
+                      "name": "Attach Blockly Debugger",
+                      "host": "127.0.0.1",
+                      "dapPort": 4711,
+                      "sourceFileMap": {},
+                      "completeProgram": false,
+                      "wrapperLineOffset": 9
+                  }
+              ]
       }
     ],
     "configuration": {
@@ -54,6 +117,23 @@
           "description": "Zeit in Millisekunden, die nach jeder Zeile gewartet wird, um die Ausführung zu verlangsamen. Setze auf 0, um keine Verzögerung zu haben.",
           "minimum": 0,
           "maximum": 10000
+        },
+          "blocklyServer.completeProgram": {
+              "type": "boolean",
+              "default": false,
+              "description": "Wenn aktiv, wird der Java-Text als vollständiges Programm an den Server gesendet (kein Main-Wrapper)."
+          },
+          "blocklyServer.dapHost": {
+              "type": "string",
+              "default": "127.0.0.1",
+              "description": "Host des Blockly DAP-Servers für Debug-Sessions."
+          },
+          "blocklyServer.dapPort": {
+              "type": "integer",
+              "default": 4711,
+              "description": "Port des Blockly DAP-Servers für Debug-Sessions.",
+              "minimum": 1,
+              "maximum": 65535
         }
       }
     },
@@ -68,6 +148,11 @@
           "command": "blockly-code-runner.stopBlocklyExecution",
           "group": "navigation",
           "when": "resourceExtname == .java"
+        },
+          {
+              "command": "blockly-code-runner.debugBlocklyFile",
+              "group": "navigation",
+              "when": "resourceExtname == .java"
         }
       ]
     }

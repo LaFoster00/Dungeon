@@ -1,9 +1,22 @@
 import * as vscode from 'vscode';
 import { fetchLanguageConfig, BlocklyCompletionItem } from './handlers/languageProvider';
-import sendBlocklyFile, {stopBlocklyExecution} from './handlers/sendBlocklyFile';
+import * as path from 'path';
+import sendBlocklyFile, {SendBlocklyFileOptions, stopBlocklyExecution} from './handlers/sendBlocklyFile';
 
 export const BLOCKLY_URL = () => vscode.workspace.getConfiguration('blocklyServer').get('url', 'http://localhost:8080');
 export const SLEEP_AFTER_EACH_LINE = () => vscode.workspace.getConfiguration('blocklyServer').get('sleepAfterEachLine', 1000);
+export const BLOCKLY_DAP_HOST = () => vscode.workspace.getConfiguration('blocklyServer').get('dapHost', '127.0.0.1');
+export const BLOCKLY_DAP_PORT = () => vscode.workspace.getConfiguration('blocklyServer').get('dapPort', 4711);
+export const COMPLETE_PROGRAM = () => vscode.workspace.getConfiguration('blocklyServer').get('completeProgram', false);
+const NON_COMPLETE_PROGRAM_LINE_OFFSET = 9;
+
+interface BlocklyDebugConfiguration extends vscode.DebugConfiguration {
+    host?: string;
+    dapPort?: number;
+    sourceFileMap?: Record<string, string>;
+    completeProgram?: boolean;
+    wrapperLineOffset?: number;
+}
 const codeObjects = {
     'hero': {
         kind: vscode.CompletionItemKind.Class,
@@ -63,6 +76,37 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register the command
     const runCommandDisposable = vscode.commands.registerCommand('blockly-code-runner.sendBlocklyFile', () => sendBlocklyFile());
+    const debugCommandDisposable = vscode.commands.registerCommand('blockly-code-runner.debugBlocklyFile', async () => {
+        const editor = vscode.window.activeTextEditor;
+        const options: SendBlocklyFileOptions = {
+            waitForDebugger: true,
+            sourceFileName: editor?.document.uri.fsPath
+        };
+
+        const sent = await sendBlocklyFile(options);
+        if (!sent) {
+            return;
+        }
+
+        const started = await vscode.debug.startDebugging(undefined, {
+            type: 'blockly-dap',
+            request: 'attach',
+            name: 'Debug Blockly-Code',
+            host: BLOCKLY_DAP_HOST(),
+            dapPort: BLOCKLY_DAP_PORT(),
+            sourceFileMap: {},
+            completeProgram: options.completeProgram ?? COMPLETE_PROGRAM(),
+            wrapperLineOffset: NON_COMPLETE_PROGRAM_LINE_OFFSET
+        });
+
+        if (!started) {
+            vscode.window.showErrorMessage('Failed to attach Blockly debugger.');
+        }
+    });
+    const debugConfigurationProvider = vscode.debug.registerDebugConfigurationProvider('blockly-dap', new BlocklyDebugConfigurationProvider());
+    const debugAdapterDescriptorFactory = vscode.debug.registerDebugAdapterDescriptorFactory('blockly-dap', new BlocklyDebugAdapterDescriptorFactory());
+    const debugAdapterTrackerFactory = vscode.debug.registerDebugAdapterTrackerFactory('blockly-dap', new BlocklyDebugAdapterTrackerFactory());
+
 
     // Register stop command
     const stopCommandDisposable = vscode.commands.registerCommand('blockly-code-runner.stopBlocklyExecution', () => stopBlocklyExecution());
@@ -155,7 +199,242 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(runCommandDisposable);
+    context.subscriptions.push(debugCommandDisposable);
     context.subscriptions.push(stopCommandDisposable);
     context.subscriptions.push(completionProvider);
     context.subscriptions.push(hoverProvider);
+    context.subscriptions.push(debugConfigurationProvider);
+    context.subscriptions.push(debugAdapterDescriptorFactory);
+    context.subscriptions.push(debugAdapterTrackerFactory);
+}
+
+class BlocklyDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
+    resolveDebugConfiguration(
+        _: vscode.WorkspaceFolder | undefined,
+        config: BlocklyDebugConfiguration
+    ): vscode.DebugConfiguration {
+        if (!config.type) {
+            config.type = 'blockly-dap';
+        }
+        if (!config.request) {
+            config.request = 'attach';
+        }
+        if (!config.name) {
+            config.name = 'Debug Blockly-Code';
+        }
+
+        config.host = config.host ?? BLOCKLY_DAP_HOST();
+        config.dapPort = config.dapPort ?? BLOCKLY_DAP_PORT();
+        config.sourceFileMap = config.sourceFileMap ?? {};
+        config.completeProgram = config.completeProgram ?? COMPLETE_PROGRAM();
+        config.wrapperLineOffset =
+            config.completeProgram
+                ? 0
+                : Math.max(0, config.wrapperLineOffset ?? NON_COMPLETE_PROGRAM_LINE_OFFSET);
+
+        return config;
+    }
+}
+
+class BlocklyDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+    createDebugAdapterDescriptor(session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+        const config = session.configuration as BlocklyDebugConfiguration;
+        const host = config.host ?? BLOCKLY_DAP_HOST();
+        const port = config.dapPort ?? BLOCKLY_DAP_PORT();
+        return new vscode.DebugAdapterServer(port, host);
+    }
+}
+
+class BlocklyDebugAdapterTrackerFactory implements vscode.DebugAdapterTrackerFactory {
+    createDebugAdapterTracker(session: vscode.DebugSession): vscode.DebugAdapterTracker {
+        const config = session.configuration as BlocklyDebugConfiguration;
+        const sourceFileMap = config.sourceFileMap ?? {};
+        const reverseMap = new Map<string, string>();
+        const lineOffset = config.completeProgram
+            ? 0
+            : Math.max(0, config.wrapperLineOffset ?? NON_COMPLETE_PROGRAM_LINE_OFFSET);
+        for (const [k, v] of Object.entries(sourceFileMap)) {
+            reverseMap.set(v, k);
+        }
+
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+        return {
+            onWillReceiveMessage: (message: { command?: string; arguments?: { source?: { path?: string } } }) => {
+                if (message?.command === 'setBreakpoints' || message?.command === 'breakpointLocations') {
+                    mapSourcePathToBlockly(message.arguments, sourceFileMap, workspaceRoot);
+                }
+
+                if (lineOffset > 0 && message?.command === 'setBreakpoints') {
+                    remapSetBreakpointsRequest(message.arguments as SetBreakpointsRequestArgs, lineOffset);
+                }
+
+                if (lineOffset > 0 && message?.command === 'breakpointLocations') {
+                    remapBreakpointLocationsRequest(message.arguments as BreakpointLocationsRequestArgs, lineOffset);
+                }
+            },
+            onDidSendMessage: (message: unknown) => {
+                mapSourcesInResponse(message as Record<string, unknown>, reverseMap, workspaceRoot, lineOffset);
+            }
+        };
+    }
+}
+
+interface SetBreakpointsRequestArgs {
+    breakpoints?: Array<{ line?: number; endLine?: number }>;
+    lines?: number[];
+    source?: { path?: string };
+}
+
+interface BreakpointLocationsRequestArgs {
+    line?: number;
+    endLine?: number;
+    source?: { path?: string };
+}
+
+function remapSetBreakpointsRequest(args: SetBreakpointsRequestArgs | undefined, lineOffset: number) {
+    if (!args || lineOffset <= 0) {
+        return;
+    }
+
+    for (const bp of args.breakpoints ?? []) {
+        bp.line = addLineOffset(bp.line, lineOffset);
+        bp.endLine = addLineOffset(bp.endLine, lineOffset);
+    }
+
+    if (Array.isArray(args.lines)) {
+        args.lines = args.lines.map((line) => addLineOffset(line, lineOffset) ?? line);
+    }
+}
+
+function remapBreakpointLocationsRequest(args: BreakpointLocationsRequestArgs | undefined, lineOffset: number) {
+    if (!args || lineOffset <= 0) {
+        return;
+    }
+
+    args.line = addLineOffset(args.line, lineOffset);
+    args.endLine = addLineOffset(args.endLine, lineOffset);
+}
+
+function mapSourcePathToBlockly(
+    args: { source?: { path?: string } } | undefined,
+    sourceFileMap: Record<string, string>,
+    workspaceRoot?: string
+) {
+    const sourcePath = args?.source?.path;
+    if (!sourcePath || sourcePath === '<unknown>') {
+        return;
+    }
+
+    const mapped = sourceFileMap[sourcePath];
+    if (mapped) {
+        args!.source!.path = mapped;
+        return;
+    }
+
+    if (path.isAbsolute(sourcePath)) {
+        return;
+    }
+
+    if (!workspaceRoot) {
+        return;
+    }
+
+    const candidate = path.join(workspaceRoot, sourcePath);
+    const reverse = sourceFileMap[candidate];
+    if (reverse) {
+        args!.source!.path = reverse;
+    }
+}
+
+function mapSourcesInResponse(
+    message: Record<string, unknown>,
+    reverseMap: Map<string, string>,
+    workspaceRoot?: string,
+    lineOffset = 0
+) {
+    if (!message) {
+        return;
+    }
+
+    if (message.type === 'response' && message.command === 'stackTrace') {
+        const body = message.body as {
+            stackFrames?: Array<{ source?: { path?: string; name?: string }; line?: number; endLine?: number }>;
+        } | undefined;
+        const frames = body?.stackFrames ?? [];
+        for (const frame of frames) {
+            mapSource(frame.source, reverseMap, workspaceRoot);
+            if (lineOffset > 0) {
+                frame.line = subtractLineOffset(frame.line, lineOffset);
+                frame.endLine = subtractLineOffset(frame.endLine, lineOffset);
+            }
+        }
+    }
+
+    if (message.type === 'response' && message.command === 'setBreakpoints') {
+        const body = message.body as {
+            breakpoints?: Array<{ source?: { path?: string; name?: string }; line?: number; endLine?: number }>;
+        } | undefined;
+        const breakpoints = body?.breakpoints ?? [];
+        for (const bp of breakpoints) {
+            mapSource(bp.source, reverseMap, workspaceRoot);
+            if (lineOffset > 0) {
+                bp.line = subtractLineOffset(bp.line, lineOffset);
+                bp.endLine = subtractLineOffset(bp.endLine, lineOffset);
+            }
+        }
+    }
+
+    if (message.type === 'response' && message.command === 'breakpointLocations') {
+        const body = message.body as {
+            breakpoints?: Array<{ line?: number; endLine?: number }>;
+        } | undefined;
+        const breakpoints = body?.breakpoints ?? [];
+        for (const bp of breakpoints) {
+            if (lineOffset > 0) {
+                bp.line = subtractLineOffset(bp.line, lineOffset);
+                bp.endLine = subtractLineOffset(bp.endLine, lineOffset);
+            }
+        }
+    }
+}
+
+function addLineOffset(line: number | undefined, offset: number): number | undefined {
+    if (typeof line !== 'number') {
+        return line;
+    }
+    return line + offset;
+}
+
+function subtractLineOffset(line: number | undefined, offset: number): number | undefined {
+    if (typeof line !== 'number') {
+        return line;
+    }
+    return Math.max(1, line - offset);
+}
+
+function mapSource(
+    source: { path?: string; name?: string } | undefined,
+    reverseMap: Map<string, string>,
+    workspaceRoot?: string
+) {
+    if (!source?.path) {
+        return;
+    }
+
+    if (source.path === '<unknown>') {
+        delete source.path;
+        source.name = source.name ?? '<unknown>';
+        return;
+    }
+
+    const mapped = reverseMap.get(source.path);
+    if (mapped) {
+        source.path = mapped;
+        return;
+    }
+
+    if (!path.isAbsolute(source.path) && workspaceRoot) {
+        source.path = path.join(workspaceRoot, source.path);
+    }
 }

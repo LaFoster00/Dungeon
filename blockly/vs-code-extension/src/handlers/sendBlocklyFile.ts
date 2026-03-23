@@ -1,29 +1,35 @@
 import * as vscode from 'vscode';
-import axios, {AxiosError} from 'axios';
+import axios from 'axios';
 import {showMessageWithTimeout} from '../utils/utils';
-import {BLOCKLY_URL, SLEEP_AFTER_EACH_LINE} from '../extension';
+import {BLOCKLY_URL, COMPLETE_PROGRAM, SLEEP_AFTER_EACH_LINE} from '../extension';
 
 // Create a diagnostic collection to manage error diagnostics
 const diagnosticCollection = vscode.languages.createDiagnosticCollection('blockly');
 const wrapperOffset = 9; // Offset for the wrapper code in Java
 
-export default async function sendBlocklyFile() {
+export interface SendBlocklyFileOptions {
+    waitForDebugger?: boolean;
+    completeProgram?: boolean;
+    sourceFileName?: string;
+}
+
+export default async function sendBlocklyFile(options: SendBlocklyFileOptions = {}): Promise<boolean> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage('No active editor detected!');
-        return;
+        return false;
     }
 
     if (editor.document.languageId !== 'java') {
         vscode.window.showErrorMessage('Please open a Java file!');
-        return;
+        return false;
     }
 
     if (editor.document.isDirty) {
         const result = await editor.document.save();
         if (!result) {
             vscode.window.showErrorMessage('Failed to save the Java file!');
-            return;
+            return false;
         }
     }
 
@@ -33,20 +39,44 @@ export default async function sendBlocklyFile() {
     const code: string = editor.document.getText();
 
     try {
+        const queryParams = new URLSearchParams();
+        queryParams.set('sleep', String(SLEEP_AFTER_EACH_LINE()));
+
+        if (options.waitForDebugger) {
+            queryParams.set('waitForDebugger', '1');
+        }
+
+        if (options.completeProgram ?? COMPLETE_PROGRAM()) {
+            queryParams.set('complete', '1');
+        }
+
+        const sourceFileName = options.sourceFileName ?? editor.document.uri.fsPath;
+        if (sourceFileName) {
+            queryParams.set('sourceFileName', sourceFileName);
+        }
+
         await axios.post(BLOCKLY_URL() + "/reset", {}, {headers: {'Content-Type': 'text/plain'}}); // reset before any input
-        await axios.post(BLOCKLY_URL() + "/code?sleep=" + SLEEP_AFTER_EACH_LINE(), code, {headers: {'Content-Type': 'text/plain'}});
-        showMessageWithTimeout('Blockly file sent successfully!');
+        await axios.post(BLOCKLY_URL() + '/code?' + queryParams.toString(), code, {headers: {'Content-Type': 'text/plain'}});
+
+        if (options.waitForDebugger) {
+            showMessageWithTimeout('Blockly file sent. Waiting for debugger attach...');
+        } else {
+            showMessageWithTimeout('Blockly file sent successfully!');
+        }
+        return true;
     } catch (error: unknown) {
-        if (!(error instanceof AxiosError))
+        if (!axios.isAxiosError(error))
             throw error; // rethrow if not an AxiosError
 
-        if (error.response?.status.toString().startsWith('4')) {
-            const errorMessage = error.response.data;
+        const axiosError = error;
+
+        if (axiosError.response?.status.toString().startsWith('4')) {
+            const errorMessage = String(axiosError.response.data ?? '');
             vscode.window.showErrorMessage('Execution failed');
 
             if (errorMessage === 'Another code execution is already running. Please stop it first.') {
                 vscode.window.showErrorMessage(errorMessage);
-                return;
+                return false;
             }
 
             // Parse and display the error messages
@@ -54,29 +84,36 @@ export default async function sendBlocklyFile() {
             if (amountOfErrors === 0) {
                 vscode.window.showErrorMessage('No Syntax errors found in the Java file but still failed to execute');
                 console.error({
-                    rawError: error,
-                    status: error.response.status,
-                    body: error.response.data
+                    rawError: axiosError,
+                    status: axiosError.response.status,
+                    body: axiosError.response.data
                 });
             }
         } else {
-            vscode.window.showErrorMessage(`Failed to send Java file: ${error.message}`);
+            vscode.window.showErrorMessage(`Failed to send Java file: ${axiosError.message}`);
         }
+        return false;
     }
 }
 
 export async function stopBlocklyExecution() {
-    const url = BLOCKLY_URL() + '/code?stop=1';
+    const url = BLOCKLY_URL() + '/code?stop';
     try {
-        await axios.get(url);
+        await axios.post(url, {}, {headers: {'Content-Type': 'text/plain'}});
         await axios.post(BLOCKLY_URL() + "/reset", {}, {headers: {'Content-Type': 'text/plain'}}); // reset before any input
         showMessageWithTimeout('Blockly execution stopped');
     } catch (error: unknown) {
-        if (!(error instanceof AxiosError))
-            throw error; // rethrow if not an AxiosError
+        if (axios.isAxiosError(error)) {
+            vscode.window.showErrorMessage(`Failed to stop Java execution: ${error.message}`);
+            return;
+        }
 
-        vscode.window.showErrorMessage(`Failed to stop Java execution: ${error.message}`);
+        vscode.window.showErrorMessage(`Failed to stop Java execution: ${toErrorMessage(error)}`);
     }
+}
+
+function toErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
 }
 
 function displayErrorsInEditor(errorMessage: string, document: vscode.TextDocument): number {

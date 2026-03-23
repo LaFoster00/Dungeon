@@ -456,7 +456,9 @@ public class VM {
         }
         // Abort the execution.
         case Action.Abort abort -> {
-          currentOp.emitError("Execution aborted: " + abort.message());
+          if (abort.message().contains("interrupted by VM stop/reload"))
+            currentOp.emitWarning("Execution aborted: " + abort.message());
+          else currentOp.emitError("Execution aborted: " + abort.message());
           cleanupAfterAbort();
         }
         // Call another function. This is only used for function calls.

@@ -14,6 +14,9 @@ import core.level.loader.DungeonLoader;
 import core.utils.Point;
 import core.utils.logging.DungeonLogger;
 import level.BlocklyLevel;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +26,8 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Controls communication between the Blockly frontend and the dungeon game. Provides HTTP endpoints
@@ -34,25 +39,15 @@ public class Server {
 
   private static final DungeonLogger LOGGER = DungeonLogger.getLogger(Server.class);
 
+  static {
+    Logger.getLogger("").setLevel(Level.FINEST);
+  }
+
   // Singleton
   private static Server instance;
 
   /** Default port for the server. */
   public static final int DEFAULT_PORT = 8080;
-
-  /**
-   * This boolean will be set to true on error or if the user clicked the reset button in the
-   * blockly frontend. The execution of the current program will stop if this variable is true.
-   */
-  public boolean interruptExecution = false;
-
-  /** This boolean will be set to true on error. */
-  public boolean errorOccurred = false;
-
-  /** This variable cotnains the error message if an error occured during the execution. */
-  public String errorMsg = "";
-
-  private boolean clearHUD = false;
 
   /** Constructor of the server. */
   private Server() {}
@@ -81,16 +76,12 @@ public class Server {
     HttpServer server = HttpServer.create(new InetSocketAddress("localhost", DEFAULT_PORT), 0);
     HttpContext resetContext = server.createContext("/reset");
     resetContext.setHandler(this::handleResetRequest);
-    HttpContext clearContext = server.createContext("/clear");
-    clearContext.setHandler(this::handleClearRequest);
     HttpContext levelsContext = server.createContext("/levels");
     levelsContext.setHandler(this::handleLevelsRequest);
     HttpContext levelContext = server.createContext("/level");
     levelContext.setHandler(this::handleLevelRequest);
     HttpContext codeContext = server.createContext("/code");
     codeContext.setHandler(this::handleCodeRequest);
-    HttpContext stepContext = server.createContext("/step");
-    stepContext.setHandler(this::handleStepRequest);
     HttpContext languageContext = server.createContext("/language");
     languageContext.setHandler(this::handleLanguageRequest);
     HttpContext statusContext = server.createContext("/status");
@@ -99,51 +90,9 @@ public class Server {
     return server;
   }
 
-  /**
-   * Handles the reset request. This function will set the boolean interruptExecution. The execution
-   * will be stopped.
-   *
-   * @param exchange Exchange object. The function will send a success response to the blockly
-   *     frontend
-   * @throws IOException If an error occurs while sending the response
-   */
-  private void handleResetRequest(HttpExchange exchange) throws IOException {
-    if (!ensureMethod(exchange, "POST")) return;
-    BlocklyCodeRunner.instance().stopExecution();
-    // Reset values
-    interruptExecution = true;
-    Client.restart();
-    sendHeroPosition(exchange);
-  }
-
-  /**
-   * Handles the clear request. This function will clear all global variables that may have been
-   * modified. It will empty all stacks, hashmaps and resets all global variables to their default
-   * value.
-   *
-   * @param exchange Exchange object. The function will send a success response to the blockly
-   *     frontend
-   * @throws IOException If an error occurs while sending the response
-   */
-  private void handleClearRequest(HttpExchange exchange) throws IOException {
-    if (!ensureMethod(exchange, "POST")) return;
-    clearGlobalValues();
-
-    sendHeroPosition(exchange);
-  }
-
-  private void sendHeroPosition(HttpExchange exchange) throws IOException {
-    Point playerPos = EntityUtils.getPlayerPosition();
-    if (playerPos == null) {
-      playerPos = new Point(0, 0);
-    }
-    String response = playerPos.toString();
-    addCorsHeaders(exchange);
-    exchange.sendResponseHeaders(200, response.getBytes().length);
-    OutputStream os = exchange.getResponseBody();
-    os.write(response.getBytes());
-    os.close();
-  }
+  // ---------------------------------------------------------
+  // CORS Headers and Handling
+  // ---------------------------------------------------------
 
   /**
    * Applies permissive CORS headers so browser-based clients can call the API without being blocked
@@ -167,10 +116,54 @@ public class Server {
     if (!"OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
       return false;
     }
-    addCorsHeaders(exchange);
-    exchange.sendResponseHeaders(204, -1);
+    sendResponse(StatusCode.NO_CONTENT, null, exchange);
     exchange.close();
     return true;
+  }
+
+  /**
+   * Ensures the incoming HTTP method matches the expected one, replying with 405 when it does not
+   * and short-circuiting OPTIONS preflight. Returns false when the caller should stop processing.
+   */
+  private boolean ensureMethod(HttpExchange exchange, String expectedMethod) throws IOException {
+    if (handleOptions(exchange)) return false;
+    if (!expectedMethod.equalsIgnoreCase(exchange.getRequestMethod())) {
+      sendResponse(StatusCode.METHOD_NOT_ALLOWED, "Method Not Allowed", exchange);
+      return false;
+    }
+    return true;
+  }
+
+  // ---------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------
+
+  private void sendResponse(
+      @NotNull StatusCode code, @Nullable String response, @NotNull HttpExchange exchange)
+      throws IOException {
+    addCorsHeaders(exchange);
+    if (response == null) {
+      exchange.sendResponseHeaders(code.value, -1);
+    } else {
+      exchange.sendResponseHeaders(code.value, response.getBytes(StandardCharsets.UTF_8).length);
+      OutputStream os = exchange.getResponseBody();
+      os.write(response.getBytes(StandardCharsets.UTF_8));
+      os.close();
+    }
+  }
+
+  /**
+   * Wait for the delta time of the current frame.
+   *
+   * <p>Used to wait for the game loop to finish the current frame before executing the next action.
+   */
+  public static void waitDelta() {
+    long timeout = (long) (Gdx.graphics.getDeltaTime() * 1000);
+    try {
+      TimeUnit.MILLISECONDS.sleep(timeout - 1);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -208,6 +201,53 @@ public class Server {
   }
 
   /**
+   * Collects the set of Blockly blocks that are disabled for the given level so the frontend can
+   * hide or gray them out.
+   */
+  private @Unmodifiable Set<String> blockedBlocksForLevel(@Nullable ILevel level) {
+    if (level instanceof BlocklyLevel blocklyLevel) {
+      return Collections.unmodifiableSet(blocklyLevel.blockedBlocklyElements());
+    }
+    return Collections.emptySet();
+  }
+
+  private String stopExecution() {
+    if (BlocklyCodeRunner.instance().isRunning()) {
+      BlocklyCodeRunner.instance().stopExecution();
+      return "Code execution stopped";
+    } else {
+      return "No code execution running";
+    }
+  }
+
+  private void sendHeroPosition(HttpExchange exchange) throws IOException {
+    Point playerPos = EntityUtils.getPlayerPosition();
+    if (playerPos == null) {
+      playerPos = new Point(0, 0);
+    }
+    sendResponse(StatusCode.OK, playerPos.toString(), exchange);
+  }
+
+  // ---------------------------------------------------------
+  // Endpoint Handlers
+  // ---------------------------------------------------------
+
+  /**
+   * Handles the reset request. This function will set the boolean interruptExecution. The execution
+   * will be stopped.
+   *
+   * @param exchange Exchange object. The function will send a success response to the blockly
+   *     frontend
+   * @throws IOException If an error occurs while sending the response
+   */
+  private void handleResetRequest(HttpExchange exchange) throws IOException {
+    LOGGER.info("Received reset request");
+    if (!ensureMethod(exchange, "POST")) return;
+    Client.restart();
+    sendHeroPosition(exchange);
+  }
+
+  /**
    * Handles the levels request. This function will send all available levels to the blockly
    * frontend.
    *
@@ -215,18 +255,10 @@ public class Server {
    *     frontend
    */
   private void handleLevelsRequest(HttpExchange exchange) throws IOException {
+    LOGGER.info("Received levels request");
     if (!ensureMethod(exchange, "GET")) return;
-    StringBuilder response = new StringBuilder();
-    for (String levelName : DungeonLoader.levelOrder()) {
-      response.append(levelName).append("\n");
-    }
-    response.deleteCharAt(response.length() - 1); // Remove last newline
-
-    addCorsHeaders(exchange);
-    exchange.sendResponseHeaders(200, response.toString().getBytes().length);
-    OutputStream os = exchange.getResponseBody();
-    os.write(response.toString().getBytes());
-    os.close();
+    String response = String.join("\n", DungeonLoader.levelOrder());
+    sendResponse(StatusCode.OK, response, exchange);
   }
 
   /**
@@ -238,6 +270,7 @@ public class Server {
    *     frontend
    */
   private void handleLevelRequest(HttpExchange exchange) throws IOException {
+    LOGGER.info("Received level request" + exchange.getRequestURI().getRawQuery());
     if (!ensureMethod(exchange, "GET")) return;
     Map<String, List<String>> queryParams = parseQueryParams(exchange);
     StringBuilder response = new StringBuilder();
@@ -252,30 +285,9 @@ public class Server {
         waitDelta(); // waiting for all systems to update once
       }
     }
-
     response.append(DungeonLoader.currentLevel()).append(" ");
-    for (String blockedBlock : blockedBlocksForLevel(Game.currentLevel().orElse(null))) {
-      response.append(blockedBlock).append(" ");
-    }
-    response.deleteCharAt(response.length() - 1); // Remove last space
-
-    addCorsHeaders(exchange);
-    exchange.sendResponseHeaders(200, response.length());
-    OutputStream os = exchange.getResponseBody();
-    os.write(response.toString().getBytes());
-    os.close();
-  }
-
-  /**
-   * Collects the set of Blockly blocks that are disabled for the given level so the frontend can
-   * hide or gray them out.
-   */
-  private Set<String> blockedBlocksForLevel(ILevel level) {
-    Set<String> blockedBlocks = new HashSet<>();
-    if (level instanceof BlocklyLevel blocklyLevel) {
-      blockedBlocks.addAll(blocklyLevel.blockedBlocklyElements());
-    }
-    return blockedBlocks;
+    response.append(String.join(" ", blockedBlocksForLevel(Game.currentLevel().orElse(null))));
+    sendResponse(StatusCode.OK, response.toString(), exchange);
   }
 
   /**
@@ -286,13 +298,30 @@ public class Server {
    * @throws IOException If an error occurs while sending the response
    */
   private void handleCodeRequest(HttpExchange exchange) throws IOException {
+    LOGGER.info("Received code request" + exchange.getRequestURI().getRawQuery());
     if (!ensureMethod(exchange, "POST")) return;
     Map<String, List<String>> queryParams = parseQueryParams(exchange);
+    // Handle stop request
+    {
+      boolean isStopRequest = queryParams.containsKey("stop");
+      if (isStopRequest) {
+        String response = stopExecution();
+        sendResponse(StatusCode.OK, response, exchange);
+        return;
+      }
+    }
 
-    boolean isStopRequest = queryParams.containsKey("stop");
+    // Handle normal code execution request
+    if (BlocklyCodeRunner.instance().isRunning()) {
+      String response = "Another code execution is already running. Please stop it first.";
+      sendResponse(StatusCode.CONFLICT, response, exchange);
+      return;
+    }
+
     boolean isCompleteProgram = queryParams.containsKey("complete");
     boolean waitForDebugger = queryParams.containsKey("waitForDebugger");
     String sourceFileNameParam = firstParam(queryParams, "sourceFileName");
+
     int sleepAfterEachLine = -1;
     String sleepParam = firstParam(queryParams, "sleep");
     if (sleepParam != null) {
@@ -303,107 +332,25 @@ public class Server {
       }
     }
 
-    if (isStopRequest) {
-      handleStopCodeExecution(exchange);
-      return;
-    }
-
-    // Handle normal code execution request
-    if (BlocklyCodeRunner.instance().isRunning()) {
-      String response = "Another code execution is already running. Please stop it first.";
-      sendError(exchange, 409, response);
-      return;
-    }
-
     InputStream inStream = exchange.getRequestBody();
-    String text = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
+    String code = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
 
     // Start code execution
-    interruptExecution = false;
     try {
       if (sleepAfterEachLine >= 0) {
         BlocklyCodeRunner.instance()
             .compileAndRunCode(
-                text, sleepAfterEachLine, isCompleteProgram, waitForDebugger, sourceFileNameParam);
+                code, sleepAfterEachLine, isCompleteProgram, waitForDebugger, sourceFileNameParam);
       } else {
         BlocklyCodeRunner.instance()
-            .compileAndRunCode(text, isCompleteProgram, waitForDebugger, sourceFileNameParam);
+            .compileAndRunCode(code, isCompleteProgram, waitForDebugger, sourceFileNameParam);
       }
-
-      // Wait 1 second to check for errors or completion
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        // Ignore
-      }
-
-      String response;
-      int statusCode;
-
-      if (interruptExecution) {
-        response = errorMsg.isEmpty() ? "Code execution interrupted" : "Error: " + errorMsg;
-        statusCode = 400;
-        BlocklyCodeRunner.instance().stopExecution();
-      } else if (!BlocklyCodeRunner.instance().isRunning()) {
-        // Code completed execution within 1 second
-        response = "OK - Code executed successfully";
-        statusCode = 200;
-      } else {
-        // Code is still running after 1 second
-        response = "OK - Code execution started";
-        statusCode = 200;
-      }
-
-      addCorsHeaders(exchange);
-      exchange.sendResponseHeaders(statusCode, response.getBytes().length);
-      OutputStream os = exchange.getResponseBody();
-      os.write(response.getBytes());
-      os.close();
+      sendResponse(StatusCode.OK, "OK - Code execution started", exchange);
     } catch (Exception e) {
-      LOGGER.error("Error executing code: " + e);
-      setError(e.getMessage());
-      String response = errorMsg;
-      sendError(exchange, 400, response);
-      BlocklyCodeRunner.instance().stopExecution();
+      LOGGER.error("Exception executing code: " + e);
+      stopExecution();
+      sendResponse(StatusCode.BAD_REQUEST, e.getMessage(), exchange);
     }
-  }
-
-  /**
-   * Handles stop request for currently running code execution.
-   *
-   * @param exchange Exchange object
-   * @throws IOException If an error occurs while sending the response
-   */
-  private void handleStopCodeExecution(HttpExchange exchange) throws IOException {
-    if (!ensureMethod(exchange, "POST")) return;
-    String response;
-    int statusCode = 200;
-
-    if (BlocklyCodeRunner.instance().isRunning()) {
-      BlocklyCodeRunner.instance().stopExecution();
-      interruptExecution = true;
-      response = "Code execution stopped";
-    } else {
-      response = "No code execution running";
-    }
-
-    addCorsHeaders(exchange);
-    exchange.sendResponseHeaders(statusCode, response.getBytes().length);
-    OutputStream os = exchange.getResponseBody();
-    os.write(response.getBytes());
-    os.close();
-  }
-
-  /**
-   * Handles the step request. This function will execute the next step of the currently running
-   * code. If no code is running, it will return an error.
-   *
-   * @param exchange Exchange object
-   * @throws IOException If an error occurs while sending the response
-   */
-  private void handleStepRequest(HttpExchange exchange) throws IOException {
-    if (!ensureMethod(exchange, "POST")) return;
-    sendError(exchange, 501, "Step execution not implemented yet");
   }
 
   /**
@@ -414,18 +361,14 @@ public class Server {
    * @throws IOException If an error occurs while sending the response
    */
   private void handleLanguageRequest(HttpExchange exchange) throws IOException {
+    LOGGER.info("Received language request" + exchange.getRequestURI().getRawQuery());
     if (!ensureMethod(exchange, "GET")) return;
     addCorsHeaders(exchange);
 
     Map<String, List<String>> queryParams = parseQueryParams(exchange);
     String objectName = firstParam(queryParams, "object");
     if (objectName == null) objectName = "/src/server";
-
-    String response = LanguageServer.GenerateCompletionItems(objectName);
-    exchange.sendResponseHeaders(200, response.getBytes().length);
-    OutputStream os = exchange.getResponseBody();
-    os.write(response.getBytes());
-    os.close();
+    sendResponse(StatusCode.OK, LanguageServer.GenerateCompletionItems(objectName), exchange);
   }
 
   /**
@@ -436,6 +379,7 @@ public class Server {
    * @throws IOException If an error occurs while sending the response
    */
   private void handleStatusRequest(HttpExchange exchange) throws IOException {
+    LOGGER.info("Received status request");
     if (!ensureMethod(exchange, "GET")) return;
     String response;
     if (BlocklyCodeRunner.instance().isRunning()) {
@@ -443,82 +387,6 @@ public class Server {
     } else {
       response = "completed";
     }
-
-    addCorsHeaders(exchange);
-    exchange.sendResponseHeaders(200, response.getBytes().length);
-    OutputStream os = exchange.getResponseBody();
-    os.write(response.getBytes());
-    os.close();
-  }
-
-  /**
-   * Clear all global variables that may have been modified. Empty all stacks, hashmaps and reset
-   * all global variables to their default value. Also clear the variable and array HUD in the
-   * dungeon.
-   */
-  public void clearGlobalValues() {
-    BlocklyCodeRunner.instance().stopExecution();
-
-    // Reset values
-    interruptExecution = false;
-    errorOccurred = false;
-    errorMsg = "";
-    // Set clear HUD to true so the HUD will be cleared next time the start route will be used.
-    clearHUD = true;
-    System.out.println("Values cleared");
-  }
-
-  /**
-   * Set the error flag and stop the execution. Also set the error message to the provided message.
-   *
-   * @param errMsg Error message that will be sent to the blockly frontend.
-   */
-  private void setError(String errMsg) {
-    if (errMsg.trim().isEmpty()) {
-      errMsg = "Unknown error";
-    }
-    interruptExecution = true;
-    errorOccurred = true;
-    errorMsg = errMsg;
-  }
-
-  /**
-   * Wait for the delta time of the current frame.
-   *
-   * <p>Used to wait for the game loop to finish the current frame before executing the next action.
-   */
-  public static void waitDelta() {
-    long timeout = (long) (Gdx.graphics.getDeltaTime() * 1000);
-    try {
-      TimeUnit.MILLISECONDS.sleep(timeout - 1);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Normalized error responder that attaches CORS headers and writes a plain-text message with the
-   * given HTTP status code. Keeps error handling consistent across endpoints.
-   */
-  private void sendError(HttpExchange exchange, int status, String message) throws IOException {
-    addCorsHeaders(exchange);
-    byte[] payload = message.getBytes(StandardCharsets.UTF_8);
-    exchange.sendResponseHeaders(status, payload.length);
-    try (OutputStream os = exchange.getResponseBody()) {
-      os.write(payload);
-    }
-  }
-
-  /**
-   * Ensures the incoming HTTP method matches the expected one, replying with 405 when it does not
-   * and short-circuiting OPTIONS preflight. Returns false when the caller should stop processing.
-   */
-  private boolean ensureMethod(HttpExchange exchange, String expectedMethod) throws IOException {
-    if (handleOptions(exchange)) return false;
-    if (!expectedMethod.equalsIgnoreCase(exchange.getRequestMethod())) {
-      sendError(exchange, 405, "Method Not Allowed");
-      return false;
-    }
-    return true;
+    sendResponse(StatusCode.OK, response, exchange);
   }
 }

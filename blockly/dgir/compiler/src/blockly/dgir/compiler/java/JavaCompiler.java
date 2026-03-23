@@ -73,6 +73,7 @@ public class JavaCompiler {
       result = StaticJavaParser.parse(source);
     } catch (ParseProblemException e) {
       logger.severe("Failed to parse Java source code: " + e.getMessage());
+      logger.severe("Source code:\n" + source);
       return Optional.empty();
     }
 
