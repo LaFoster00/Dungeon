@@ -32,7 +32,10 @@ Als Entwickler der Extension musst du die folgenden Schritte in deinem Projektve
     ```
     Dieser Befehl erstellt eine Datei mit einem Namen wie `blockly-code-runner-X.Y.Z.vsix` (die Version stammt aus deiner `package.json`). Diese Datei ist das Installationspaket für deine Extension.
 
-    *Hinweis: `vsce` liest die `.vscodeignore`-Datei, um zu bestimmen, welche Dateien nicht in das Paket aufgenommen werden sollen. Das `vscode:prepublish`-Skript (`npm run compile`) in der `package.json` stellt sicher, dass der Code vor dem Paketieren kompiliert wird.*
+    *Hinweis: `vsce` liest die `.vscodeignore`-Datei, um zu bestimmen, welche Dateien nicht in das Paket aufgenommen
+    werden sollen. Das `vscode:prepublish`-Skript (`npm run compile`) in der `package.json` stellt sicher, dass der Code
+    vor dem Paketieren kompiliert wird. Dabei werden die Dungeon-Intrinsics automatisch in die Extension-Ressourcen
+    kopiert und in die `.vsix` eingebunden.*
 
 ## Schritt 2: Verteilen der `.vsix`-Datei
 
@@ -68,3 +71,15 @@ Benutzer können die `.vsix`-Datei auf zwei Arten installieren:
 ## Aktualisieren der Extension
 
 Um die Extension zu aktualisieren, erstelle als Entwickler eine neue `.vsix`-Datei mit der aktualisierten Version (vergiss nicht, die Versionsnummer in deiner `package.json` zu erhöhen). Lasse die Benutzer die neue `.vsix`-Datei einfach wie in "Schritt 3" beschrieben installieren. VS Code wird die vorhandene Installation überschreiben.
+
+## Erste Nutzung nach der Installation
+
+1. Öffne den Zielordner als Workspace in VS Code.
+2. Starte über die Command Palette (`Ctrl+Shift+P`) den Befehl `Blockly: Create Blockly Java Project`.
+3. Die Extension erstellt im aktuellen Workspace `src/` und `src/Dungeon/`, kopiert die Intrinsics und legt bei Bedarf
+   `src/Main.java` an.
+
+Hinweis zum Sende-Modus: Die Extension entscheidet automatisch kontextbasiert zwischen Wrapper- und
+Complete-Program-Modus. Liegt im gleichen Verzeichnis wie die geöffnete Java-Datei ein `Dungeon/Intrinsic.java`, wird
+als vollständiges Programm gesendet.
+

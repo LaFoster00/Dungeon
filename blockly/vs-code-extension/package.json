@@ -82,11 +82,6 @@
                                   "type": "string"
                               }
                           },
-                          "completeProgram": {
-                              "type": "boolean",
-                              "default": false,
-                              "description": "Set true when your source is sent as a complete Java program and no wrapper line remap is needed."
-                          },
                           "wrapperLineOffset": {
                               "type": "number",
                               "default": 9,
@@ -103,7 +98,6 @@
                       "host": "127.0.0.1",
                       "dapPort": 4711,
                       "sourceFileMap": {},
-                      "completeProgram": false,
                       "wrapperLineOffset": 9
                   }
               ]
@@ -125,11 +119,6 @@
           "minimum": 0,
           "maximum": 10000
         },
-          "blocklyServer.completeProgram": {
-              "type": "boolean",
-              "default": false,
-              "description": "Wenn aktiv, wird der Java-Text als vollständiges Programm an den Server gesendet (kein Main-Wrapper)."
-          },
           "blocklyServer.dapHost": {
               "type": "string",
               "default": "127.0.0.1",

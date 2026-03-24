@@ -1,14 +1,17 @@
 import * as vscode from 'vscode';
 import { fetchLanguageConfig, BlocklyCompletionItem } from './handlers/languageProvider';
 import * as path from 'path';
-import sendBlocklyFile, {SendBlocklyFileOptions, stopBlocklyExecution} from './handlers/sendBlocklyFile';
+import sendBlocklyFile, {
+    resolveCompleteProgramMode,
+    SendBlocklyFileOptions,
+    stopBlocklyExecution
+} from './handlers/sendBlocklyFile';
 import createBlocklyJavaProject from './handlers/createBlocklyJavaProject';
 
 export const BLOCKLY_URL = () => vscode.workspace.getConfiguration('blocklyServer').get('url', 'http://localhost:8080');
 export const SLEEP_AFTER_EACH_LINE = () => vscode.workspace.getConfiguration('blocklyServer').get('sleepAfterEachLine', 1000);
 export const BLOCKLY_DAP_HOST = () => vscode.workspace.getConfiguration('blocklyServer').get('dapHost', '127.0.0.1');
 export const BLOCKLY_DAP_PORT = () => vscode.workspace.getConfiguration('blocklyServer').get('dapPort', 4711);
-export const COMPLETE_PROGRAM = () => vscode.workspace.getConfiguration('blocklyServer').get('completeProgram', false);
 const NON_COMPLETE_PROGRAM_LINE_OFFSET = 9;
 
 interface BlocklyDebugConfiguration extends vscode.DebugConfiguration {
@@ -80,6 +83,7 @@ export function activate(context: vscode.ExtensionContext) {
     const createProjectCommandDisposable = vscode.commands.registerCommand('blockly-code-runner.createBlocklyJavaProject', () => createBlocklyJavaProject(context));
     const debugCommandDisposable = vscode.commands.registerCommand('blockly-code-runner.debugBlocklyFile', async () => {
         const editor = vscode.window.activeTextEditor;
+        const resolvedCompleteProgram = await resolveCompleteProgramMode(editor?.document);
         const options: SendBlocklyFileOptions = {
             waitForDebugger: true,
             sourceFileName: editor?.document.uri.fsPath
@@ -97,7 +101,7 @@ export function activate(context: vscode.ExtensionContext) {
             host: BLOCKLY_DAP_HOST(),
             dapPort: BLOCKLY_DAP_PORT(),
             sourceFileMap: {},
-            completeProgram: options.completeProgram ?? COMPLETE_PROGRAM(),
+            completeProgram: resolvedCompleteProgram,
             wrapperLineOffset: NON_COMPLETE_PROGRAM_LINE_OFFSET
         });
 
@@ -212,10 +216,10 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 class BlocklyDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
-    resolveDebugConfiguration(
+    async resolveDebugConfiguration(
         _: vscode.WorkspaceFolder | undefined,
         config: BlocklyDebugConfiguration
-    ): vscode.DebugConfiguration {
+    ): Promise<vscode.DebugConfiguration> {
         if (!config.type) {
             config.type = 'blockly-dap';
         }
@@ -229,7 +233,7 @@ class BlocklyDebugConfigurationProvider implements vscode.DebugConfigurationProv
         config.host = config.host ?? BLOCKLY_DAP_HOST();
         config.dapPort = config.dapPort ?? BLOCKLY_DAP_PORT();
         config.sourceFileMap = config.sourceFileMap ?? {};
-        config.completeProgram = config.completeProgram ?? COMPLETE_PROGRAM();
+        config.completeProgram = await resolveCompleteProgramMode(vscode.window.activeTextEditor?.document);
         config.wrapperLineOffset =
             config.completeProgram
                 ? 0

@@ -68,7 +68,6 @@ async function findIntrinsicSourceDir(
 async function copyIntrinsicFiles(sourceDir: string, targetDir: string): Promise<number> {
     const files = await fs.readdir(sourceDir);
     // Remove the _index.txt file
-    const indexPath = path.join(sourceDir, '_index.txt');
     files.splice(files.indexOf('_index.txt'), 1);
 
     let copied = 0;

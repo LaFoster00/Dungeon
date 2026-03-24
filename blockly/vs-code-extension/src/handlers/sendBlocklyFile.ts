@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
+import * as path from 'path';
+import {promises as fs} from 'fs';
 import {showMessageWithTimeout} from '../utils/utils';
-import {BLOCKLY_URL, COMPLETE_PROGRAM, SLEEP_AFTER_EACH_LINE} from '../extension';
+import {BLOCKLY_URL, SLEEP_AFTER_EACH_LINE} from '../extension';
 
 // Create a diagnostic collection to manage error diagnostics
 const diagnosticCollection = vscode.languages.createDiagnosticCollection('blockly');
@@ -9,8 +11,17 @@ const wrapperOffset = 9; // Offset for the wrapper code in Java
 
 export interface SendBlocklyFileOptions {
     waitForDebugger?: boolean;
-    completeProgram?: boolean;
     sourceFileName?: string;
+}
+
+export async function resolveCompleteProgramMode(
+    document?: vscode.TextDocument
+): Promise<boolean> {
+    if (!document) {
+        return false;
+    }
+
+    return hasDungeonIntrinsicsNextToSourceFile(document);
 }
 
 export default async function sendBlocklyFile(options: SendBlocklyFileOptions = {}): Promise<boolean> {
@@ -46,7 +57,8 @@ export default async function sendBlocklyFile(options: SendBlocklyFileOptions = 
             queryParams.set('waitForDebugger', '1');
         }
 
-        if (options.completeProgram ?? COMPLETE_PROGRAM()) {
+        const completeProgramMode = await resolveCompleteProgramMode(editor.document);
+        if (completeProgramMode) {
             queryParams.set('complete', '1');
         }
 
@@ -92,6 +104,21 @@ export default async function sendBlocklyFile(options: SendBlocklyFileOptions = 
         } else {
             vscode.window.showErrorMessage(`Failed to send Java file: ${axiosError.message}`);
         }
+        return false;
+    }
+}
+
+async function hasDungeonIntrinsicsNextToSourceFile(document: vscode.TextDocument): Promise<boolean> {
+    const currentDir = path.dirname(document.uri.fsPath);
+    const markerFile = path.join(currentDir, 'Dungeon', 'Intrinsic.java');
+    return pathExists(markerFile);
+}
+
+async function pathExists(targetPath: string): Promise<boolean> {
+    try {
+        await fs.access(targetPath);
+        return true;
+    } catch {
         return false;
     }
 }
