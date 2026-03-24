@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
  * status (/status).
  */
 public class Server {
-
   private static final DungeonLogger LOGGER = DungeonLogger.getLogger(Server.class);
 
   // Singleton
@@ -329,22 +328,35 @@ public class Server {
     InputStream inStream = exchange.getRequestBody();
     String code = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
 
-    // Start code execution
-    try {
-      if (sleepAfterEachLine >= 0) {
-        BlocklyCodeRunner.instance()
-            .compileAndRunCode(
-                code, sleepAfterEachLine, isCompleteProgram, waitForDebugger, sourceFileNameParam);
-      } else {
-        BlocklyCodeRunner.instance()
-            .compileAndRunCode(code, isCompleteProgram, waitForDebugger, sourceFileNameParam);
-      }
-      sendResponse(StatusCode.OK, "OK - Code execution started", exchange);
-    } catch (Exception e) {
-      LOGGER.error("Exception executing code: " + e);
-      stopExecution();
-      sendResponse(StatusCode.BAD_REQUEST, e.getMessage(), exchange);
-    }
+    final int finalSleepAfterEachLine = sleepAfterEachLine;
+    EventScheduler.scheduleAction(
+        () -> {
+          // Start code execution
+          try {
+            if (finalSleepAfterEachLine >= 0) {
+              BlocklyCodeRunner.instance()
+                  .compileAndRunCode(
+                      code,
+                      finalSleepAfterEachLine,
+                      isCompleteProgram,
+                      waitForDebugger,
+                      sourceFileNameParam);
+            } else {
+              BlocklyCodeRunner.instance()
+                  .compileAndRunCode(code, isCompleteProgram, waitForDebugger, sourceFileNameParam);
+            }
+            sendResponse(StatusCode.OK, "OK - Code execution started", exchange);
+          } catch (Exception e) {
+            LOGGER.error("Exception executing code: " + e);
+            stopExecution();
+            try {
+              sendResponse(StatusCode.BAD_REQUEST, e.getMessage(), exchange);
+            } catch (IOException ex) {
+              LOGGER.error("Failed to send error response: " + ex);
+            }
+          }
+        },
+        0);
   }
 
   /**
@@ -361,7 +373,7 @@ public class Server {
 
     Map<String, List<String>> queryParams = parseQueryParams(exchange);
     String objectName = firstParam(queryParams, "object");
-    if (objectName == null) objectName = "/src/server";
+    if (objectName == null) objectName = "/server";
     sendResponse(StatusCode.OK, LanguageServer.GenerateCompletionItems(objectName), exchange);
   }
 

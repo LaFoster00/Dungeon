@@ -11,6 +11,8 @@ import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static dgir.core.DgirCoreUtils.indent;
+
 /** Util class to convert IR to text. */
 public class IrToText {
   static final AtomicInteger blockIndex = new AtomicInteger(0);
@@ -33,15 +35,6 @@ public class IrToText {
             return "%" + v.getDebugInfo().name() + "_" + valueIndex.getAndIncrement();
           }
         });
-  }
-
-  private static String indent(String text, int indent) {
-    StringBuilder builder = new StringBuilder();
-    String indentStr = String.join("", java.util.Collections.nCopies(indent, "\t"));
-    for (String line : text.lines().toList()) {
-      builder.append(indentStr).append(line).append("\n");
-    }
-    return builder.toString();
   }
 
   public static String toText(Operation operation) {

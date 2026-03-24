@@ -1,181 +1,179 @@
 {
-  "name": "blockly-code-runner",
-  "displayName": "Blockly-Code-Runner",
-  "description": "",
-  "author": {
-    "name": "Flamtky",
-    "url": "https://github.com/Flamtky"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Dungeon-CampusMinden/Dungeon"
-  },
-  "publisher": "Flamtky",
-  "icon": "images/logo.png",
-  "version": "1.0.2",
-  "engines": {
-    "vscode": "^1.97.0"
-  },
-  "categories": [
-    "Programming Languages",
-    "Other"
-  ],
-  "activationEvents": [
-      "onLanguage:java",
-      "onCommand:blockly-code-runner.createBlocklyJavaProject",
-      "onCommand:blockly-code-runner.debugBlocklyFile",
-      "onDebugResolve:blockly-dap"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "blockly-code-runner.sendBlocklyFile",
-        "title": "Run Blockly-Code",
-        "category": "Blockly",
-        "icon": "$(play)"
-      },
-      {
-        "command": "blockly-code-runner.stopBlocklyExecution",
-        "title": "Stop Blockly-Code",
-        "category": "Blockly",
-        "icon": "$(debug-stop)"
-      },
-        {
-            "command": "blockly-code-runner.createBlocklyJavaProject",
-            "title": "Create Blockly Java Project",
-            "category": "Blockly",
-            "icon": "$(new-folder)"
-        },
-        {
-            "command": "blockly-code-runner.debugBlocklyFile",
-            "title": "Debug Blockly-Code",
-            "category": "Blockly",
-            "icon": "$(debug-alt)"
-        }
-    ],
-      "debuggers": [
-          {
-              "type": "blockly-dap",
-              "label": "Blockly DAP",
-              "languages": [
-                  "java"
-              ],
-              "configurationAttributes": {
-                  "attach": {
-                      "required": [],
-                      "properties": {
-                          "host": {
-                              "type": "string",
-                              "default": "127.0.0.1",
-                              "description": "Host of the Blockly DAP server"
-                          },
-                          "dapPort": {
-                              "type": "number",
-                              "default": 4711,
-                              "description": "Port of the Blockly DAP server"
-                          },
-                          "sourceFileMap": {
-                              "type": "object",
-                              "description": "Optional mapping between editor source paths and debugger source paths",
-                              "additionalProperties": {
-                                  "type": "string"
-                              }
-                          },
-                          "wrapperLineOffset": {
-                              "type": "number",
-                              "default": 9,
-                              "description": "Line offset added by server-side wrapping for non-complete programs."
-                          }
-                      }
-                  }
-              },
-              "initialConfigurations": [
-                  {
-                      "type": "blockly-dap",
-                      "request": "attach",
-                      "name": "Attach Blockly Debugger",
-                      "host": "127.0.0.1",
-                      "dapPort": 4711,
-                      "sourceFileMap": {},
-                      "wrapperLineOffset": 9
-                  }
-              ]
-      }
-    ],
-    "configuration": {
-      "type": "object",
-      "title": "Blockly-Code-Runner",
-      "properties": {
-        "blocklyServer.url": {
-          "type": "string",
-          "default": "http://localhost:8080",
-          "description": "Server-URL für Blockly"
-        },
-        "blocklyServer.sleepAfterEachLine": {
-          "type": "integer",
-          "default": 500,
-          "description": "Zeit in Millisekunden, die nach jeder Zeile gewartet wird, um die Ausführung zu verlangsamen. Setze auf 0, um keine Verzögerung zu haben.",
-          "minimum": 0,
-          "maximum": 10000
-        },
-          "blocklyServer.dapHost": {
-              "type": "string",
-              "default": "127.0.0.1",
-              "description": "Host des Blockly DAP-Servers für Debug-Sessions."
-          },
-          "blocklyServer.dapPort": {
-              "type": "integer",
-              "default": 4711,
-              "description": "Port des Blockly DAP-Servers für Debug-Sessions.",
-              "minimum": 1,
-              "maximum": 65535
-        }
-      }
+    "name": "blockly-code-runner",
+    "displayName": "Blockly-Code-Runner",
+    "description": "",
+    "author": {
+        "name": "Flamtky",
+        "url": "https://github.com/Flamtky"
     },
-    "menus": {
-      "editor/title": [
-        {
-          "command": "blockly-code-runner.sendBlocklyFile",
-          "group": "navigation",
-          "when": "resourceExtname == .java"
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Dungeon-CampusMinden/Dungeon"
+    },
+    "publisher": "Flamtky",
+    "icon": "images/logo.png",
+    "version": "1.0.2",
+    "engines": {
+        "vscode": "^1.97.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:java",
+        "onDebugResolve:blockly-dap"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "blockly-code-runner.sendBlocklyFile",
+                "title": "Run Blockly-Code",
+                "category": "Blockly",
+                "icon": "$(play)"
+            },
+            {
+                "command": "blockly-code-runner.stopBlocklyExecution",
+                "title": "Stop Blockly-Code",
+                "category": "Blockly",
+                "icon": "$(debug-stop)"
+            },
+            {
+                "command": "blockly-code-runner.createBlocklyJavaProject",
+                "title": "Create Blockly Java Project",
+                "category": "Blockly",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "blockly-code-runner.debugBlocklyFile",
+                "title": "Debug Blockly-Code",
+                "category": "Blockly",
+                "icon": "$(debug-alt)"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "blockly-dap",
+                "label": "Blockly DAP",
+                "languages": [
+                    "java"
+                ],
+                "configurationAttributes": {
+                    "attach": {
+                        "required": [],
+                        "properties": {
+                            "host": {
+                                "type": "string",
+                                "default": "127.0.0.1",
+                                "description": "Host of the Blockly DAP server"
+                            },
+                            "dapPort": {
+                                "type": "number",
+                                "default": 4711,
+                                "description": "Port of the Blockly DAP server"
+                            },
+                            "sourceFileMap": {
+                                "type": "object",
+                                "description": "Optional mapping between editor source paths and debugger source paths",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            },
+                            "wrapperLineOffset": {
+                                "type": "number",
+                                "default": 9,
+                                "description": "Line offset added by server-side wrapping for non-complete programs."
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "blockly-dap",
+                        "request": "attach",
+                        "name": "Attach Blockly Debugger",
+                        "host": "127.0.0.1",
+                        "dapPort": 4711,
+                        "sourceFileMap": {},
+                        "wrapperLineOffset": 9
+                    }
+                ]
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Blockly-Code-Runner",
+            "properties": {
+                "blocklyServer.url": {
+                    "type": "string",
+                    "default": "http://localhost:8080",
+                    "description": "Server-URL für Blockly"
+                },
+                "blocklyServer.sleepAfterEachLine": {
+                    "type": "integer",
+                    "default": 500,
+                    "description": "Zeit in Millisekunden, die nach jeder Zeile gewartet wird, um die Ausführung zu verlangsamen. Setze auf 0, um keine Verzögerung zu haben.",
+                    "minimum": 0,
+                    "maximum": 10000
+                },
+                "blocklyServer.dapHost": {
+                    "type": "string",
+                    "default": "127.0.0.1",
+                    "description": "Host des Blockly DAP-Servers für Debug-Sessions."
+                },
+                "blocklyServer.dapPort": {
+                    "type": "integer",
+                    "default": 4711,
+                    "description": "Port des Blockly DAP-Servers für Debug-Sessions.",
+                    "minimum": 1,
+                    "maximum": 65535
+                }
+            }
         },
-        {
-          "command": "blockly-code-runner.stopBlocklyExecution",
-          "group": "navigation",
-          "when": "resourceExtname == .java"
-        },
-          {
-              "command": "blockly-code-runner.debugBlocklyFile",
-              "group": "navigation",
-              "when": "resourceExtname == .java"
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "blockly-code-runner.sendBlocklyFile",
+                    "group": "navigation",
+                    "when": "resourceExtname == .java"
+                },
+                {
+                    "command": "blockly-code-runner.stopBlocklyExecution",
+                    "group": "navigation",
+                    "when": "resourceExtname == .java"
+                },
+                {
+                    "command": "blockly-code-runner.debugBlocklyFile",
+                    "group": "navigation",
+                    "when": "resourceExtname == .java"
+                }
+            ]
         }
-      ]
+    },
+    "scripts": {
+        "copy:intrinsics": "node ./scripts/copy-intrinsics.mjs",
+        "vscode:prepublish": "npm run compile",
+        "compile": "npm run copy:intrinsics && tsc -p ./",
+        "watch": "npm run copy:intrinsics && tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "test": "vscode-test"
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.10",
+        "@types/node": "20.x",
+        "@types/vscode": "^1.97.0",
+        "@typescript-eslint/eslint-plugin": "^8.25.0",
+        "@typescript-eslint/parser": "^8.25.0",
+        "@vscode/test-cli": "^0.0.10",
+        "@vscode/test-electron": "^2.4.1",
+        "eslint": "^9.22.0",
+        "typescript-eslint": "^8.26.0",
+        "typescript": "^5.7.3"
+    },
+    "dependencies": {
+        "axios": "^1.13.5"
     }
-  },
-  "scripts": {
-      "copy:intrinsics": "node ./scripts/copy-intrinsics.mjs",
-    "vscode:prepublish": "npm run compile",
-      "compile": "npm run copy:intrinsics && tsc -p ./",
-      "watch": "npm run copy:intrinsics && tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
-    "@types/vscode": "^1.97.0",
-    "@typescript-eslint/eslint-plugin": "^8.25.0",
-    "@typescript-eslint/parser": "^8.25.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
-    "eslint": "^9.22.0",
-    "typescript-eslint": "^8.26.0",
-    "typescript": "^5.7.3"
-  },
-  "dependencies": {
-      "axios": "^1.13.5"
-  }
 }

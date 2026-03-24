@@ -3,10 +3,10 @@ package coderunner;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import contrib.hud.UIUtils;
 import contrib.systems.AttributeBarSystem;
 import contrib.systems.DebugDrawSystem;
 import contrib.systems.EventScheduler;
-import contrib.hud.UIUtils;
 import core.Game;
 import core.System;
 import core.systems.CameraSystem;
@@ -55,11 +55,7 @@ final class DebugPauseBridge {
           }
         };
 
-    if (Gdx.app != null) {
-      Gdx.app.postRunnable(applyState);
-    } else {
-      applyState.run();
-    }
+    Gdx.app.postRunnable(applyState);
   }
 
   private void pauseGameplaySystems() {

@@ -17,11 +17,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
-
-import static dgir.dialect.builtin.BuiltinOps.ProgramOp;
 
 @SuppressWarnings({"unchecked"})
 public class JavaCompiler {
@@ -30,7 +28,7 @@ public class JavaCompiler {
 
   protected JavaCompiler() {}
 
-  public static @NotNull Optional<ProgramOp> compileSource(
+  public static @NotNull CompilationResult compileSource(
       @NotNull String source, @NotNull String filename) {
     StaticJavaParser.getParserConfiguration()
         .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
@@ -74,7 +72,12 @@ public class JavaCompiler {
     } catch (ParseProblemException e) {
       logger.severe("Failed to parse Java source code: " + e.getMessage());
       logger.severe("Source code:\n" + source);
-      return Optional.empty();
+      return new CompilationResult.Failure(
+          List.of(
+              "Failed to parse Java source code: "
+                  + e.getMessage().substring(0, e.getMessage().indexOf("Problem stacktrace : "))),
+          List.of(),
+          List.of());
     }
 
     EmitContext context = new EmitContext(filename);
@@ -84,8 +87,7 @@ public class JavaCompiler {
     new LoopLowering().visit(result, null);
     Boolean castEliminationResult = new ImplicitCastElimination().visit(result, context);
     if (castEliminationResult != null) {
-      context.printDiagnostics();
-      return Optional.empty();
+      return context.asCompilationResult();
     }
     new LogicalBinaryToConditional().visit(result, context);
     new DeadCodeElimination().visit(result, null);
@@ -94,11 +96,7 @@ public class JavaCompiler {
     Dialect.registerAllDialects();
     DungeonDialect.get().register();
 
-    EmitResult<Boolean> emitResult = NonValueVisitor.get().visit(result, context);
-    context.printDiagnostics();
-    if (emitResult.isFailure()) {
-      return Optional.empty();
-    }
-    return Optional.ofNullable(context.program);
+    NonValueVisitor.get().visit(result, context);
+    return context.asCompilationResult();
   }
 }

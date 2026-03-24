@@ -235,15 +235,21 @@ public final class EmitContext {
     info.add(formatDiagnostic(node, message, args));
   }
 
+  public CompilationResult asCompilationResult() {
+    if (compilationSuccessful()) {
+      assert program != null : "Program must be set before returning a CompilationResult.";
+      return new CompilationResult.Success(program, info, warnings);
+    } else {
+      return new CompilationResult.Failure(errors, warnings, info);
+    }
+  }
+
   public void printDiagnostics() {
-    for (String error : errors) {
-      System.err.println(error);
-    }
-    for (String warning : warnings) {
-      System.err.println(warning);
-    }
-    for (String info : info) {
-      System.out.println(info);
-    }
+    StringBuilder sb = new StringBuilder();
+    sb.append("Diagnostics:\n");
+    sb.append("ERRORS:\n").append(String.join("\n", errors));
+    sb.append("\n\nWARNINGS:\n").append(String.join("\n", warnings));
+    sb.append("\n\nINFO:\n").append(String.join("\n", info));
+    System.out.println(sb.toString());
   }
 }

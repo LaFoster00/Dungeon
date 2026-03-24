@@ -1,5 +1,6 @@
 package coderunner;
 
+import blockly.dgir.compiler.java.CompilationResult;
 import blockly.dgir.compiler.java.JavaCompiler;
 import components.VmManagedComponent;
 import core.Game;
@@ -10,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 import server.Server;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import static dgir.dialect.builtin.BuiltinOps.ProgramOp;
 
@@ -63,8 +63,10 @@ public class Main {
    * @return The instance of the BlocklyCodeRunner.
    */
   public static BlocklyCodeRunner instance() {
-    if (instance == null) {
-      instance = new BlocklyCodeRunner();
+    synchronized (BlocklyCodeRunner.class) {
+      if (instance == null) {
+        instance = new BlocklyCodeRunner();
+      }
     }
     return instance;
   }
@@ -81,7 +83,7 @@ public class Main {
 
   /**
    * Requests the current program to stop and interrupts the VM thread so any blocking wait inside
-   * an op runner is unblocked immediately.
+   * an op runner is unblocked immediately. Only call from main thread.
    *
    * <p>This is a no-op when nothing is running.
    */
@@ -112,6 +114,15 @@ public class Main {
                     .forEach(c -> ((VmManagedComponent) c).destroyVmManagedComponent()));
   }
 
+  /**
+   * Compiles and runs the given code. If the code is not a complete program, it will be wrapped in
+   * a main method and a class.
+   *
+   * @param code the code to run
+   * @param isCompleteProgram whether the code is a complete program or not.
+   * @param waitForDebugger whether to wait for a debugger to attach before running the code.
+   * @param sourceFileName the name of the source file.
+   */
   public void compileAndRunCode(
       String code,
       boolean isCompleteProgram,
@@ -120,6 +131,16 @@ public class Main {
     compileAndRunCode(code, 0, isCompleteProgram, waitForDebugger, sourceFileName);
   }
 
+  /**
+   * Compiles and runs the given code. If the code is not a complete program, it will be wrapped in
+   * a main method and a class. Only call from main thread.
+   *
+   * @param code the code to run
+   * @param sleepAfterEachLine the time to sleep after executing each line of code, in milliseconds.
+   * @param completeProgram whether the code is a complete program or not.
+   * @param waitForDebugger whether to wait for a debugger to attach before running the code.
+   * @param sourceFileName the name of the source file.
+   */
   public void compileAndRunCode(
       String code,
       int sleepAfterEachLine,
@@ -141,15 +162,15 @@ public class Main {
             + sleepAfterEachLine
             + " and waitForDebugger: "
             + waitForDebugger);
-    Optional<ProgramOp> program =
+    CompilationResult compilationResult =
         JavaCompiler.compileSource(
             completeCode, sourceFileName != null ? sourceFileName : "Main.java");
-    if (program.isEmpty()) {
-      LOGGER.error("Failed to compile code");
-      return;
+    if (compilationResult instanceof CompilationResult.Failure) {
+      throw new RuntimeException("Compilation failed with errors: \n" + compilationResult);
     }
+    ProgramOp program = ((CompilationResult.Success) compilationResult).program();
     try {
-      dapServer.reloadProgram(program.get(), waitForDebugger);
+      dapServer.reloadProgram(program, waitForDebugger);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }

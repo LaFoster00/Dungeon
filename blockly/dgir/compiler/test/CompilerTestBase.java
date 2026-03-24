@@ -1,3 +1,4 @@
+import blockly.dgir.compiler.java.CompilationResult;
 import blockly.dgir.compiler.java.JavaCompiler;
 import blockly.dgir.vm.dialect.dg.DungeonDialectRunner;
 import dgir.core.DgirCoreUtils;
@@ -15,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,9 +52,11 @@ public class CompilerTestBase {
       System.out.println("Failed to create output directory '" + savePath + "': " + e);
     }
 
-    Optional<BuiltinOps.ProgramOp> programOp =
+    CompilationResult compilationResult =
         JavaCompiler.compileSource(formatedCode, callerName + ".java");
-    assert programOp.isPresent() : "Compilation failed";
+    assert compilationResult instanceof CompilationResult.Success
+        : "Compilation failed" + compilationResult;
+    BuiltinOps.ProgramOp program = ((CompilationResult.Success) compilationResult).program();
 
     if (printSource) System.out.println(formatedCode);
     if (saveSource) {
@@ -69,7 +71,7 @@ public class CompilerTestBase {
       }
     }
 
-    String result = Utils.getMapper(true).writeValueAsString(programOp.get());
+    String result = Utils.getMapper(true).writeValueAsString(program);
 
     if (printJsonResult) System.out.println(result);
     if (saveJsonResult) {
@@ -84,12 +86,12 @@ public class CompilerTestBase {
       }
     }
 
-    if (printDgirResult) System.out.println(IrToText.toText(programOp.get().getOperation()));
+    if (printDgirResult) System.out.println(IrToText.toText(program.getOperation()));
     if (saveDgirResult) {
       String filePath = savePath + callerName + ".dgir";
       try {
         BufferedWriter writer = Files.newBufferedWriter(Paths.get(filePath), UTF_8);
-        writer.write(IrToText.toText(programOp.get().getOperation()));
+        writer.write(IrToText.toText(program.getOperation()));
         writer.close();
         System.out.println("Saved result to " + filePath);
       } catch (IOException e) {
@@ -98,12 +100,11 @@ public class CompilerTestBase {
     }
 
     assertTrue(
-        programOp.get().verify(true),
-        "Verification failed for " + callerName + ":\n" + result + "\n");
+        program.verify(true), "Verification failed for " + callerName + ":\n" + result + "\n");
 
     if (!run) return;
 
-    vm.init(programOp.get());
+    vm.init(program);
     try {
       long startTime = System.nanoTime();
       assert vm.run() : "Execution failed";

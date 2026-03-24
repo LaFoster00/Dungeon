@@ -30,6 +30,7 @@ import core.utils.Direction;
 import core.utils.IVoidFunction;
 import core.utils.Point;
 import core.utils.components.path.IPath;
+import core.utils.logging.DungeonLogLevel;
 import core.utils.logging.DungeonLogger;
 import core.utils.logging.DungeonLoggerConfig;
 import java.io.IOException;
@@ -87,7 +88,7 @@ public final class Game {
    */
   public static void run() {
     if (!DungeonLoggerConfig.isInitialized()) {
-      DungeonLoggerConfig.initDefault();
+      DungeonLoggerConfig.initWithLevel(DungeonLogLevel.INFO);
     }
 
     if (PreRunConfiguration.multiplayerEnabled()) {

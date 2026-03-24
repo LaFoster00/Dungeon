@@ -21,6 +21,7 @@ import core.utils.Tuple;
 import core.utils.Vector2;
 import core.utils.components.draw.state.StateMachine;
 import core.utils.components.path.SimpleIPath;
+import core.utils.logging.DungeonLogger;
 import dgir.vm.api.DialectRunner;
 import entities.HeroTankControlledFactory;
 import level.produs.*;
@@ -47,6 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>For the Web-UI you have to start the frontend yourself.
  */
 public class Client {
+  public static final DungeonLogger LOGGER = DungeonLogger.getLogger(Client.class);
 
   /** The name of the blockly player. */
   public static final String WIZARD_NAME = "Algorim";
@@ -312,16 +314,11 @@ public class Client {
           }
         };
 
-    if (Gdx.app != null) {
-      Gdx.app.postRunnable(restartTask);
-      return;
-    }
-
-    // Fallback for tests without a LibGDX app instance.
-    restartTask.run();
+    Gdx.app.postRunnable(restartTask);
   }
 
   private static void performRestart() {
+    LOGGER.info("Restarting game...");
     BlocklyCodeRunner.instance().stopExecution();
     Game.removeAllEntities();
     Game.system(PositionSystem.class, System::stop);
@@ -330,5 +327,6 @@ public class Client {
     DungeonLoader.reloadCurrentLevel();
     Game.system(PositionSystem.class, System::run);
     DialogTracker.instance().clear();
+    LOGGER.info("Game restarted.");
   }
 }

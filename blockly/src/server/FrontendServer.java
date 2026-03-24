@@ -1,7 +1,6 @@
 package server;
 
 import com.sun.net.httpserver.HttpServer;
-import core.utils.logging.DungeonLogLevel;
 import core.utils.logging.DungeonLogger;
 
 import java.awt.*;
@@ -21,10 +20,6 @@ public class FrontendServer {
   private static final int PORT = 8081;
   private static final DungeonLogger LOGGER = DungeonLogger.getLogger(FrontendServer.class);
   private static HttpServer server;
-
-  static {
-    LOGGER.getBaseLogger().setLevel(DungeonLogLevel.INFO.toJulLevel());
-  }
 
   /**
    * Starts the frontend server.

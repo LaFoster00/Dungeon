@@ -16,6 +16,22 @@ import java.util.Optional;
  * constructors — they are purely namespace containers.
  */
 public class DgirCoreUtils {
+  /**
+   * Indent each line of {@code text} by {@code indent} tab characters. Lines are determined by
+   * splitting on {@code \n} (not {@code \r\n}).
+   *
+   * @param text the text to indent.
+   * @param indent the number of tab characters to prepend to each line.
+   * @return the indented text.
+   */
+  public static String indent(String text, int indent) {
+    StringBuilder builder = new StringBuilder();
+    String indentStr = String.join("", java.util.Collections.nCopies(indent, "\t"));
+    for (String line : text.lines().toList()) {
+      builder.append(indentStr).append(line).append("\n");
+    }
+    return builder.toString();
+  }
 
   /**
    * Split {@code text} by the first occurrence of {@code delimiter} that appears at nesting depth

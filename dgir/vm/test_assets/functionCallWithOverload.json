@@ -193,10 +193,6 @@
                                     }
                                 }
                             ],
-                            "output": {
-                                "@id": "%6",
-                                "type": "int32"
-                            },
                             "regions": [
                                 {
                                     "bodyValues": [
@@ -273,10 +269,6 @@
                                     }
                                 }
                             ],
-                            "output": {
-                                "@id": "%10",
-                                "type": "float32"
-                            },
                             "regions": [
                                 {
                                     "bodyValues": [
