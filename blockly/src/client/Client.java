@@ -4,7 +4,6 @@ import blockly.dgir.vm.dialect.dg.DgActionGateway;
 import blockly.dgir.vm.dialect.dg.DungeonDialectRunner;
 import coderunner.BlocklyCodeRunner;
 import coderunner.DgHeroActionGateway;
-import com.badlogic.gdx.Gdx;
 import com.sun.net.httpserver.HttpServer;
 import components.AmmunitionComponent;
 import contrib.systems.*;
@@ -291,7 +290,7 @@ public class Client {
 
   /**
    * Restarts the game by removing all entities, recreating the player, and reloading the current
-   * level.
+   * level. Call on main thread only.
    *
    * <p>Restart work is always dispatched to the LibGDX application thread via {@link
    * com.badlogic.gdx.Application#postRunnable(Runnable)}. This is robust even when tests start the
@@ -304,17 +303,11 @@ public class Client {
   public static void restart() {
     // Coalesce concurrent restart requests; one queued restart is enough.
     if (!restartQueued.compareAndSet(false, true)) return;
-
-    Runnable restartTask =
-        () -> {
-          try {
-            performRestart();
-          } finally {
-            restartQueued.set(false);
-          }
-        };
-
-    Gdx.app.postRunnable(restartTask);
+    try {
+      performRestart();
+    } finally {
+      restartQueued.set(false);
+    }
   }
 
   private static void performRestart() {

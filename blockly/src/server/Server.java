@@ -236,7 +236,7 @@ public class Server {
   private void handleResetRequest(HttpExchange exchange) throws IOException {
     LOGGER.info("Received reset request");
     if (!ensureMethod(exchange, "POST")) return;
-    Client.restart();
+    Gdx.app.postRunnable(Client::restart);
     sendHeroPosition(exchange);
   }
 
@@ -291,24 +291,28 @@ public class Server {
    * @throws IOException If an error occurs while sending the response
    */
   private void handleCodeRequest(HttpExchange exchange) throws IOException {
-    LOGGER.info("Received code request" + exchange.getRequestURI().getRawQuery());
+    LOGGER.info("Received code request: " + exchange.getRequestURI().getRawQuery());
     if (!ensureMethod(exchange, "POST")) return;
     Map<String, List<String>> queryParams = parseQueryParams(exchange);
     // Handle stop request
     {
       boolean isStopRequest = queryParams.containsKey("stop");
       if (isStopRequest) {
+        LOGGER.info("Received stop request");
         String response = stopExecution();
         sendResponse(StatusCode.OK, response, exchange);
         return;
       }
     }
 
+    final boolean stoppedExecution;
     // Handle normal code execution request
     if (BlocklyCodeRunner.instance().isRunning()) {
-      String response = "Another code execution is already running. Please stop it first.";
-      sendResponse(StatusCode.CONFLICT, response, exchange);
-      return;
+      Client.restart();
+      waitDelta();
+      stoppedExecution = true;
+    } else {
+      stoppedExecution = false;
     }
 
     boolean isCompleteProgram = queryParams.containsKey("complete");
@@ -329,8 +333,9 @@ public class Server {
     String code = new String(inStream.readAllBytes(), StandardCharsets.UTF_8);
 
     final int finalSleepAfterEachLine = sleepAfterEachLine;
-    EventScheduler.scheduleAction(
+    Gdx.app.postRunnable(
         () -> {
+          LOGGER.info("Handling code request.");
           // Start code execution
           try {
             if (finalSleepAfterEachLine >= 0) {
@@ -345,7 +350,11 @@ public class Server {
               BlocklyCodeRunner.instance()
                   .compileAndRunCode(code, isCompleteProgram, waitForDebugger, sourceFileNameParam);
             }
-            sendResponse(StatusCode.OK, "OK - Code execution started", exchange);
+            sendResponse(
+                StatusCode.OK,
+                "OK - Code execution started"
+                    + (stoppedExecution ? "Stopped running code previously running code." : ""),
+                exchange);
           } catch (Exception e) {
             LOGGER.error("Exception executing code: " + e);
             stopExecution();
@@ -355,8 +364,7 @@ public class Server {
               LOGGER.error("Failed to send error response: " + ex);
             }
           }
-        },
-        0);
+        });
   }
 
   /**

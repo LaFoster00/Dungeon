@@ -154,7 +154,7 @@ public class Main {
       completeCode = code;
     }
     LOGGER.info(
-        "Compiling and running code: "
+        "Compiling and running code: \n"
             + completeCode
             + "for file: "
             + sourceFileName
