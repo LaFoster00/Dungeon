@@ -22,8 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Optional;
 
-import static blockly.dgir.compiler.java.emission.EmissionUtils.visitRValueNodeList;
-
 public class Intrinsics {
   public static EmitResult<Optional<Value>> emitIntrinsic(
       MethodCallExpr n, String intrinsicName, List<Value> args, EmitContext context) {
@@ -34,16 +32,14 @@ public class Intrinsics {
         return EmitResult.of(Optional.empty());
       }
       case "Dungeon.Hero.rotate(Dungeon.Direction)" -> {
-        EmitResult<List<Value>> arguments = visitRValueNodeList(n.getArguments(), context);
-        if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
-        Value directionValue = arguments.get().getFirst();
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        Value directionValue = args.getFirst();
         context.insert(new DgOps.RotateOp(context.loc(n), directionValue));
         return EmitResult.of(Optional.empty());
       }
       case "Dungeon.Hero.interact(Dungeon.Direction)" -> {
-        EmitResult<List<Value>> arguments = visitRValueNodeList(n.getArguments(), context);
-        if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
-        Value directionValue = arguments.get().getFirst();
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        Value directionValue = args.getFirst();
         context.insert(new DgOps.InteractOp(context.loc(n), directionValue));
         return EmitResult.of(Optional.empty());
       }
@@ -56,9 +52,8 @@ public class Intrinsics {
         return EmitResult.of(Optional.empty());
       }
       case "Dungeon.Hero.drop(Dungeon.ItemType)" -> {
-        EmitResult<List<Value>> arguments = visitRValueNodeList(n.getArguments(), context);
-        if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
-        Value itemTypeValue = arguments.get().getFirst();
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        Value itemTypeValue = args.getFirst();
         context.insert(new DgOps.DropOp(context.loc(n), itemTypeValue));
         return EmitResult.of(Optional.empty());
       }
@@ -75,20 +70,18 @@ public class Intrinsics {
         return EmitResult.of(Optional.empty());
       }
       case "Dungeon.Hero.isNearTile(Dungeon.LevelElement, Dungeon.Direction)" -> {
-        EmitResult<List<Value>> arguments = visitRValueNodeList(n.getArguments(), context);
-        if (arguments.isFailure() || arguments.get().size() != 2) return EmitResult.failure();
-        Value levelElementValue = arguments.get().getFirst();
-        Value directionValue = arguments.get().get(1);
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        Value levelElementValue = args.getFirst();
+        Value directionValue = args.get(1);
         var op =
             context.insert(
                 new DgOps.IsNearTileOp(context.loc(n), levelElementValue, directionValue));
         return EmitResult.of(Optional.of(op.getResult()));
       }
       case "Dungeon.Hero.matchesTile(Dungeon.LevelElement, Dungeon.LevelElement)" -> {
-        EmitResult<List<Value>> arguments = visitRValueNodeList(n.getArguments(), context);
-        if (arguments.isFailure() || arguments.get().size() != 2) return EmitResult.failure();
-        Value levelElementValue1 = arguments.get().getFirst();
-        Value levelElementValue2 = arguments.get().get(1);
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        Value levelElementValue1 = args.getFirst();
+        Value levelElementValue2 = args.get(1);
         var op =
             context.insert(
                 new ArithOps.BinaryOp(
@@ -99,9 +92,8 @@ public class Intrinsics {
         return EmitResult.of(Optional.of(op.getResult()));
       }
       case "Dungeon.Hero.isActive(Dungeon.Direction)" -> {
-        EmitResult<List<Value>> arguments = visitRValueNodeList(n.getArguments(), context);
-        if (arguments.isFailure() || arguments.get().size() != 1) return EmitResult.failure();
-        Value directionValue = arguments.get().getFirst();
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        Value directionValue = args.getFirst();
         var op = context.insert(new DgOps.IsActiveOp(context.loc(n), directionValue));
         return EmitResult.of(Optional.of(op.getResult()));
       }
@@ -171,10 +163,9 @@ public class Intrinsics {
           "Dungeon.Arrays.copyOf(long[], int)",
           "Dungeon.Arrays.copyOf(float[], int)",
           "Dungeon.Arrays.copyOf(double[], int)" -> {
-        var result = visitRValueNodeList(n.getArguments(), context);
-        if (result.isFailure() || result.get().size() != 2) return EmitResult.failure();
-        Value arrayValue = result.get().getFirst();
-        Value newLengthValue = result.get().get(1);
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        Value arrayValue = args.getFirst();
+        Value newLengthValue = args.get(1);
         var op = context.insert(new MemOps.ReallocGcOp(context.loc(n), arrayValue, newLengthValue));
         op.setOutputValue(arrayValue);
         return EmitResult.of(Optional.of(op.getResult()));

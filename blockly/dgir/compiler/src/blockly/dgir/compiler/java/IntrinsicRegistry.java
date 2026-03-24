@@ -112,6 +112,7 @@ public class IntrinsicRegistry {
       logger.info("Intrinsics for module " + fileName + ": " + fileIntrinsics);
 
       intrinsics.addAll(fileIntrinsics);
+      types.add("Dungeon.*");
     }
   }
 
