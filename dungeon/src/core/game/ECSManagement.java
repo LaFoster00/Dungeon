@@ -84,7 +84,7 @@ public final class ECSManagement {
   public static void informAboutChanges(Entity entity) {
     if (levelEntities().anyMatch(entity1 -> entity1.equals(entity))) {
       activeEntityStorage.forEach(f -> f.update(entity));
-      LOGGER.info(entity + " informed the Game about component changes.");
+      LOGGER.debug(entity + " informed the Game about component changes.");
     }
   }
 
@@ -113,7 +113,7 @@ public final class ECSManagement {
     EntityIdProvider.ensureRegistered(entity.id());
 
     activeEntityStorage.forEach(f -> f.add(entity));
-    LOGGER.info(entity + " will be added to the Game.");
+    LOGGER.debug(entity + " will be added to the Game.");
 
     try {
       if (Game.network().isServer()) {
@@ -140,7 +140,7 @@ public final class ECSManagement {
   public static Entity remove(Entity entity) {
     activeEntityStorage.forEach(f -> f.remove(entity));
     EntityIdProvider.unregister(entity.id());
-    LOGGER.info(entity + " will be removed from the Game.");
+    LOGGER.debug(entity + " will be removed from the Game.");
 
     try {
       if (Game.network().isServer()) {
@@ -202,7 +202,7 @@ public final class ECSManagement {
         activeEntityStorage.stream().filter(f -> f.equals(system.filterRules())).findFirst();
     filter.ifPresentOrElse(
         f -> f.add(system), () -> createNewEntitySystemMapper(system.filterRules()).add(system));
-    LOGGER.info("A new {} was added to the game", system.getClass().getName());
+    LOGGER.debug("A new {} was added to the game", system.getClass().getName());
     return Optional.ofNullable(currentSystem);
   }
 

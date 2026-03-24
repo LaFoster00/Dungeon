@@ -131,7 +131,7 @@ public final class Entity implements Comparable<Entity> {
     this.id = id;
     this.components = new HashMap<>();
     this.name = name != null ? name : "_" + id;
-    LOGGER.info(this + " was created.");
+    LOGGER.debug(this + " was created.");
   }
 
   /**
