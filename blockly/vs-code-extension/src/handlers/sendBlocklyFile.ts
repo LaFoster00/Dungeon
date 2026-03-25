@@ -51,6 +51,7 @@ export default async function sendBlocklyFile(
     diagnosticCollection.clear();
 
     const code: string = editor.document.getText();
+    let completeProgramMode = false;
 
     try {
         const queryParams = new URLSearchParams();
@@ -60,9 +61,7 @@ export default async function sendBlocklyFile(
             queryParams.set("waitForDebugger", "1");
         }
 
-        const completeProgramMode = await resolveCompleteProgramMode(
-            editor.document,
-        );
+        completeProgramMode = await resolveCompleteProgramMode(editor.document);
         if (completeProgramMode) {
             queryParams.set("complete", "1");
         }
@@ -113,6 +112,7 @@ export default async function sendBlocklyFile(
             const amountOfErrors = displayErrorsInEditor(
                 errorMessage,
                 editor.document,
+                completeProgramMode,
             );
             if (amountOfErrors === 0) {
                 vscode.window.showErrorMessage(
@@ -185,18 +185,46 @@ function toErrorMessage(error: unknown): string {
 function displayErrorsInEditor(
     errorMessage: string,
     document: vscode.TextDocument,
+    completeProgramMode: boolean,
 ): number {
     const diagnostics: vscode.Diagnostic[] = [];
 
-    // Parse Java compilation errors
-    // Format is typically: "filename:line: error: message"
-    const errorLines = errorMessage.split("\n");
+    console.log(
+        "=== displayErrorsInEditor called ===",
+        "completeProgramMode:",
+        completeProgramMode,
+    );
+    console.log("Raw error message:", errorMessage);
 
-    const errorRegex = /UserScript\.java:(\d+): ([fF]ehler|[eE]rror): (.+)/;
+    // Strip RuntimeException wrapper if present
+    // e.g., "ERROR: Exception executing code: java.lang.RuntimeException: <actual error>"
+    let cleanedMessage = errorMessage;
+    const runtimeExceptionMatch = errorMessage.match(
+        /java\.lang\.RuntimeException:\s*(.*)/s,
+    );
+    if (runtimeExceptionMatch) {
+        cleanedMessage = runtimeExceptionMatch[1];
+        console.log(
+            "Stripped RuntimeException, cleaned message:",
+            cleanedMessage,
+        );
+    }
+
+    // Parse Java compilation errors
+    // Format is typically: "filename:line:column: error: message"
+    const errorLines = cleanedMessage.split("\n");
+    console.log(
+        "Split into",
+        errorLines.length,
+        "lines:",
+        errorLines.map((l, i) => `[${i}]: ${JSON.stringify(l)}`),
+    );
+
+    const errorRegex = /^(.*):(\d+):(\d+):\s*([eE]rror|[wW]arning):\s*(.+)$/;
     // Try to determine a more specific range for the error
     // For example, if the error message mentions a specific symbol
     const symbolRegex = /[sS]ymbol:\s+([mM]ethode|[vV]ariable)\s+([^\s(]+)/;
-    const offsetRegex = /(\s*)\^/; // only spaces and one ^
+    const offsetRegex = /^(\s*)\^/; // only spaces and one ^
 
     let currentLineNum: number = -1;
     const currentError = {
@@ -208,15 +236,22 @@ function displayErrorsInEditor(
         errorOffset: -1,
     };
 
-    for (const line of errorLines) {
-        const errorMatch = errorRegex.exec(line);
+    for (let i = 0; i < errorLines.length; i++) {
+        const line = errorLines[i];
+        const trimmedLine = line.trim();
+        const errorMatch = errorRegex.exec(trimmedLine);
         const offsetMatch = offsetRegex.exec(line);
-        const symbolMatch = symbolRegex.exec(line);
+        const symbolMatch = symbolRegex.exec(trimmedLine);
+
+        console.log(
+            `Line ${i}: "${line}" | trimmed: "${trimmedLine}" | matches error: ${!!errorMatch} | matches offset: ${!!offsetMatch} | matches symbol: ${!!symbolMatch}`,
+        );
 
         if (errorMatch) {
-            // If we found a new error, we want to to see if we can find a symbol
-            // if we find a new error, we want to process the previous one first even if we don't have a symbol
+            console.log("Found error match:", errorMatch);
+            // If we found a new error, process the previous one first
             if (currentError.message) {
+                console.log("Adding previous error:", currentError);
                 addDiagnostic(
                     diagnostics,
                     currentLineNum,
@@ -225,37 +260,220 @@ function displayErrorsInEditor(
                 );
             }
 
-            // set to the new error
-            currentError.message = errorMatch[3];
-            currentError.symbol.name = "";
-            currentError.symbol.type = "";
-            currentError.errorOffset = -1;
+            // Parse new error
+            const parsedLine = parseInt(errorMatch[2], 10);
+            const parsedColumn = errorMatch[3]
+                ? Math.max(parseInt(errorMatch[3], 10) - 1, 0)
+                : -1;
 
-            currentLineNum = parseInt(errorMatch[1], 10) - wrapperOffset;
+            currentLineNum = completeProgramMode
+                ? parsedLine - 1
+                : parsedLine - wrapperOffset;
             currentLineNum = Math.max(
                 0,
                 Math.min(currentLineNum, document.lineCount - 1),
             ); // Clamp to valid range
-        }
 
-        if (offsetMatch) {
+            currentError.message = errorMatch[5];
+            currentError.symbol.name = "";
+            currentError.symbol.type = "";
+            currentError.errorOffset = parsedColumn;
+
+            console.log(
+                `Parsed error: line=${parsedLine}, column=${parsedColumn}, mapped line=${currentLineNum}, message="${currentError.message}"`,
+            );
+
+            // Check if next line is the source code line
+            if (i + 1 < errorLines.length) {
+                const nextLine = errorLines[i + 1];
+                const nextTrimmed = nextLine.trim();
+                // If it doesn't match error/warning pattern and isn't a caret line, it's source
+                if (
+                    !errorRegex.test(nextTrimmed) &&
+                    !offsetRegex.test(nextLine) &&
+                    nextTrimmed.length > 0
+                ) {
+                    console.log("Found source line:", nextLine);
+                    // This is the source line, we can use it for context
+                    // Skip it in parsing by incrementing i
+                    i++;
+                    // Check if the line after source is the caret line
+                    if (i + 1 < errorLines.length) {
+                        const caretLine = errorLines[i + 1];
+                        if (offsetRegex.test(caretLine)) {
+                            const caretMatch = offsetRegex.exec(caretLine);
+                            if (caretMatch) {
+                                currentError.errorOffset = caretMatch[1].length;
+                                console.log(
+                                    "Found caret line, offset:",
+                                    caretMatch[1].length,
+                                );
+                            }
+                            i++;
+                        }
+                    }
+                }
+            }
+        } else if (offsetMatch && currentError.message) {
+            console.log("Found offset match:", offsetMatch);
             currentError.errorOffset = offsetMatch[1].length;
-        }
-
-        if (symbolMatch) {
+        } else if (symbolMatch && currentError.message) {
+            console.log("Found symbol match:", symbolMatch);
             currentError.symbol.name = symbolMatch[2];
             currentError.symbol.type = symbolMatch[1];
         }
     }
 
+    console.log("Final error object before adding:", currentError);
     // Add the last error if there is one
-    if (currentError.message)
+    if (currentError.message) {
+        console.log("Adding final error:", currentError);
         addDiagnostic(diagnostics, currentLineNum, currentError, document);
+    }
 
+    console.log("Total diagnostics found:", diagnostics.length);
     // Set the diagnostics
     diagnosticCollection.set(document.uri, diagnostics);
 
+    // Show error window with extracted diagnostics
+    if (diagnostics.length > 0) {
+        displayErrorWindow(diagnostics, document);
+    }
+
     return diagnostics.length;
+}
+
+function displayErrorWindow(
+    diagnostics: vscode.Diagnostic[],
+    document: vscode.TextDocument,
+): void {
+    const errorCount = diagnostics.length;
+    const firstError = diagnostics[0];
+
+    // Build diagnostic summary
+    let diagnosticsSummary = `Found ${errorCount} error${errorCount !== 1 ? "s" : ""}:\n\n`;
+    diagnostics.slice(0, 5).forEach((diag, index) => {
+        const line = diag.range.start.line + 1;
+        const col = diag.range.start.character + 1;
+        diagnosticsSummary += `${index + 1}. Line ${line}:${col} - ${diag.message}\n`;
+    });
+    if (errorCount > 5) {
+        diagnosticsSummary += `\n... and ${errorCount - 5} more error${errorCount - 5 !== 1 ? "s" : ""}`;
+    }
+
+    console.log("=== Extracted Diagnostics ===");
+    console.log(diagnosticsSummary);
+    console.log("=============================");
+
+    // Show error message with action buttons
+    const openErrorAction = "Show First Error";
+    const showAllErrorsAction = "Show All Errors";
+
+    vscode.window
+        .showErrorMessage(
+            diagnosticsSummary,
+            openErrorAction,
+            showAllErrorsAction,
+        )
+        .then((selection) => {
+            if (selection === openErrorAction) {
+                navigateToError(document, firstError, 0);
+            } else if (selection === showAllErrorsAction) {
+                showAllErrorsInOutput(diagnostics, document);
+            }
+        });
+}
+
+function navigateToError(
+    document: vscode.TextDocument,
+    diagnostic: vscode.Diagnostic,
+    errorIndex: number,
+): void {
+    const range = diagnostic.range;
+    const position = range.start;
+
+    // Open the document and navigate to error
+    vscode.window.showTextDocument(document, {
+        selection: range,
+        preview: false,
+    });
+
+    // Optionally show the error in the output panel
+    const outputChannel = vscode.window.createOutputChannel("Blockly Compiler");
+    outputChannel.show(true);
+    outputChannel.appendLine("=== Blockly Compilation Error ===");
+    outputChannel.appendLine(
+        `Error ${errorIndex + 1}: Line ${position.line + 1}, Column ${position.character + 1}`,
+    );
+    outputChannel.appendLine(`Message: ${diagnostic.message}`);
+    outputChannel.appendLine("");
+
+    console.log(
+        `Navigating to error at line ${position.line + 1}, column ${position.character + 1}`,
+    );
+}
+
+function showAllErrorsInOutput(
+    diagnostics: vscode.Diagnostic[],
+    document: vscode.TextDocument,
+): void {
+    const outputChannel = vscode.window.createOutputChannel(
+        "Blockly Compiler Errors",
+    );
+    outputChannel.clear();
+    outputChannel.show(true);
+
+    outputChannel.appendLine(
+        "╔════════════════════════════════════════════════╗",
+    );
+    outputChannel.appendLine(
+        "║         BLOCKLY COMPILATION ERRORS             ║",
+    );
+    outputChannel.appendLine(
+        "╚════════════════════════════════════════════════╝",
+    );
+    outputChannel.appendLine("");
+    outputChannel.appendLine(`Total Errors: ${diagnostics.length}`);
+    outputChannel.appendLine(`File: ${document.uri.fsPath}`);
+    outputChannel.appendLine("");
+    outputChannel.appendLine("─".repeat(50));
+
+    diagnostics.forEach((diagnostic, index) => {
+        const range = diagnostic.range;
+        const line = range.start.line + 1;
+        const col = range.start.character + 1;
+
+        outputChannel.appendLine("");
+        outputChannel.appendLine(
+            `[${index + 1}/${diagnostics.length}] Error at Line ${line}, Column ${col}`,
+        );
+        outputChannel.appendLine(`Message: ${diagnostic.message}`);
+        outputChannel.appendLine(
+            `Severity: ${diagnostic.severity === vscode.DiagnosticSeverity.Error ? "ERROR" : diagnostic.severity === vscode.DiagnosticSeverity.Warning ? "WARNING" : "INFO"}`,
+        );
+
+        // Try to show the actual line content
+        try {
+            const lineContent = document.lineAt(line - 1);
+            outputChannel.appendLine(`Source:  ${lineContent.text}`);
+
+            // Show caret pointer
+            const caretPos = " ".repeat(col - 1) + "^";
+            outputChannel.appendLine(`         ${caretPos}`);
+        } catch (e) {
+            // Line might not exist
+        }
+
+        outputChannel.appendLine("─".repeat(50));
+    });
+
+    outputChannel.appendLine("");
+    outputChannel.appendLine("Click on a line to navigate to that error.");
+    outputChannel.appendLine(
+        "Use the Problems panel (Ctrl+Shift+M) for more details.",
+    );
+
+    console.log("Opened All Errors view in output panel");
 }
 
 function addDiagnostic(
@@ -268,11 +486,21 @@ function addDiagnostic(
     },
     document: vscode.TextDocument,
 ) {
+    console.log(
+        `addDiagnostic: lineNum=${lineNum}, docLineCount=${document.lineCount}, errorOffset=${errorObj.errorOffset}, message="${errorObj.message}"`,
+    );
+
     // Guard against negative line numbers
-    if (lineNum < 0) return;
+    if (lineNum < 0) {
+        console.log("Skipping: lineNum < 0");
+        return;
+    }
 
     // Guard against line numbers that are too high
-    if (lineNum >= document.lineCount) return;
+    if (lineNum >= document.lineCount) {
+        console.log("Skipping: lineNum >= document.lineCount");
+        return;
+    }
 
     // Get the text of the line to determine the range
     const line = document.lineAt(Math.min(lineNum, document.lineCount - 1));
@@ -280,6 +508,20 @@ function addDiagnostic(
 
     if (errorObj.symbol.name) {
         const symbolIndex = line.text.indexOf(errorObj.symbol.name);
+        console.log(
+            `Symbol lookup: "${errorObj.symbol.name}" found at index ${symbolIndex}`,
+        );
+        if (symbolIndex < 0) {
+            diagnostics.push(
+                new vscode.Diagnostic(
+                    range,
+                    errorObj.message,
+                    vscode.DiagnosticSeverity.Error,
+                ),
+            );
+            console.log("Added symbol error diagnostic (fallback to line)");
+            return;
+        }
         const start = new vscode.Position(lineNum, symbolIndex);
         const end = new vscode.Position(
             lineNum,
@@ -296,6 +538,7 @@ function addDiagnostic(
                 vscode.DiagnosticSeverity.Error,
             ),
         );
+        console.log("Added symbol-specific error diagnostic:", preciseRange);
         return;
     }
 
@@ -311,6 +554,10 @@ function addDiagnostic(
                 vscode.DiagnosticSeverity.Error,
             ),
         );
+        console.log(
+            `Added offset-based error diagnostic at column ${errorObj.errorOffset}:`,
+            preciseRange,
+        );
         return;
     }
 
@@ -322,4 +569,5 @@ function addDiagnostic(
             vscode.DiagnosticSeverity.Error,
         ),
     );
+    console.log("Added fallback error diagnostic (whole line):", range);
 }
