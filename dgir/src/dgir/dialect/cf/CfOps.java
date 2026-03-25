@@ -1,7 +1,6 @@
 package dgir.dialect.cf;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.debug.Location;
 import dgir.core.ir.Block;
 import dgir.core.ir.Op;
@@ -24,7 +23,7 @@ import java.util.function.Function;
  * Sealed marker interface for all operations in the {@link CfDialect}.
  *
  * <p>Every concrete op must both extend {@link CfOp} and implement this interface so that {@link
- * DgirCoreUtils.Dialect#allOps} can discover it automatically via reflection.
+ * Dialect#allOps(Class)} can discover it automatically via reflection.
  */
 public sealed interface CfOps {
   /**

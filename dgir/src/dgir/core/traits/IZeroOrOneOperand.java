@@ -13,6 +13,12 @@ import java.util.Optional;
  * "return" that can optionally return a value.
  */
 public interface IZeroOrOneOperand extends IOpTrait {
+  /**
+   * Verifies that the operation has at most one operand.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return {@code true} if the operand count is zero or one.
+   */
   @Contract(pure = true)
   default boolean verify(@NotNull IZeroOrOneOperand ignored) {
     // Ensure that the operation only has one operator

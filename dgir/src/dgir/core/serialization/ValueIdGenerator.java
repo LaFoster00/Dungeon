@@ -6,6 +6,7 @@ import dgir.core.ir.Value;
 
 import java.io.Serial;
 
+/** JSON object-id generator for {@link Value} instances using debug name and sequence. */
 public class ValueIdGenerator extends ObjectIdGenerator<String> {
   @Serial private static final long serialVersionUID = 1L;
 

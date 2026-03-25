@@ -15,6 +15,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Sealed marker interface for all types contributed by the {@link FuncDialect}.
+ *
+ * <p>Every concrete type must extend {@link FuncBaseType} and implement this interface so that
+ * {@link Dialect#allTypes(Class)} can discover it automatically via reflection.
+ */
 public sealed interface FuncTypes {
   /**
    * Abstract base class for all types contributed by the {@link FuncDialect}.
@@ -25,11 +31,21 @@ public sealed interface FuncTypes {
    */
   abstract class FuncBaseType extends Type {
 
+    /**
+     * Returns the namespace prefix used when printing this type.
+     *
+     * @return the fixed {@code "func"} namespace.
+     */
     @Override
     public @NotNull String getNamespace() {
       return "func";
     }
 
+    /**
+     * Returns the dialect that owns this type.
+     *
+     * @return the {@link FuncDialect} class.
+     */
     @Override
     public @NotNull Class<? extends Dialect> getDialect() {
       return FuncDialect.class;
@@ -103,6 +119,10 @@ public sealed interface FuncTypes {
       return List.of();
     }
 
+    // =========================================================================
+    // Validation
+    // =========================================================================
+
     @Override
     public Function<Object, Boolean> getValidator() {
       // I currently do not know what about a value passed to type should do wrong since its just
@@ -114,10 +134,22 @@ public sealed interface FuncTypes {
     // Factory
     // =========================================================================
 
+    /**
+     * Returns the canonical empty function type.
+     *
+     * @return the empty function signature.
+     */
     public static FuncType empty() {
       return TypeUniquer.uniqueInstance(new FuncType());
     }
 
+    /**
+     * Returns a function type with the given inputs and output.
+     *
+     * @param inputs the ordered list of parameter types.
+     * @param output the return type, or {@code null} for void.
+     * @return a canonicalized {@link FuncType} instance.
+     */
     public static FuncType of(@NotNull List<Type> inputs, @Nullable Type output) {
       return TypeUniquer.uniqueInstance(new FuncType(inputs, output));
     }

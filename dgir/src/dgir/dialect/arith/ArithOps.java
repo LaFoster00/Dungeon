@@ -1,7 +1,6 @@
 package dgir.dialect.arith;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.debug.Location;
 import dgir.core.ir.*;
 import dgir.core.traits.IBinaryOperands;
@@ -17,17 +16,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static dgir.dialect.arith.ArithAttrs.*;
 import static dgir.dialect.arith.ArithAttrs.BinModeAttr;
 import static dgir.dialect.arith.ArithAttrs.BinModeAttr.BinMode;
-import static dgir.dialect.builtin.BuiltinAttrs.*;
+import static dgir.dialect.arith.ArithAttrs.UnaryModeAttr;
+import static dgir.dialect.builtin.BuiltinAttrs.IntegerAttribute;
+import static dgir.dialect.builtin.BuiltinAttrs.TypeAttribute;
 import static dgir.dialect.builtin.BuiltinTypes.*;
 
 /**
  * Sealed marker interface for all operations in the {@link ArithDialect}.
  *
  * <p>Every concrete op must both extend {@link ArithOp} and implement this interface so that {@link
- * DgirCoreUtils.Dialect#allOps} can discover it automatically via reflection.
+ * Dialect#allOps(Class)} can discover it automatically via reflection.
  */
 public sealed interface ArithOps {
   /**
@@ -51,12 +51,22 @@ public sealed interface ArithOps {
     // Op Info
     // =========================================================================
 
+    /**
+     * Returns the dialect that owns this operation.
+     *
+     * @return the {@link ArithDialect} class.
+     */
     @Contract(pure = true)
     @Override
     public @NotNull Class<? extends Dialect> getDialect() {
       return ArithDialect.class;
     }
 
+    /**
+     * Returns the namespace prefix used when printing this operation.
+     *
+     * @return the fixed {@code "arith"} namespace.
+     */
     @Contract(pure = true)
     @Override
     public @NotNull String getNamespace() {
@@ -64,17 +74,43 @@ public sealed interface ArithOps {
     }
   }
 
+  /**
+   * Unary arithmetic operation in the {@code arith} dialect.
+   *
+   * <p>The operand and result types must both be numeric, and the operation kind is selected via
+   * the required {@code unaryMode} attribute.
+   */
   final class UnaryOp extends ArithOp implements ArithOps, ISingleOperand, IHasResult {
+
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "arith.unary"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "arith.unary";
     }
 
+    /**
+     * Returns the default {@code unaryMode} attribute for this operation.
+     *
+     * @return a single {@link UnaryModeAttr} attribute named {@code unaryMode}.
+     */
     @Override
     public @NotNull @Unmodifiable List<@NotNull NamedAttribute> getDefaultAttributes() {
       return List.of(new NamedAttribute("unaryMode", new UnaryModeAttr()));
     }
 
+    /**
+     * Verifies operand, result, and mode constraints for this operation.
+     *
+     * @return a verifier that returns {@code true} when the op is well-formed.
+     */
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return operation -> {
@@ -103,11 +139,15 @@ public sealed interface ArithOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     @SuppressWarnings("unused")
     private UnaryOp() {}
 
     /**
-     * Create a unary op.
+     * Creates a unary operation.
      *
      * <p>In case of increment or decrement operations the output value will automatically be set to
      * the operand, as these operations conceptually update the operand in-place. For other unary
@@ -127,6 +167,16 @@ public sealed interface ArithOps {
       }
     }
 
+    // =========================================================================
+    // Functions
+    // =========================================================================
+
+    /**
+     * Returns the configured unary operation mode.
+     *
+     * @return the {@code unaryMode} attribute value.
+     * @throws AssertionError if the attribute is missing.
+     */
     public @NotNull UnaryModeAttr.UnaryMode getMode() {
       return getAttributeAs("unaryMode", UnaryModeAttr.class)
           .map(UnaryModeAttr::getMode)
@@ -141,16 +191,35 @@ public sealed interface ArithOps {
    */
   final class BinaryOp extends ArithOp implements ArithOps, IBinaryOperands, IHasResult {
 
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "arith.bin"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "arith.bin";
     }
 
+    /**
+     * Returns the default {@code binMode} attribute for this operation.
+     *
+     * @return a single {@link BinModeAttr} attribute named {@code binMode}.
+     */
     @Override
     public @NotNull @Unmodifiable List<NamedAttribute> getDefaultAttributes() {
       return List.of(new NamedAttribute("binMode", new BinModeAttr()));
     }
 
+    /**
+     * Verifies operand, result, and mode constraints for this operation.
+     *
+     * @return a verifier that returns {@code true} when the op is well-formed.
+     */
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return operation -> {
@@ -205,11 +274,15 @@ public sealed interface ArithOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     @SuppressWarnings("unused")
     private BinaryOp() {}
 
     /**
-     * Create a binary op with two numeric operands.
+     * Creates a binary operation with two numeric operands.
      *
      * @param loc the source location of this operation.
      * @param lhs the left-hand operand.
@@ -234,6 +307,16 @@ public sealed interface ArithOps {
       getAttributeAs("binMode", BinModeAttr.class).orElseThrow().setMode(binMode);
     }
 
+    // =========================================================================
+    // Functions
+    // =========================================================================
+
+    /**
+     * Returns the configured binary operation mode.
+     *
+     * @return the {@code binMode} attribute value.
+     * @throws AssertionError if the attribute is missing.
+     */
     public @NotNull BinMode getMode() {
       return getAttributeAs("binMode", BinModeAttr.class)
           .map(BinModeAttr::getMode)
@@ -241,19 +324,43 @@ public sealed interface ArithOps {
     }
   }
 
-  /** Casts a numeric operand to a target numeric type. */
+  /**
+   * Casts a numeric operand to a target numeric type.
+   *
+   * <p>The input and output types must both be numeric, and the result type is taken from the
+   * required {@code to} attribute.
+   */
   final class CastOp extends ArithOp implements ArithOps, ISingleOperand, IHasResult {
 
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "arith.cast"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "arith.cast";
     }
 
+    /**
+     * Returns the default {@code to} attribute for this operation.
+     *
+     * @return a single {@link TypeAttribute} attribute named {@code to}.
+     */
     @Override
     public @NotNull @Unmodifiable List<NamedAttribute> getDefaultAttributes() {
       return List.of(new NamedAttribute("to", new TypeAttribute()));
     }
 
+    /**
+     * Verifies operand, target type, and result type constraints for this operation.
+     *
+     * @return a verifier that returns {@code true} when the op is well-formed.
+     */
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return operation -> {
@@ -275,11 +382,15 @@ public sealed interface ArithOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     @SuppressWarnings("unused")
     private CastOp() {}
 
     /**
-     * Create a cast op.
+     * Creates a cast operation.
      *
      * @param loc the source location of this operation.
      * @param value the value to cast.
@@ -290,6 +401,16 @@ public sealed interface ArithOps {
       getAttributeAs("to", TypeAttribute.class).orElseThrow().setType(targetType);
     }
 
+    // =========================================================================
+    // Functions
+    // =========================================================================
+
+    /**
+     * Returns the configured target type of this cast.
+     *
+     * @return the {@code to} attribute value.
+     * @throws AssertionError if the attribute is missing.
+     */
     public @NotNull Type getTargetType() {
       return getAttributeAs("to", TypeAttribute.class)
           .map(TypeAttribute::getType)
@@ -309,17 +430,32 @@ public sealed interface ArithOps {
     // Type Info
     // =========================================================================
 
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "arith.constant"}.
+     */
     @Contract(pure = true)
     @Override
     public @NotNull String getIdent() {
       return "arith.constant";
     }
 
+    /**
+     * Verifies that the constant is structurally valid.
+     *
+     * @return a verifier that always accepts the operation.
+     */
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return ignored -> true;
     }
 
+    /**
+     * Returns the default {@code value} attribute for this operation.
+     *
+     * @return a single {@link IntegerAttribute} attribute named {@code value}.
+     */
     @Contract(pure = true)
     @Override
     public @NotNull List<NamedAttribute> getDefaultAttributes() {

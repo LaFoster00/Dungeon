@@ -12,6 +12,12 @@ import org.jetbrains.annotations.NotNull;
  * first operand slot.
  */
 public interface ISingleOperand extends IOpTrait {
+  /**
+   * Verifies that the operation has exactly one non-null operand.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return {@code true} if the single-operand constraint is satisfied.
+   */
   @Contract(pure = true)
   default boolean verify(@NotNull ISingleOperand ignored) {
     // Ensure that the operation only has one operator
@@ -26,11 +32,21 @@ public interface ISingleOperand extends IOpTrait {
     return true;
   }
 
+  /**
+   * Returns the single operand value.
+   *
+   * @return the operand value.
+   */
   @Contract(pure = true)
   default @NotNull Value getOperand() {
     return getOperation().getOperandValue(0).orElseThrow();
   }
 
+  /**
+   * Returns the type of the single operand value.
+   *
+   * @return the operand type.
+   */
   @Contract(pure = true)
   default @NotNull Type getOperandType() {
     return getOperand().getType();

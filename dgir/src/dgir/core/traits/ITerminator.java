@@ -18,6 +18,12 @@ import java.util.Optional;
  * block-exit validation.
  */
 public interface ITerminator extends IOpTrait {
+  /**
+   * Verifies that this operation is placed as the last operation of its parent block.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return {@code true} if the operation is a valid block terminator positionally.
+   */
   default boolean verify(@NotNull ITerminator ignored) {
     // Make sure the terminator is the last operation in the region.
     Optional<Block> block = getOperation().getParent();

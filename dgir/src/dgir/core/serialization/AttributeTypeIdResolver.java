@@ -9,7 +9,11 @@ import tools.jackson.databind.JavaType;
 import tools.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import tools.jackson.databind.type.TypeFactory;
 
+/**
+ * Type resolver for polymorphic attribute deserialization using dialect-registered ident strings.
+ */
 public class AttributeTypeIdResolver extends TypeIdResolverBase {
+  /** Constructs the type resolver for attribute deserialization. */
   public AttributeTypeIdResolver() {
     super(TypeFactory.createDefaultInstance().constructType(Attribute.class));
   }

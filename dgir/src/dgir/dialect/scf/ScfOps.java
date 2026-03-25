@@ -1,7 +1,6 @@
 package dgir.dialect.scf;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.debug.Location;
 import dgir.core.ir.*;
 import dgir.core.traits.*;
@@ -19,7 +18,7 @@ import java.util.function.Function;
  * Sealed marker interface for all operations in the {@link ScfDialect}.
  *
  * <p>Every concrete op must both extend {@link ScfOp} and implement this interface so that {@link
- * DgirCoreUtils.Dialect#allOps} can discover it automatically via reflection.
+ * Dialect#allOps(Class)} can discover it automatically via reflection.
  */
 public sealed interface ScfOps {
   /**

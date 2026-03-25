@@ -12,6 +12,12 @@ import org.jetbrains.annotations.NotNull;
  * operand slots, respectively.
  */
 public interface IBinaryOperands extends IOpTrait {
+  /**
+   * Verifies that the operation has exactly two value operands.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return {@code true} if both operands exist.
+   */
   default boolean verify(IBinaryOperands ignored) {
     Operation op = getOperation();
     if (op.getOperands().size() != 2) {
@@ -25,6 +31,11 @@ public interface IBinaryOperands extends IOpTrait {
     return true;
   }
 
+  /**
+   * Returns the left-hand side operand value.
+   *
+   * @return the first operand value.
+   */
   default @NotNull Value getLhs() {
     return getOperation()
         .getOperand(0)
@@ -36,6 +47,11 @@ public interface IBinaryOperands extends IOpTrait {
                         + getOperation()));
   }
 
+  /**
+   * Returns the right-hand side operand value.
+   *
+   * @return the second operand value.
+   */
   default @NotNull Value getRhs() {
     return getOperation()
         .getOperand(1)

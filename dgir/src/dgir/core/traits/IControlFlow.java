@@ -12,6 +12,12 @@ import org.jetbrains.annotations.NotNull;
  * verify} implementation always passes.
  */
 public interface IControlFlow extends IOpTrait {
+  /**
+   * Semantic tag verifier for control-flow operations.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return always {@code true}.
+   */
   @Contract(pure = true)
   default boolean verify(@NotNull IControlFlow ignored) {
     return true;

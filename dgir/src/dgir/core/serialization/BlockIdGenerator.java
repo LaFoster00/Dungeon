@@ -5,6 +5,7 @@ import dgir.core.ir.Value;
 
 import java.io.Serial;
 
+/** JSON object-id generator for {@link dgir.core.ir.Block} instances using a sequential counter. */
 public class BlockIdGenerator extends ObjectIdGenerator<String> {
   @Serial
   private static final long serialVersionUID = 1L;

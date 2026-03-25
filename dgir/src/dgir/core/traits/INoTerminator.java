@@ -6,6 +6,12 @@ import org.jetbrains.annotations.NotNull;
 
 /** Mark an operation as not having a terminator. */
 public interface INoTerminator extends IOpTrait {
+  /**
+   * Verifies one-region/one-block structure without a terminator operation.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return {@code true} if the structural constraints are satisfied.
+   */
   @Contract(pure = true)
   default boolean verify(@NotNull INoTerminator ignored) {
     Operation operation = getOperation();

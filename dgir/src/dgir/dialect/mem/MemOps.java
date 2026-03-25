@@ -15,25 +15,70 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
 
+/**
+ * Sealed marker interface for all operations in the {@link MemoryDialect}.
+ *
+ * <p>Every concrete op must both extend {@link MemOp} and implement this interface so that {@link
+ * Dialect#allOps(Class)} can discover it automatically via reflection.
+ */
 public sealed interface MemOps {
+  /**
+   * Abstract base class for all operations in the {@code mem} (memory) dialect.
+   *
+   * <p>Concrete subclasses must implement {@link #getIdent()} and {@link #getVerifier()}, and must
+   * implement {@link MemOps} to be enumerated by {@link MemoryDialect}.
+   */
   abstract class MemOp extends Op {
+    // =========================================================================
+    // Op Info
+    // =========================================================================
+
+    /**
+     * Returns the dialect that owns this operation.
+     *
+     * @return the {@link MemoryDialect} class.
+     */
     @Override
     public @NotNull Class<? extends Dialect> getDialect() {
       return MemoryDialect.class;
     }
 
+    /**
+     * Returns the namespace prefix used when printing this operation.
+     *
+     * @return the fixed {@code "mem"} namespace.
+     */
     @Override
     public @NotNull String getNamespace() {
       return "mem";
     }
   }
 
+  /**
+   * Allocates a GC-managed array in the {@code mem} dialect.
+   *
+   * <p>The allocation may be specified either by a static width or by a dynamic size operand.
+   */
   final class AllocGcOp extends MemOp implements MemOps, IHasResult, IZeroOrOneOperand {
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "mem.alloc_gc"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "mem.alloc_gc";
     }
 
+    /**
+     * Verifies that the allocation uses a valid size specification.
+     *
+     * @return a verifier that accepts well-formed allocation operations.
+     */
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
@@ -55,8 +100,20 @@ public sealed interface MemOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     private AllocGcOp() {}
 
+    /**
+     * Creates a GC allocation with a static size.
+     *
+     * @param loc the source location of this operation.
+     * @param elementType the array element type.
+     * @param staticSize the allocated width.
+     * @param explicitBound whether the width should be encoded as a fixed bound.
+     */
     public AllocGcOp(
         @NotNull Location loc, @NotNull Type elementType, int staticSize, boolean explicitBound) {
       setOperation(
@@ -69,6 +126,13 @@ public sealed interface MemOps {
                   elementType, explicitBound ? OptionalInt.of(staticSize) : OptionalInt.empty())));
     }
 
+    /**
+     * Creates a GC allocation whose width is computed dynamically.
+     *
+     * @param loc the source location of this operation.
+     * @param elementType the array element type.
+     * @param dynamicSize the runtime size operand.
+     */
     public AllocGcOp(@NotNull Location loc, @NotNull Type elementType, @NotNull Value dynamicSize) {
       setOperation(
           Operation.Create(
@@ -79,6 +143,15 @@ public sealed interface MemOps {
               MemTypes.ArrayT.of(elementType, OptionalInt.empty())));
     }
 
+    // =========================================================================
+    // Functions
+    // =========================================================================
+
+    /**
+     * Returns the statically encoded allocation width, if present.
+     *
+     * @return the static size, or an empty optional for dynamic allocations.
+     */
     public OptionalInt getStaticSize() {
       if (getArrayType().getWidth().isPresent()) {
         return getArrayType().getWidth();
@@ -86,6 +159,11 @@ public sealed interface MemOps {
       return OptionalInt.empty();
     }
 
+    /**
+     * Returns the dynamic size operand, if present.
+     *
+     * @return the dynamic size operand, or an empty optional for static allocations.
+     */
     public Optional<Value> getDynamicSize() {
       if (getOperand().isPresent()) {
         return Optional.of(getOperand().get().orElseThrow());
@@ -93,17 +171,37 @@ public sealed interface MemOps {
       return Optional.empty();
     }
 
+    /**
+     * Returns the array result type produced by this allocation.
+     *
+     * @return the {@link MemTypes.ArrayT} result type.
+     */
     public MemTypes.ArrayT getArrayType() {
       return (MemTypes.ArrayT) getResultType();
     }
   }
 
+  /** Allocates a GC-managed array from an explicit list of element values. */
   final class AllocGcFromElementsOp extends MemOp implements MemOps, IHasResult {
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "mem.alloc_gc_from_elements"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "mem.alloc_gc_from_elements";
     }
 
+    /**
+     * Verifies that all element operands match the array element type.
+     *
+     * @return a verifier that accepts well-formed element-based allocations.
+     */
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
@@ -132,8 +230,20 @@ public sealed interface MemOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     private AllocGcFromElementsOp() {}
 
+    /**
+     * Creates a GC allocation from explicit element values.
+     *
+     * @param loc the source location of this operation.
+     * @param elementType the array element type.
+     * @param elements the element values used to initialize the array.
+     * @param explicitBound whether the array width should be fixed to the element count.
+     */
     public AllocGcFromElementsOp(
         Location loc, Type elementType, List<Value> elements, boolean explicitBound) {
       setOperation(
@@ -147,17 +257,41 @@ public sealed interface MemOps {
                   explicitBound ? OptionalInt.of(elements.size()) : OptionalInt.empty())));
     }
 
+    // =========================================================================
+    // Functions
+    // =========================================================================
+
+    /**
+     * Returns the array result type produced by this allocation.
+     *
+     * @return the {@link MemTypes.ArrayT} result type.
+     */
     public MemTypes.ArrayT getArrayType() {
       return (MemTypes.ArrayT) getResultType();
     }
   }
 
+  /** Reallocates an existing GC-managed array to a new size. */
   final class ReallocGcOp extends MemOp implements MemOps, IHasResult {
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "mem.realloc_gc"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "mem.realloc_gc";
     }
 
+    /**
+     * Verifies that the reallocation size and array types are consistent.
+     *
+     * @return a verifier that accepts well-formed reallocation operations.
+     */
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
@@ -187,8 +321,20 @@ public sealed interface MemOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     private ReallocGcOp() {}
 
+    /**
+     * Creates a reallocation with a static target size.
+     *
+     * @param loc the source location of this operation.
+     * @param array the array to reallocate.
+     * @param newSize the new width.
+     * @param explicitBound whether the width should be encoded as a fixed bound.
+     */
     public ReallocGcOp(
         @NotNull Location loc, @NotNull Value array, int newSize, boolean explicitBound) {
       if (!(array.getType() instanceof MemTypes.ArrayT arrayType)) {
@@ -205,6 +351,13 @@ public sealed interface MemOps {
               arrayType.withSize(explicitBound ? OptionalInt.of(newSize) : OptionalInt.empty())));
     }
 
+    /**
+     * Creates a reallocation whose target size is provided dynamically.
+     *
+     * @param loc the source location of this operation.
+     * @param array the array to reallocate.
+     * @param newSize the runtime size operand.
+     */
     public ReallocGcOp(@NotNull Location loc, @NotNull Value array, @NotNull Value newSize) {
       if (!(array.getType() instanceof MemTypes.ArrayT arrayType)) {
         throw new IllegalArgumentException(
@@ -216,6 +369,15 @@ public sealed interface MemOps {
               loc, this, List.of(array, newSize), null, arrayType.withSize(OptionalInt.empty())));
     }
 
+    // =========================================================================
+    // Functions
+    // =========================================================================
+
+    /**
+     * Returns the statically encoded target width, if present.
+     *
+     * @return the static size, or an empty optional for dynamic reallocation.
+     */
     public OptionalInt getStaticSize() {
       if (getArrayType().getWidth().isPresent()) {
         return getArrayType().getWidth();
@@ -223,6 +385,11 @@ public sealed interface MemOps {
       return OptionalInt.empty();
     }
 
+    /**
+     * Returns the dynamic size operand, if present.
+     *
+     * @return the dynamic size operand, or an empty optional for static reallocation.
+     */
     public Optional<Value> getDynamicSize() {
       if (getOperand(1).isPresent()) {
         return Optional.of(getOperandValue(1).orElseThrow());
@@ -230,17 +397,37 @@ public sealed interface MemOps {
       return Optional.empty();
     }
 
+    /**
+     * Returns the array result type produced by this reallocation.
+     *
+     * @return the {@link MemTypes.ArrayT} result type.
+     */
     public MemTypes.ArrayT getArrayType() {
       return (MemTypes.ArrayT) getResultType();
     }
   }
 
+  /** Casts one array type to another compatible array type. */
   final class CastOp extends MemOp implements MemOps, ISingleOperand, IHasResult {
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "mem.cast"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "mem.cast";
     }
 
+    /**
+     * Verifies that the input and output array types are compatible.
+     *
+     * @return a verifier that accepts well-formed cast operations.
+     */
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
@@ -280,23 +467,54 @@ public sealed interface MemOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     private CastOp() {}
 
+    /**
+     * Creates an array cast to the provided target type.
+     *
+     * @param loc the source location of this operation.
+     * @param type the target array type.
+     * @param array the array value to cast.
+     */
     public CastOp(@NotNull Location loc, @NotNull MemTypes.ArrayT type, @NotNull Value array) {
       setOperation(Operation.Create(loc, this, List.of(array), null, type));
     }
 
+    /**
+     * Returns the target array type produced by this cast.
+     *
+     * @return the {@link MemTypes.ArrayT} result type.
+     */
     public @NotNull MemTypes.ArrayT getArrayType() {
       return (MemTypes.ArrayT) getResultType();
     }
   }
 
+  /** Returns the size of an array value as a 64-bit integer. */
   final class SizeofOp extends MemOp implements MemOps, IHasResult, ISingleOperand {
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "mem.get_size"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "mem.get_size";
     }
 
+    /**
+     * Verifies that the operand is an array value.
+     *
+     * @return a verifier that accepts well-formed size-of operations.
+     */
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
@@ -311,19 +529,44 @@ public sealed interface MemOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     private SizeofOp() {}
 
+    /**
+     * Creates a size-of operation for the given array.
+     *
+     * @param loc the source location of this operation.
+     * @param array the array whose size should be computed.
+     */
     public SizeofOp(@NotNull Location loc, @NotNull Value array) {
       setOperation(Operation.Create(loc, this, List.of(array), null, BuiltinTypes.IntegerT.INT64));
     }
   }
 
+  /** Loads an element from a GC-managed array. */
   final class GetElementOp extends MemOp implements MemOps, IHasResult {
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "mem.get_element"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "mem.get_element";
     }
 
+    /**
+     * Verifies that the array and index operands have valid types.
+     *
+     * @return a verifier that accepts well-formed element reads.
+     */
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
@@ -344,8 +587,19 @@ public sealed interface MemOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     private GetElementOp() {}
 
+    /**
+     * Creates an element-read operation.
+     *
+     * @param loc the source location of this operation.
+     * @param array the array to read from.
+     * @param index the element index.
+     */
     public GetElementOp(@NotNull Location loc, @NotNull Value array, @NotNull Value index) {
       if (!(array.getType() instanceof MemTypes.ArrayT arrayType)) {
         throw new IllegalArgumentException(
@@ -356,21 +610,50 @@ public sealed interface MemOps {
           Operation.Create(loc, this, List.of(array, index), null, arrayType.getElementType()));
     }
 
+    // =========================================================================
+    // Functions
+    // =========================================================================
+
+    /**
+     * Returns the array operand.
+     *
+     * @return the array value at operand position {@code 0}.
+     */
     public @NotNull Value getArrayValue() {
       return getOperandValue(0).orElseThrow();
     }
 
+    /**
+     * Returns the index operand.
+     *
+     * @return the index value at operand position {@code 1}.
+     */
     public @NotNull Value getIndexValue() {
       return getOperandValue(1).orElseThrow();
     }
   }
 
+  /** Stores an element into a GC-managed array. */
   final class SetElementOp extends MemOp implements MemOps, INoResult {
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "mem.set_element"}.
+     */
     @Override
     public @NotNull String getIdent() {
       return "mem.set_element";
     }
 
+    /**
+     * Verifies that the array, index, and value operands have valid types.
+     *
+     * @return a verifier that accepts well-formed element writes.
+     */
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
@@ -399,21 +682,52 @@ public sealed interface MemOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
     private SetElementOp() {}
 
+    /**
+     * Creates an element-write operation.
+     *
+     * @param loc the source location of this operation.
+     * @param array the array to modify.
+     * @param index the element index.
+     * @param value the value to store.
+     */
     public SetElementOp(
         @NotNull Location loc, @NotNull Value array, @NotNull Value index, @NotNull Value value) {
       setOperation(Operation.Create(loc, this, List.of(array, index, value), null, null));
     }
 
+    // =========================================================================
+    // Functions
+    // =========================================================================
+
+    /**
+     * Returns the array operand.
+     *
+     * @return the array value at operand position {@code 0}.
+     */
     public @NotNull Value getArrayValue() {
       return getOperandValue(0).orElseThrow();
     }
 
+    /**
+     * Returns the index operand.
+     *
+     * @return the index value at operand position {@code 1}.
+     */
     public @NotNull Value getIndexValue() {
       return getOperandValue(1).orElseThrow();
     }
 
+    /**
+     * Returns the value operand to be written into the array.
+     *
+     * @return the element value at operand position {@code 2}.
+     */
     public @NotNull Value getValueValue() {
       return getOperandValue(2).orElseThrow();
     }

@@ -16,10 +16,10 @@ import java.util.function.Function;
 
 /**
  * Abstract base class for all types in the IR. Types are contributed by dialects and can be either
- * simple (e.g. int32) or parameterized (e.g. ptr<int32> or func<(int32) -> (int32)>). Each type
- * must have a unique identifier (e.g. "int32" or "func.func") and a validator function that checks
- * whether a given value is a valid instance of that type. Parameterized types must also provide a
- * factory that creates instances of themselves from a parameterized identifier.
+ * simple (e.g. {@code int32}) or parameterized (e.g. {@code ptr<int32>} or {@code func<(int32) ->
+ * (int32)>}). Each type must have a unique identifier (e.g. "int32" or "func.func") and a validator
+ * function that checks whether a given value is a valid instance of that type. Parameterized types
+ * must also provide a factory that creates instances of themselves from a parameterized identifier.
  *
  * <p>Types are immutable and should be compared by reference. To make sure a type is truly unique,
  * it should every created instance should be routet through the {@link TypeUniquer}, or be created
@@ -120,7 +120,7 @@ public abstract class Type {
    * Returns a factory that creates a type from a parameterized identifier. This is used for types
    * that have parameters, such as ptrs or function types. The parameterized identifier is the
    * string representation of the type, including its parameters. For example, for a pointer type,
-   * the parameterized identifier could be "ptr<i32>" or "ptr<ptr<f64>>".
+   * the parameterized identifier could be {@code "ptr<i32>"} or {@code "ptr<ptr<f64>>"}.
    *
    * <p>The factory should parse the parameterized identifier and return the corresponding type
    * instance. For types that do not have parameters, this can simply return a factory that ignores
@@ -156,6 +156,11 @@ public abstract class Type {
   // Functions
   // =========================================================================
 
+  /**
+   * Returns registration details associated with this type instance.
+   *
+   * @return the type details.
+   */
   @Contract(pure = true)
   public @NotNull TypeDetails getDetails() {
     return details;
@@ -176,6 +181,12 @@ public abstract class Type {
     this.details = details;
   }
 
+  /**
+   * Validates a storage value against this type's validator.
+   *
+   * @param value the value to validate.
+   * @return {@code true} when {@code value} is valid for this type.
+   */
   public final boolean validate(Object value) {
     return getDetails().validator().apply(value);
   }

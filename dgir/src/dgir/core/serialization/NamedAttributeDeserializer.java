@@ -16,10 +16,16 @@ import tools.jackson.databind.deser.std.StdDeserializer;
  * field-specific messages.
  */
 public class NamedAttributeDeserializer extends StdDeserializer<NamedAttribute> {
+  /** Constructs the deserializer bound to {@link NamedAttribute} class. */
   public NamedAttributeDeserializer() {
     this(NamedAttribute.class);
   }
 
+  /**
+   * Constructs the deserializer with an explicit target class.
+   *
+   * @param vc target class for deserialization.
+   */
   public NamedAttributeDeserializer(Class<?> vc) {
     super(vc);
   }

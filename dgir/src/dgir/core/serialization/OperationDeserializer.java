@@ -28,10 +28,16 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
   private static final Map<Operation, Map<BlockOperand, JsonNode>> unresolvedSuccessorReferences =
       new HashMap<>();
 
+  /** Constructs the deserializer bound to {@link Operation} class. */
   public OperationDeserializer() {
     this(Operation.class);
   }
 
+  /**
+   * Constructs the deserializer with an explicit target class.
+   *
+   * @param vc target class for deserialization.
+   */
   public OperationDeserializer(Class<?> vc) {
     super(vc);
   }

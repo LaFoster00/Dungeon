@@ -8,11 +8,18 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.jsontype.TypeSerializer;
 import tools.jackson.databind.ser.std.StdSerializer;
 
+/** Serializes builtin {@code integerAttr} values as compact JSON objects. */
 public class IntegerAttributeSerializer extends StdSerializer<BuiltinAttrs.IntegerAttribute> {
+  /** Constructs the serializer bound to {@link BuiltinAttrs.IntegerAttribute} class. */
   public IntegerAttributeSerializer() {
     super(BuiltinAttrs.IntegerAttribute.class);
   }
 
+  /**
+   * Constructs the serializer with an explicit target class.
+   *
+   * @param t target class for serialization.
+   */
   public IntegerAttributeSerializer(Class<?> t) {
     super(t);
   }

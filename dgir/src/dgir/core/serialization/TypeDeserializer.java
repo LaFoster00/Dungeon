@@ -15,10 +15,16 @@ import tools.jackson.databind.deser.std.StdDeserializer;
  * input mismatches with descriptive error text.
  */
 public class TypeDeserializer extends StdDeserializer<Type> {
+  /** Constructs the deserializer bound to {@link Type} class. */
   public TypeDeserializer() {
     this(Type.class);
   }
 
+  /**
+   * Constructs the deserializer with an explicit target class.
+   *
+   * @param vc target class for deserialization.
+   */
   public TypeDeserializer(Class<?> vc) {
     super(vc);
   }

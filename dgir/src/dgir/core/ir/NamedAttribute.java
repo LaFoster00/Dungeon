@@ -25,6 +25,12 @@ public final class NamedAttribute {
   // Constructors
   // =========================================================================
 
+  /**
+   * Creates a named attribute pair.
+   *
+   * @param name attribute key.
+   * @param attribute attribute value.
+   */
   @JsonCreator
   public NamedAttribute(
       @JsonProperty("name") @NotNull String name,
@@ -37,11 +43,21 @@ public final class NamedAttribute {
   // Functions
   // =========================================================================
 
+  /**
+   * Returns the attribute key.
+   *
+   * @return attribute name.
+   */
   @Contract(pure = true)
   public @NotNull String getName() {
     return name;
   }
 
+  /**
+   * Returns the attribute value.
+   *
+   * @return stored attribute.
+   */
   @Contract(pure = true)
   public @NotNull Attribute getAttribute() {
     return attribute;

@@ -39,10 +39,21 @@ public abstract class Operand<
   // Constructors
   // =========================================================================
 
+  /**
+   * Creates an operand with no referenced value.
+   *
+   * @param owner owning operation.
+   */
   public Operand(@NotNull Operation owner) {
     this.owner = owner;
   }
 
+  /**
+   * Creates an operand and initializes its referenced value.
+   *
+   * @param owner owning operation.
+   * @param value initial referenced value.
+   */
   public Operand(@NotNull Operation owner, @Nullable ValueT value) {
     this.owner = owner;
     setValue(value);
@@ -81,6 +92,11 @@ public abstract class Operand<
     return Optional.ofNullable(value);
   }
 
+  /**
+   * Returns the referenced value or throws if the reference is unset.
+   *
+   * @return referenced value.
+   */
   @Contract(pure = true)
   @JsonIgnore
   public @NotNull ValueT getValueOrThrow() {
@@ -90,7 +106,7 @@ public abstract class Operand<
   /**
    * Get the use-list object for the value currently referenced by this operand.
    *
-   * @return The use-list of the current value.
+   * @return the use-list of the current value if present.
    */
   @Contract(pure = true)
   public @NotNull Optional<IRObjectWithUseList<ValueT, DerivedT>> geCurrentUseList() {

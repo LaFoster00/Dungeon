@@ -14,10 +14,16 @@ import tools.jackson.databind.deser.std.StdDeserializer;
  * <p>The JSON value must be an object that can be deserialized as an operation.
  */
 public class OpDeserializer extends StdDeserializer<Op> {
+  /** Constructs the deserializer bound to {@link Op} class. */
   public OpDeserializer() {
     this(Op.class);
   }
 
+  /**
+   * Constructs the deserializer with an explicit target class.
+   *
+   * @param vc target class for deserialization.
+   */
   public OpDeserializer(Class<?> vc) {
     super(vc);
   }

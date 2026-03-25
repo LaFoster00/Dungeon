@@ -56,19 +56,35 @@ public abstract class Dialect {
   // Dialect Info
   // =========================================================================
 
-  /** The namespace prefix used in operation/type idents (e.g. {@code "arith"}, {@code "func"}). */
+  /**
+   * The namespace prefix used in operation/type idents (e.g. {@code "arith"}, {@code "func"}).
+   *
+   * @return the dialect namespace.
+   */
   @Contract(pure = true)
   public abstract @NotNull String getNamespace();
 
-  /** All operation prototypes contributed by this dialect. */
+  /**
+   * All operation prototypes contributed by this dialect.
+   *
+   * @return an unmodifiable list of operation prototypes.
+   */
   @Contract(pure = true)
   public abstract @NotNull @Unmodifiable List<Op> allOps();
 
-  /** All type prototypes contributed by this dialect. */
+  /**
+   * All type prototypes contributed by this dialect.
+   *
+   * @return an unmodifiable list of type prototypes.
+   */
   @Contract(pure = true)
   public abstract @NotNull @Unmodifiable List<Type> allTypes();
 
-  /** All attribute prototypes contributed by this dialect. */
+  /**
+   * All attribute prototypes contributed by this dialect.
+   *
+   * @return an unmodifiable list of attribute prototypes.
+   */
   @Contract(pure = true)
   public abstract @NotNull @Unmodifiable List<Attribute> allAttributes();
 

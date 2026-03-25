@@ -19,6 +19,12 @@ import org.jetbrains.annotations.NotNull;
  * <p>Examples: {@link FuncOps.FuncOp}.
  */
 public interface ISymbol extends IOpTrait {
+  /**
+   * Verifies that the operation carries the required symbol-name attribute.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return {@code true} if the symbol attribute exists.
+   */
   @Contract(pure = true)
   default boolean verify(@NotNull ISymbol ignored) {
     if (!getOperation().getAttributeMap().containsKey(SymbolTable.getSymbolAttributeName())) {
@@ -28,6 +34,11 @@ public interface ISymbol extends IOpTrait {
     return true;
   }
 
+  /**
+   * Returns the declared symbol name.
+   *
+   * @return the symbol name string.
+   */
   @Contract(pure = true)
   default @NotNull String getSymbol() {
     return getOperation()

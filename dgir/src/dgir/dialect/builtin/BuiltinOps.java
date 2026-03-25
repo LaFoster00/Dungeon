@@ -1,7 +1,6 @@
 package dgir.dialect.builtin;
 
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.debug.Location;
 import dgir.core.ir.Block;
 import dgir.core.ir.Op;
@@ -20,7 +19,7 @@ import static dgir.dialect.func.FuncOps.FuncOp;
  * Sealed marker interface for all operations in the {@link BuiltinDialect}.
  *
  * <p>Every concrete op must both extend {@link BuiltinOp} and implement this interface so that
- * {@link DgirCoreUtils.Dialect#allOps} can discover it automatically via reflection.
+ * {@link Dialect#allOps(Class)} can discover it automatically via reflection.
  */
 public sealed interface BuiltinOps {
   /**
@@ -169,12 +168,26 @@ public sealed interface BuiltinOps {
    * existing value.
    */
   final class IdOp extends BuiltinOp implements BuiltinOps, ISingleOperand, IHasResult {
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    /**
+     * Returns the MLIR-style identifier for this operation.
+     *
+     * @return the fixed identifier {@code "id"}.
+     */
     @Contract(pure = true)
     @Override
     public @NotNull String getIdent() {
       return "id";
     }
 
+    /**
+     * Verifies that the result type matches the operand type.
+     *
+     * @return a verifier that accepts well-formed identity operations.
+     */
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return operation -> {
@@ -190,12 +203,30 @@ public sealed interface BuiltinOps {
       };
     }
 
+    // =========================================================================
+    // Constructors
+    // =========================================================================
+
+    /** Creates a default identity-op instance for dialect registration. */
     private IdOp() {}
 
+    /**
+     * Creates an identity operation that returns the given value.
+     *
+     * @param location the source location of this operation.
+     * @param value the value to forward as the result.
+     */
     public IdOp(@NotNull Location location, @NotNull Value value) {
       setOperation(true, Operation.Create(location, this, List.of(value), null, value.getType()));
     }
 
+    /**
+     * Creates an identity operation that forwards one value to another.
+     *
+     * @param location the source location of this operation.
+     * @param from the source value.
+     * @param to the destination value whose type becomes the output type.
+     */
     public IdOp(@NotNull Location location, @NotNull Value from, @NotNull Value to) {
       setOperation(true, Operation.Create(location, this, List.of(from), null, from.getType()));
       setOutputValue(to);

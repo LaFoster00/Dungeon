@@ -11,6 +11,12 @@ import org.jetbrains.annotations.NotNull;
  * container of a module, which can only contain global operations.
  */
 public interface IGlobalContainer extends IOpTrait {
+  /**
+   * Verifies that all contained operations implement {@link IGlobal}.
+   *
+   * @param op trait receiver required by verifier signature.
+   * @return {@code true} if all nested operations are global.
+   */
   @Contract(pure = true)
   default boolean verify(@NotNull IGlobalContainer op) {
     // Ensure that all operations contained in the regions are global operations.

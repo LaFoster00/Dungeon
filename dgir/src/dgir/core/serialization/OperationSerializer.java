@@ -7,11 +7,18 @@ import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ser.std.StdSerializer;
 
+/** Serializes an {@link Operation} to its JSON object form. */
 public class OperationSerializer extends StdSerializer<Operation> {
+  /** Constructs the serializer bound to {@link Operation} class. */
   public OperationSerializer() {
     super(Operation.class);
   }
 
+  /**
+   * Constructs the serializer with an explicit target class.
+   *
+   * @param t target class for serialization.
+   */
   public OperationSerializer(Class<?> t) {
     super(t);
   }

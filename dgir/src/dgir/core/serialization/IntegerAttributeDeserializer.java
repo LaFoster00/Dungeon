@@ -16,10 +16,16 @@ import tools.jackson.databind.deser.std.StdDeserializer;
  * reports malformed input through {@link DeserializationContext#reportInputMismatch}.
  */
 public class IntegerAttributeDeserializer extends StdDeserializer<BuiltinAttrs.IntegerAttribute> {
+  /** Constructs the deserializer bound to {@link BuiltinAttrs.IntegerAttribute} class. */
   public IntegerAttributeDeserializer() {
     this(BuiltinAttrs.IntegerAttribute.class);
   }
 
+  /**
+   * Constructs the deserializer with an explicit target class.
+   *
+   * @param vc target class for deserialization.
+   */
   protected IntegerAttributeDeserializer(Class<?> vc) {
     super(vc);
   }

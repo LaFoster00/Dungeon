@@ -11,11 +11,35 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Sealed marker interface for all types contributed by the {@link BuiltinDialect}.
+ *
+ * <p>Every concrete type must extend {@link BuiltinType} and implement this interface so that
+ * {@link Dialect#allTypes(Class)} can discover it automatically via reflection.
+ */
 public sealed interface BuiltinTypes {
+  // =========================================================================
+  // Utility Helpers
+  // =========================================================================
+
+  /**
+   * Returns whether a type is numeric.
+   *
+   * @param type the type to inspect.
+   * @return {@code true} for integer and floating-point types.
+   */
   static boolean isNumeric(@NotNull Type type) {
     return type instanceof IntegerT || type instanceof FloatT;
   }
 
+  /**
+   * Returns the dominant numeric type for two numeric operands.
+   *
+   * @param lhsType the left-hand operand type.
+   * @param rhsType the right-hand operand type.
+   * @return the wider and/or more precise numeric type.
+   * @throws IllegalArgumentException if either type is not numeric.
+   */
   static @NotNull Type getDominantType(@NotNull Type lhsType, @NotNull Type rhsType) {
     if (!isNumeric(lhsType) || !isNumeric(rhsType)) {
       throw new IllegalArgumentException(
@@ -51,6 +75,14 @@ public sealed interface BuiltinTypes {
     return integerTypeByWidth(Math.max(lhsWidth, rhsWidth), shouldBeSigned);
   }
 
+  /**
+   * Returns the canonical integer type for a given width and signedness.
+   *
+   * @param width the bit width.
+   * @param isSigned whether the integer is signed.
+   * @return the matching {@link IntegerT} singleton.
+   * @throws IllegalArgumentException if the width is unsupported.
+   */
   static @NotNull IntegerT integerTypeByWidth(int width, boolean isSigned) {
     return switch (width) {
       case 1 -> IntegerT.INT1;
@@ -404,6 +436,12 @@ public sealed interface BuiltinTypes {
       return width;
     }
 
+    /**
+     * Converts a numeric value to the Java primitive wrapper matching this float width.
+     *
+     * @param number the number to convert.
+     * @return the converted number as a {@link Float} or {@link Double}.
+     */
     public Number convertToValidNumber(Number number) {
       return switch (width) {
         case 32 -> number.floatValue();

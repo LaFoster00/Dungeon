@@ -9,6 +9,12 @@ import org.jetbrains.annotations.NotNull;
  * self-contained, such as function definitions, and isolates them from the surrounding context.
  */
 public interface IIsolatedFromAbove extends IOpTrait {
+  /**
+   * Trait-level verifier placeholder; semantic validation is done by analysis.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return always {@code true}.
+   */
   @Contract(pure = true)
   default boolean verify(@NotNull IIsolatedFromAbove ignored) {
     // The verification of this trait is done in the reaching definitions analysis.

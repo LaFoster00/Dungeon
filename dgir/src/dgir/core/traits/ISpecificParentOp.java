@@ -17,11 +17,17 @@ import java.util.Optional;
  * <p>The verifier walks to the immediate parent operation and checks its type against the list
  * returned by {@link #getValidParentTypes()}. An op with no parent passes unconditionally.
  *
- * <p>Examples: {@link ScfOps.BreakOp} (only valid inside {@link ScfOps.ForOp}), {@link
+ * <p>Examples: {@link ScfOps.EndOp} (only valid inside {@link ScfOps.ForOp}), {@link
  * ScfOps.ContinueOp} (valid inside {@link ScfOps.IfOp}, {@link ScfOps.ScopeOp}, or {@link
  * ScfOps.ForOp}), {@link FuncOps.ReturnOp} (only valid inside {@link FuncOps.FuncOp}).
  */
 public interface ISpecificParentOp extends IOpTrait {
+  /**
+   * Verifies that the direct parent operation matches one of {@link #getValidParentTypes()}.
+   *
+   * @param ignored trait receiver required by verifier signature.
+   * @return {@code true} if there is no parent or the parent type is allowed.
+   */
   @Contract(pure = true)
   default boolean verify(@NotNull ISpecificParentOp ignored) {
     Operation operation = getOperation();
