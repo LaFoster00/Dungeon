@@ -3,9 +3,12 @@ package blockly.dgir.compiler.java;
 import blockly.dgir.compiler.java.emission.NonValueVisitor;
 import blockly.dgir.compiler.java.transformations.*;
 import blockly.dgir.dialect.dg.DungeonDialect;
+import com.github.javaparser.Problem;
 import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.Range;
 import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.TokenRange;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
@@ -17,9 +20,13 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
+
+import static blockly.dgir.compiler.java.DiagnosticUtils.formatJavacDiagnostic;
 
 @SuppressWarnings({"unchecked"})
 public class JavaCompiler {
@@ -70,17 +77,11 @@ public class JavaCompiler {
     try {
       result = StaticJavaParser.parse(source);
     } catch (ParseProblemException e) {
-      logger.severe("Failed to parse Java source code: " + e.getMessage());
-      logger.severe("Source code:\n" + source);
       return new CompilationResult.Failure(
-          List.of(
-              "Failed to parse Java source code: "
-                  + e.getMessage().substring(0, e.getMessage().indexOf("Problem stacktrace : "))),
-          List.of(),
-          List.of());
+          formatParseProblems(e.getProblems(), filename, source), List.of(), List.of());
     }
 
-    EmitContext context = new EmitContext(filename);
+    EmitContext context = new EmitContext(filename, source);
 
     new DeadCodeElimination().visit(result, null);
     new SwitchToIf().visit(result, context);
@@ -98,5 +99,35 @@ public class JavaCompiler {
 
     NonValueVisitor.get().visit(result, context);
     return context.asCompilationResult();
+  }
+
+  private static @NotNull List<String> formatParseProblems(
+      @NotNull List<Problem> problems, @NotNull String filename, @NotNull String source) {
+    if (problems.isEmpty()) {
+      return List.of(filename + ": error: Failed to parse Java source code.");
+    }
+
+    List<String> sourceLines = List.of(source.split("\\R", -1));
+    List<String> diagnostics = new ArrayList<>(problems.size());
+    for (Problem problem : problems) {
+      Integer line = null;
+      Integer column = null;
+      String sourceLine = null;
+
+      Optional<TokenRange> tokenRange = problem.getLocation();
+      if (tokenRange.isPresent()) {
+        Optional<Range> range = tokenRange.get().toRange();
+        if (range.isPresent()) {
+          line = range.get().begin.line;
+          column = range.get().begin.column;
+          if (line > 0 && line <= sourceLines.size()) {
+            sourceLine = sourceLines.get(line - 1);
+          }
+        }
+      }
+      diagnostics.add(
+          formatJavacDiagnostic(filename, line, column, "error", problem.getMessage(), sourceLine));
+    }
+    return diagnostics;
   }
 }

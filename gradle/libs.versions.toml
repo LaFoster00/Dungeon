@@ -18,7 +18,7 @@ junitLauncher = "6.0.3"
 
 mockito = "5.23.0"
 
-javaparser = "3.28.0"
+javaparser = "3.27.1"
 
 jk1license = "3.1.1"
 

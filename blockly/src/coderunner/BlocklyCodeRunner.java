@@ -165,8 +165,8 @@ public class Main {
     CompilationResult compilationResult =
         JavaCompiler.compileSource(
             completeCode, sourceFileName != null ? sourceFileName : "Main.java");
-    if (compilationResult instanceof CompilationResult.Failure) {
-      throw new RuntimeException("Compilation failed with errors: \n" + compilationResult);
+    if (compilationResult instanceof CompilationResult.Failure failure) {
+      throw new RuntimeException(failure.toString());
     }
     ProgramOp program = ((CompilationResult.Success) compilationResult).program();
     try {

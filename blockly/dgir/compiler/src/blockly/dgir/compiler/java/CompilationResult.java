@@ -32,13 +32,17 @@ public sealed interface CompilationResult {
       implements CompilationResult {
     @Override
     public @NonNull String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append("Failure[\n");
-      sb.append("ERRORS=\n").append(DgirCoreUtils.indent(String.join("\n", errors), 1));
-      sb.append("\n\nWARNINGS=\n").append(DgirCoreUtils.indent(String.join("\n", warnings), 1));
-      sb.append("\n\nINFOS=\n").append(DgirCoreUtils.indent(String.join("\n", infos), 1));
-      sb.append("]");
-      return sb.toString();
+      StringBuilder diagnostics = new StringBuilder();
+      if (!errors.isEmpty()) diagnostics.append(String.join("\n", errors));
+      if (!warnings.isEmpty()) {
+        if (!diagnostics.isEmpty()) diagnostics.append("\n");
+        diagnostics.append(String.join("\n", warnings));
+      }
+      if (!infos.isEmpty()) {
+        if (!diagnostics.isEmpty()) diagnostics.append("\n");
+        diagnostics.append(String.join("\n", infos));
+      }
+      return diagnostics.toString();
     }
   }
 }

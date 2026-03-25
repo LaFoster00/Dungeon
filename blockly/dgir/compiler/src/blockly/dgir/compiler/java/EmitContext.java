@@ -1,7 +1,6 @@
 package blockly.dgir.compiler.java;
 
 import blockly.dgir.compiler.SymbolTable.ScopedSymbolTable;
-import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
 import dgir.core.debug.Location;
 import dgir.core.ir.Block;
@@ -13,11 +12,12 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+import static blockly.dgir.compiler.java.DiagnosticUtils.formatDiagnostic;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class EmitContext {
@@ -76,11 +76,12 @@ public final class EmitContext {
 
   private static final java.util.logging.Logger logger =
       java.util.logging.Logger.getLogger(EmitContext.class.getName());
-  private final @NotNull String filename;
-
   private final List<String> info = new ArrayList<>();
   private final List<String> warnings = new ArrayList<>();
   private final List<String> errors = new ArrayList<>();
+
+  private final @NotNull String filename;
+  private final @Nullable List<String> sourceLines;
 
   public @Nullable BuiltinOps.ProgramOp program = null;
 
@@ -92,7 +93,12 @@ public final class EmitContext {
   private @Nullable InsertionPoint insertionPoint = null;
 
   public EmitContext(@NotNull String filename) {
+    this(filename, null);
+  }
+
+  public EmitContext(@NotNull String filename, @Nullable String source) {
     this.filename = filename;
+    sourceLines = source != null ? List.of(source.split("\\R", -1)) : null;
   }
 
   public boolean compilationSuccessful() {
@@ -101,12 +107,7 @@ public final class EmitContext {
 
   @NotNull
   public Location loc(@NotNull Node node) {
-    if (node.getRange().isEmpty()) {
-      logger.warning("No range information available for AST node, using default location.");
-      return Location.UNKNOWN;
-    }
-    Range r = node.getRange().get();
-    return new Location(filename, r.begin.line, r.begin.column);
+    return DiagnosticUtils.loc(filename, node);
   }
 
   public void putSymbol(@NotNull String name, @NotNull Value value) {
@@ -176,30 +177,6 @@ public final class EmitContext {
   }
 
   /**
-   * Creates a descriptive diagnostic message for the given AST node and message. The message should
-   * be human-readable and should include the source location of the node for easier debugging.
-   *
-   * @param node the AST node
-   * @param message the diagnostic message
-   * @return a formatted diagnostic message
-   */
-  public @NotNull String formatDiagnostic(Node node, @NotNull String message, Object... args) {
-    Location loc = loc(node);
-    StringBuilder formated =
-        new StringBuilder(
-            MessageFormat.format(
-                "{0}:{1}:{2} \"{3}\"\n{4}\n", loc.file(), loc.line(), loc.column(), node, message));
-    // Append the string representation of the args to the message.
-    if (args.length > 0) {
-      formated.append("Additional info:\n");
-      for (Object arg : args) {
-        formated.append("- ").append(arg).append("\n");
-      }
-    }
-    return formated.toString();
-  }
-
-  /**
    * Emit an error message for the given AST node and message.
    *
    * @param node the AST node
@@ -208,7 +185,7 @@ public final class EmitContext {
    *     to the message.
    */
   public void emitError(Node node, String message, Object... args) {
-    errors.add(formatDiagnostic(node, message, args));
+    errors.add(formatDiagnostic(filename, sourceLines, "error", node, message, args));
   }
 
   /**
@@ -220,7 +197,7 @@ public final class EmitContext {
    *     to the message.
    */
   public void emitWarning(Node node, String message, Object... args) {
-    warnings.add(formatDiagnostic(node, message, args));
+    warnings.add(formatDiagnostic(filename, sourceLines, "warning", node, message, args));
   }
 
   /**
@@ -232,7 +209,7 @@ public final class EmitContext {
    *     to the message.
    */
   public void emitInfo(Node node, String message, Object... args) {
-    info.add(formatDiagnostic(node, message, args));
+    info.add(formatDiagnostic(filename, sourceLines, "note", node, message, args));
   }
 
   public CompilationResult asCompilationResult() {
