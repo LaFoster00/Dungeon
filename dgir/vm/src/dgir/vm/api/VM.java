@@ -404,7 +404,7 @@ public class VM {
                 stepMode = StepMode.NONE;
                 stepOriginLocation = Location.UNKNOWN;
                 // Block until the user issues continue/next/stepIn/stepOut.
-                LOGGER.info("Breakpoint hit: " + bp + " for operation " + currentOp);
+                LOGGER.fine("Breakpoint hit: " + bp + " for operation " + currentOp);
                 waitForResume();
               }
               break;
@@ -432,10 +432,11 @@ public class VM {
         boolean inStepMode = stepMode != StepMode.NONE;
 
         if (!inStepMode) {
+          // Notify the debugger that the operation is about to be executed.
           if (!isDebugSkipLocation(location)) {
             DebugControl stepCtrl = debugger.onStep(currentOp, location);
             if (stepCtrl == DebugControl.PAUSE) {
-              LOGGER.info(
+              LOGGER.fine(
                   "Step mode triggered pause at location: "
                       + location
                       + " for operation "
@@ -535,7 +536,7 @@ public class VM {
         boolean shouldPauseNow = depthConditionMet && !onSameLine;
 
         if (shouldPauseNow) {
-          LOGGER.info(
+          LOGGER.fine(
               "Step mode "
                   + stepMode
                   + " triggered pause at location: "

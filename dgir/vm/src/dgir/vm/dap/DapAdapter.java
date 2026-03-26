@@ -157,18 +157,18 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   // Getters
   // =========================================================================
 
-  /**
-   * Returns {@code true} once the initial entry-stop has been delivered to the client.
-   *
-   * <p>After this flag is set, the {@link #onStep} callback stops checking for the entry condition
-   * and lets the normal step/pause logic take over.
-   *
-   * @return {@code true} if the {@code "entry"} stopped event has already been fired
-   */
+  /** {@inheritDoc} */
   @Override
   @Contract(pure = true)
   public boolean entryHit() {
     return entryHit;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  @Contract(pure = true)
+  public boolean stopOnEntry() {
+    return stopOnEntry;
   }
 
   /**
@@ -718,19 +718,31 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
    * function — i.e. the one that should receive the {@code "entry"} stopped event when {@code
    * stopOnEntry} is enabled.
    *
-   * <p>The heuristic used is: the operation's parent operation is at index {@code 0} and that
-   * parent is a {@link dgir.dialect.func.FuncOps.FuncOp} whose name is {@code "main"}.
+   * <p>The heuristic used is: if the operation is lexically nested inside a function named {@code
+   * main} and has a known source location, treat it as the entry point. This is not guaranteed to
+   * be correct but should work well in practice for typical programs. This is only valid before the
+   * entry point was hit since afterward any operation in the {@code main} function will be
+   * considered the entry point.
    *
    * @param operation the operation about to be executed
    * @return {@code true} if this is the entry point of the {@code main} function
    */
   private static boolean isEntryOperation(@NotNull Operation operation) {
-    return operation
-        .getParentOperation()
-        .filter(op -> op.getIndex() == 0)
-        .flatMap(op -> op.as(FuncOp.class))
-        .map(func -> "main".equals(func.getFuncNameAttribute().getValue()))
-        .orElse(false);
+    return isInMainFunc(operation) && !operation.getLocation().equals(Location.IGNORE);
+  }
+
+  private static boolean isInMainFunc(@NotNull Operation operation) {
+    Operation parent = operation.getParentOperation().orElse(null);
+    while (parent != null) {
+      if (parent.isa(FuncOp.class)) {
+        var func = parent.as(FuncOp.class).orElseThrow();
+        if ("main".equals(func.getFuncNameAttribute().getValue())) {
+          return true;
+        }
+      }
+      parent = parent.getParentOperation().orElse(null);
+    }
+    return false;
   }
 
   /**

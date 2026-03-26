@@ -17,7 +17,7 @@ import static blockly.dgir.compiler.java.CompilerUtils.markDebugSkip;
 public class DebugSkipMarker extends VoidVisitorAdapter<Void> {
   @Override
   public void visit(ForStmt n, Void arg) {
-    super.visit(n, arg);
+    super.visit(n, null);
     markDebugSkip(n.getInitialization());
     n.getCompare().ifPresent(CompilerUtils::markDebugSkip);
     markDebugSkip(n.getUpdate());
@@ -25,13 +25,13 @@ public class DebugSkipMarker extends VoidVisitorAdapter<Void> {
 
   @Override
   public void visit(WhileStmt n, Void arg) {
-    super.visit(n, arg);
+    super.visit(n, null);
     markDebugSkip(n.getCondition());
   }
 
   @Override
   public void visit(DoStmt n, Void arg) {
-    super.visit(n, arg);
+    super.visit(n, null);
     markDebugSkip(n.getCondition());
   }
 }

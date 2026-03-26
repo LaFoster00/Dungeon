@@ -54,6 +54,13 @@ public interface Debugger {
       @NotNull Operation operation, @NotNull Breakpoint breakpoint, @NotNull Location location);
 
   /**
+   * Returns true if the VM should pause when it hits the entry point of the program.
+   *
+   * @return true if the VM should pause when it hits the entry point of the program.
+   */
+  boolean stopOnEntry();
+
+  /**
    * Returns true if the VM has hit the entry point of the program.
    *
    * @return true if the VM has hit the entry point of the program.
