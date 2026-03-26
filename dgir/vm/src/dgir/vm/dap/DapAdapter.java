@@ -96,12 +96,6 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
    */
   private volatile boolean reloadInProgress = false;
 
-  /**
-   * Set to {@code true} the first time {@link #startVmThread()} is called. Used by {@link
-   * #isVmFinished()} to distinguish "never started" from "started and already done".
-   */
-  private volatile boolean vmStarted = false;
-
   /** When {@code true}, pause before the very first operation (DAP {@code stopOnEntry}). */
   private volatile boolean stopOnEntry = false;
 
@@ -200,6 +194,13 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   }
 
   /**
+   * Returns {@code true} if the adapter is waiting for a debugger to attach before starting the VM.
+   */
+  public boolean isWaitingForDebugger() {
+    return stopOnEntry && !isVmRunning();
+  }
+
+  /**
    * Stops the VM immediately and interrupts the VM thread so any blocking wait inside an op runner
    * (e.g. {@link java.util.concurrent.CountDownLatch#await()}) is unblocked.
    *
@@ -215,18 +216,6 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
       t.interrupt();
     }
     setDebugPaused(false);
-  }
-
-  /**
-   * Returns {@code true} if the VM was started at least once and its thread has since terminated.
-   *
-   * <p>The {@link DapServer} uses this to reject connections when the program has already finished
-   * and no {@link DapServer#reloadProgram} has been issued yet.
-   *
-   * @return {@code true} when the VM has run and is no longer running
-   */
-  public boolean isVmFinished() {
-    return vmStarted && !isVmRunning();
   }
 
   // =========================================================================
@@ -808,7 +797,6 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
    * session end.
    */
   private void startVmThread() {
-    vmStarted = true;
     Thread t =
         new Thread(
             () -> {
