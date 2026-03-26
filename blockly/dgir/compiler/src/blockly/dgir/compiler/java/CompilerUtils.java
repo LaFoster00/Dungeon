@@ -1,7 +1,9 @@
 package blockly.dgir.compiler.java;
 
 import com.github.javaparser.TokenRange;
+import com.github.javaparser.ast.DataKey;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.BlockStmt;
@@ -27,6 +29,18 @@ import java.util.OptionalInt;
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class CompilerUtils {
   private static final IdentityHashMap<ResolvedType, Type> resolvedToType = new IdentityHashMap<>();
+  public static final DataKey<Boolean> DEBUG_SKIP_KEY = new DataKey<>() {};
+
+  /** Marks a specific node to be skipped during debug stepping. */
+  public static <T extends Node> T markDebugSkip(T node) {
+    node.setData(DEBUG_SKIP_KEY, Boolean.TRUE);
+    return node;
+  }
+
+  public static <T extends Node> NodeList<T> markDebugSkip(NodeList<T> nodes) {
+    nodes.forEach(CompilerUtils::markDebugSkip);
+    return nodes;
+  }
 
   public static @NotNull Optional<TokenRange> mergeTokenRanges(
       @NotNull Optional<TokenRange> first, @NotNull Optional<TokenRange> second) {

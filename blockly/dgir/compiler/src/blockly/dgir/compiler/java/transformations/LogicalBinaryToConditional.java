@@ -6,6 +6,7 @@ import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
 import org.jetbrains.annotations.NotNull;
 
+import static blockly.dgir.compiler.java.CompilerUtils.markDebugSkip;
 import static blockly.dgir.compiler.java.CompilerUtils.setTokenRangeFrom;
 
 public class LogicalBinaryToConditional extends ModifierVisitor<EmitContext> {
@@ -21,18 +22,20 @@ public class LogicalBinaryToConditional extends ModifierVisitor<EmitContext> {
     return switch (op) {
       // A && B  →  (A ? B : false)
       case AND -> {
-        BooleanLiteralExpr falseExpr = setTokenRangeFrom(new BooleanLiteralExpr(false), visited);
+        BooleanLiteralExpr falseExpr =
+            setTokenRangeFrom(markDebugSkip(new BooleanLiteralExpr(false)), visited);
         ConditionalExpr conditional =
-            setTokenRangeFrom(new ConditionalExpr(left, right, falseExpr), visited);
-        yield setTokenRangeFrom(new EnclosedExpr(conditional), visited);
+            setTokenRangeFrom(markDebugSkip(new ConditionalExpr(left, right, falseExpr)), visited);
+        yield setTokenRangeFrom(markDebugSkip(new EnclosedExpr(conditional)), visited);
       }
 
       // A || B  →  (A ? true : B)
       case OR -> {
-        BooleanLiteralExpr trueExpr = setTokenRangeFrom(new BooleanLiteralExpr(true), visited);
+        BooleanLiteralExpr trueExpr =
+            setTokenRangeFrom(markDebugSkip(new BooleanLiteralExpr(true)), visited);
         ConditionalExpr conditional =
-            setTokenRangeFrom(new ConditionalExpr(left, trueExpr, right), visited);
-        yield setTokenRangeFrom(new EnclosedExpr(conditional), visited);
+            setTokenRangeFrom(markDebugSkip(new ConditionalExpr(left, trueExpr, right)), visited);
+        yield setTokenRangeFrom(markDebugSkip(new EnclosedExpr(conditional)), visited);
       }
 
       // Leave all other binary expressions untouched

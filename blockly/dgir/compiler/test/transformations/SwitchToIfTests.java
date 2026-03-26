@@ -1,5 +1,6 @@
 package transformations;
 
+import blockly.dgir.compiler.java.CompilerUtils;
 import blockly.dgir.compiler.java.EmitContext;
 import blockly.dgir.compiler.java.transformations.SwitchToIf;
 import com.github.javaparser.StaticJavaParser;
@@ -11,6 +12,7 @@ import com.github.javaparser.ast.stmt.*;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SwitchToIfTests extends TransformationTestBase {
   @Test
@@ -355,6 +357,36 @@ public class RangeExprClass {
 
     ConditionalExpr inner = outer.getElseExpr().asConditionalExpr();
     assertEquals(case2Line, beginLine(inner.getTokenRange().orElseThrow()));
+  }
+
+  @Test
+  void generatedSwitchScaffoldingIsMarkedDebugSkip() {
+    String code =
+"""
+public class DebugSkipSwitchClass {
+  public int test(int x) {
+    switch (x) {
+      case 1:
+        return 1;
+      default:
+        return 0;
+    }
+  }
+}
+""";
+
+    CompilationUnit cu = StaticJavaParser.parse(code);
+    new SwitchToIf().visit(cu, new EmitContext("generatedSwitchScaffoldingIsMarkedDebugSkip"));
+
+    BlockStmt wrapper =
+        cu.findFirst(
+                BlockStmt.class, b -> b.getStatements().size() == 1 && b.getStatement(0).isIfStmt())
+            .orElseThrow();
+    IfStmt loweredIf = wrapper.getStatement(0).asIfStmt();
+
+    assertTrue(wrapper.containsData(CompilerUtils.DEBUG_SKIP_KEY));
+    assertTrue(loweredIf.containsData(CompilerUtils.DEBUG_SKIP_KEY));
+    assertTrue(loweredIf.getCondition().containsData(CompilerUtils.DEBUG_SKIP_KEY));
   }
 
   private static int beginLine(TokenRange tokenRange) {

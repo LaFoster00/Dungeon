@@ -556,9 +556,9 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
           context.setInsertionPoint(whileOp.getConditionRegion().getEntryBlock(), -1)) {
         if (n.getCompare().isPresent()) {
           Block conditionContinueBlock = whileOp.getConditionRegion().addBlock(new Block());
-          conditionContinueBlock.addOperation(new ScfOps.ContinueOp(context.loc(n)));
+          conditionContinueBlock.addOperation(new ScfOps.ContinueOp(context.loc(markDebugSkip(n))));
           Block conditionBreakBlock = whileOp.getConditionRegion().addBlock(new Block());
-          conditionBreakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
+          conditionBreakBlock.addOperation(new ScfOps.EndOp(context.loc(markDebugSkip(n))));
 
           EmitResult<Value> compareResult =
               EmitResult.ofNullable(n.getCompare().get().accept(RValueVisitor.get(), context));
@@ -568,7 +568,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
           Value compareValue = compareResult.get();
           context.insert(
               new CfOps.BranchCondOp(
-                  context.loc(n.getCompare().get()),
+                  context.loc(markDebugSkip(n.getCompare().get())),
                   compareValue,
                   conditionContinueBlock,
                   conditionBreakBlock));
@@ -605,13 +605,13 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
           // Create the break block. This is called if there was a break statement in the loop
           // body.
           Block breakBlock = whileOp.getBodyRegion().addBlock(new Block());
-          breakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
+          breakBlock.addOperation(new ScfOps.EndOp(context.loc(markDebugSkip(n))));
 
           // Create the branch to break or continue
           // The second operation is the constant op defining the skip flag
           context.insert(
               new CfOps.BranchCondOp(
-                  context.loc(n),
+                  context.loc(markDebugSkip(n)),
                   whileOp
                       .getBodyRegion()
                       .getEntryBlock()
@@ -687,7 +687,10 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
     // Move the debug location one further down than the actual return statement, so we can step
     // to the closing curly bracket of functions and inspect the values produced.
     Location debugLocation =
-        new Location(trueLocation.file(), trueLocation.line() + 1, trueLocation.column());
+        new Location(
+            trueLocation.file(),
+            trueLocation.line() + (trueLocation.equals(Location.IGNORE) ? 0 : 1),
+            trueLocation.column());
     if (n.getExpression().isPresent()) {
       EmitResult<Value> exprRes =
           EmitResult.ofNullable(n.getExpression().get().accept(RValueVisitor.get(), context));

@@ -13,10 +13,12 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 
 import static dgir.dialect.builtin.BuiltinOps.ProgramOp;
 
 public class VM {
+  private static final Logger LOGGER = Logger.getLogger(VM.class.getName());
   private @Nullable ProgramOp program;
   private @Nullable State state;
   private @Nullable Action lastAction;
@@ -223,7 +225,6 @@ public class VM {
     pauseLock.lock();
     try {
       paused = false;
-      if (debugger != null) debugger.onUnpause();
       stepMode = StepMode.NONE;
       resumeCondition.signalAll();
     } finally {
@@ -269,7 +270,6 @@ public class VM {
     pauseLock.lock();
     try {
       paused = false;
-      if (debugger != null) debugger.onUnpause();
       stepMode = StepMode.STEP_OVER;
       // Record the current callstack depth so we can detect when we have returned to
       // the same "level". The op currently on top will be executed next (and may push
@@ -296,7 +296,6 @@ public class VM {
     pauseLock.lock();
     try {
       paused = false;
-      if (debugger != null) debugger.onUnpause();
       stepMode = StepMode.STEP_IN;
       // Remember which source line we are stepping from so we can skip over peer IR
       // operations that belong to the same line.
@@ -320,7 +319,6 @@ public class VM {
     pauseLock.lock();
     try {
       paused = false;
-      if (debugger != null) debugger.onUnpause();
       stepMode = StepMode.STEP_OUT;
       // Record the current callstack depth -1 so we can step through the outer stack frame as
       // expected without entering
@@ -406,6 +404,7 @@ public class VM {
                 stepMode = StepMode.NONE;
                 stepOriginLocation = Location.UNKNOWN;
                 // Block until the user issues continue/next/stepIn/stepOut.
+                LOGGER.info("Breakpoint hit: " + bp + " for operation " + currentOp);
                 waitForResume();
               }
               break;
@@ -433,9 +432,16 @@ public class VM {
         boolean inStepMode = stepMode != StepMode.NONE;
 
         if (!inStepMode) {
-          DebugControl stepCtrl = debugger.onStep(currentOp, location);
-          if (stepCtrl == DebugControl.PAUSE) {
-            waitForResume();
+          if (!isDebugSkipLocation(location)) {
+            DebugControl stepCtrl = debugger.onStep(currentOp, location);
+            if (stepCtrl == DebugControl.PAUSE) {
+              LOGGER.info(
+                  "Step mode triggered pause at location: "
+                      + location
+                      + " for operation "
+                      + currentOp);
+              waitForResume();
+            }
           }
         }
       }
@@ -498,6 +504,8 @@ public class VM {
               && !stepOriginLocation.equals(Location.UNKNOWN)
               && nextLocation.file().equals(stepOriginLocation.file())
               && nextLocation.line() == stepOriginLocation.line();
+      // Generated debug-skip ops should never become an observable step stop.
+      onSameLine |= isDebugSkipLocation(nextLocation);
 
       // If we are currently on a breakpoint, check if the next operation is still on the same
       // breakpoint. If not, we can remove the breakpoint from the stack and allow it to be hit
@@ -527,6 +535,13 @@ public class VM {
         boolean shouldPauseNow = depthConditionMet && !onSameLine;
 
         if (shouldPauseNow) {
+          LOGGER.info(
+              "Step mode "
+                  + stepMode
+                  + " triggered pause at location: "
+                  + nextLocation
+                  + " for operation "
+                  + nextOperation);
           stepMode = StepMode.NONE;
           stepOriginLocation = Location.UNKNOWN;
           // Notify the debugger that the step completed (so it can send a "step" stopped event
@@ -667,6 +682,10 @@ public class VM {
     return onSameBreakpoint;
   }
 
+  private static boolean isDebugSkipLocation(@NotNull Location location) {
+    return Location.IGNORE.file().equals(location.file());
+  }
+
   // =========================================================================
   // Private helpers
   // =========================================================================
@@ -684,6 +703,7 @@ public class VM {
       while (paused) {
         resumeCondition.await();
       }
+      if (debugger != null) debugger.onResume();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RuntimeException("VM execution interrupted while paused", e);

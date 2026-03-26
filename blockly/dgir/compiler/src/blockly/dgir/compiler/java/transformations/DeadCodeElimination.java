@@ -4,6 +4,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
+import static blockly.dgir.compiler.java.CompilerUtils.markDebugSkip;
 import static blockly.dgir.compiler.java.CompilerUtils.setTokenRangeFrom;
 
 public class DeadCodeElimination extends VoidVisitorAdapter<Void> {
@@ -16,7 +17,7 @@ public class DeadCodeElimination extends VoidVisitorAdapter<Void> {
     if (body instanceof ContinueStmt) {
       // If the body of the for loop is a continue statement, then we can replace it with an empty
       // block.
-      n.setBody(setTokenRangeFrom(new BlockStmt(new NodeList<>()), n.getBody()));
+      n.setBody(setTokenRangeFrom(markDebugSkip(new BlockStmt(new NodeList<>())), n.getBody()));
     }
     if (body instanceof BlockStmt block) {
       // If the last op is a continue op we can remove it.

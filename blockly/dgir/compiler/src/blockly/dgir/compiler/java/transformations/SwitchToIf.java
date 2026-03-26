@@ -124,17 +124,17 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
         Expression condition = buildEqualityCondition(selector, group.labels);
         result =
             setTokenRange(
-                new IfStmt(condition, body, result == null ? null : result.clone()),
+                markDebugSkip(new IfStmt(condition, body, result == null ? null : result.clone())),
                 group.sourceRange);
       }
     }
 
     if (result == null) {
-      return new BlockStmt(); // degenerate: nothing generated
+      return markDebugSkip(new BlockStmt()); // degenerate: nothing generated
     }
 
     // Wrap in a block so the result is a single statement
-    BlockStmt wrapper = setTokenRangeFrom(new BlockStmt(new NodeList<>()), sw);
+    BlockStmt wrapper = setTokenRangeFrom(markDebugSkip(new BlockStmt(new NodeList<>())), sw);
     wrapper.addStatement(result);
     return wrapper;
   }
@@ -186,7 +186,8 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
       CaseBranch branch = branches.get(i);
       ternary =
           setTokenRange(
-              new ConditionalExpr(branch.condition, branch.value, ternary), branch.sourceRange);
+              markDebugSkip(new ConditionalExpr(branch.condition, branch.value, ternary)),
+              branch.sourceRange);
     }
 
     return ternary;
@@ -217,7 +218,8 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
         Expression condition = buildEqualityCondition(selector, group.labels);
         result =
             setTokenRange(
-                new IfStmt(condition, body.get(), result == null ? null : result.clone()),
+                markDebugSkip(
+                    new IfStmt(condition, body.get(), result == null ? null : result.clone())),
                 group.sourceRange);
       }
     }
@@ -226,7 +228,7 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
       return Optional.empty();
     }
 
-    BlockStmt wrapper = setTokenRangeFrom(new BlockStmt(new NodeList<>()), sw);
+    BlockStmt wrapper = setTokenRangeFrom(markDebugSkip(new BlockStmt(new NodeList<>())), sw);
     wrapper.addStatement(result);
     return Optional.of(wrapper);
   }
@@ -324,7 +326,7 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
           condition == null
               ? cmp
               : setTokenRange(
-                  new BinaryExpr(condition, cmp, BinaryExpr.Operator.OR),
+                  markDebugSkip(new BinaryExpr(condition, cmp, BinaryExpr.Operator.OR)),
                   mergeTokenRanges(condition.getTokenRange(), cmp.getTokenRange()));
     }
     return condition;
@@ -344,18 +346,21 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
     if (label instanceof StringLiteralExpr) {
       // selector.equals("literal")
       MethodCallExpr equalsCall =
-          new MethodCallExpr(selector.clone(), "equals", new NodeList<>(label.clone()));
+          markDebugSkip(
+              new MethodCallExpr(selector.clone(), "equals", new NodeList<>(label.clone())));
       return setTokenRangeFrom(equalsCall, label);
     }
     if (label instanceof NullLiteralExpr) {
       // selector == null
       return setTokenRangeFrom(
-          new BinaryExpr(selector.clone(), new NullLiteralExpr(), BinaryExpr.Operator.EQUALS),
+          markDebugSkip(
+              new BinaryExpr(selector.clone(), new NullLiteralExpr(), BinaryExpr.Operator.EQUALS)),
           label);
     }
     // Primitive literals, enum constants, etc.
     return setTokenRangeFrom(
-        new BinaryExpr(selector.clone(), label.clone(), BinaryExpr.Operator.EQUALS), label);
+        markDebugSkip(new BinaryExpr(selector.clone(), label.clone(), BinaryExpr.Operator.EQUALS)),
+        label);
   }
 
   // -----------------------------------------------------------------------
@@ -438,7 +443,8 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
     switch (last) {
       case YieldStmt ys -> {
         stmts.set(
-            stmts.size() - 1, setTokenRangeFrom(new ReturnStmt(ys.getExpression().clone()), ys));
+            stmts.size() - 1,
+            setTokenRangeFrom(markDebugSkip(new ReturnStmt(ys.getExpression().clone())), ys));
         return Optional.of(rewritten);
       }
       case ReturnStmt rs -> {
@@ -446,7 +452,8 @@ public class SwitchToIf extends ModifierVisitor<@NotNull EmitContext> {
       }
       // Arrow expression case: `case X -> expr;`
       case ExpressionStmt es when stmts.size() == 1 -> {
-        stmts.set(0, setTokenRangeFrom(new ReturnStmt(es.getExpression().clone()), es));
+        stmts.set(
+            0, setTokenRangeFrom(markDebugSkip(new ReturnStmt(es.getExpression().clone())), es));
         return Optional.of(rewritten);
       }
       default -> {}

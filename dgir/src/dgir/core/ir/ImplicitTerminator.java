@@ -33,7 +33,10 @@ public interface ImplicitTerminator {
               trueLocation = block.getParentOperation().orElseThrow().getLocation();
             else trueLocation = block.getOperations().getLast().getLocation();
             Location debugLocation =
-                new Location(trueLocation.file(), trueLocation.line() + 1, trueLocation.column());
+                new Location(
+                    trueLocation.file(),
+                    trueLocation.line() + (trueLocation.equals(Location.IGNORE) ? 0 : 1),
+                    trueLocation.column());
             Op terminator = (Op) getImplicitTerminatorType().newInstance(debugLocation);
             block.addOperation(terminator);
           } catch (Exception e) {

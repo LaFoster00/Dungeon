@@ -764,7 +764,7 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   }
 
   @Override
-  public void onUnpause() {
+  public void onResume() {
     setDebugPaused(false);
   }
 

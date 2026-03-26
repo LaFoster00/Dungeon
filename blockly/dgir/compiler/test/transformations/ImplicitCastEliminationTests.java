@@ -1,5 +1,6 @@
 package transformations;
 
+import blockly.dgir.compiler.java.CompilerUtils;
 import blockly.dgir.compiler.java.EmitContext;
 import blockly.dgir.compiler.java.transformations.ImplicitCastElimination;
 import com.github.javaparser.StaticJavaParser;
@@ -216,6 +217,8 @@ public class RangeCastClass {
     assertEquals(beginLine(secondArgRange), beginLine(secondCastRange));
     assertEquals(beginLine(firstCastRange), beginLine(secondCastRange));
     assertTrue(beginColumn(firstCastRange) < beginColumn(secondCastRange));
+    assertTrue(firstCast.containsData(CompilerUtils.DEBUG_SKIP_KEY));
+    assertTrue(secondCast.containsData(CompilerUtils.DEBUG_SKIP_KEY));
   }
 
   private static int beginLine(TokenRange tokenRange) {

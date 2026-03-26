@@ -10,6 +10,7 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSol
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import dgir.core.Dialect;
+import dgir.core.IrToText;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -20,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static blockly.dgir.compiler.java.DiagnosticUtils.formatJavacDiagnostic;
 
 public class JavaCompiler {
+  static final Logger LOGGER = Logger.getLogger(JavaCompiler.class.getName());
   static boolean symbolSolverInitialized = false;
 
   protected JavaCompiler() {}
@@ -76,20 +79,33 @@ public class JavaCompiler {
     EmitContext context = new EmitContext(filename, source);
 
     new DeadCodeElimination().visit(result, null);
+    LOGGER.info("After dead code elimination:\n" + result);
     new SwitchToIf().visit(result, context);
+    LOGGER.info("After switch to if:\n" + result);
     new LoopLowering().visit(result, null);
+    LOGGER.info("After loop lowering:\n" + result);
     Boolean castEliminationResult = new ImplicitCastElimination().visit(result, context);
     if (castEliminationResult != null) {
       return context.asCompilationResult();
     }
+    LOGGER.info("After implicit cast elimination:\n" + result);
     new LogicalBinaryToConditional().visit(result, context);
+    LOGGER.info("After logical binary to conditional:\n" + result);
     new DeadCodeElimination().visit(result, null);
+    LOGGER.info("After dead code elimination:\n" + result);
+    new DebugSkipMarker().visit(result, null);
 
     // Register all dialects so that we can use them during emission.
     Dialect.registerAllDialects();
     DungeonDialect.get().register();
 
     NonValueVisitor.get().visit(result, context);
+    CompilationResult compilationResult = context.asCompilationResult();
+    if (compilationResult instanceof CompilationResult.Success success) {
+      LOGGER.info(
+          "Compilation successful with output program: \n"
+              + IrToText.toText(success.program().getOperation()));
+    }
     return context.asCompilationResult();
   }
 

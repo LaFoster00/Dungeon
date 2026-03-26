@@ -154,7 +154,7 @@ public class LoopLowering extends GenericVisitorAdapter<Boolean, Boolean> {
 
   private Statement createControlFlowFlagUpdate(Statement source, boolean isBreak) {
     // Flag writes are materialized as statements so later passes can consume them.
-    BlockStmt updates = setTokenRangeFrom(new BlockStmt(), source);
+    BlockStmt updates = setTokenRangeFrom(markDebugSkip(new BlockStmt()), source);
     if (isBreak) {
       updates.addStatement(assignTrue("skipBreak", source));
     }
@@ -164,16 +164,19 @@ public class LoopLowering extends GenericVisitorAdapter<Boolean, Boolean> {
 
   private Statement assignTrue(String variableName, Statement source) {
     NameExpr lhs = setTokenRangeFrom(new NameExpr(variableName), source);
-    BooleanLiteralExpr rhs = setTokenRangeFrom(new BooleanLiteralExpr(true), source);
-    AssignExpr assignExpr = setTokenRangeFrom(new AssignExpr(lhs, rhs, AssignExpr.Operator.ASSIGN), source);
-    return setTokenRangeFrom(new ExpressionStmt(assignExpr), source);
+    markDebugSkip(lhs);
+    BooleanLiteralExpr rhs = setTokenRangeFrom(markDebugSkip(new BooleanLiteralExpr(true)), source);
+    AssignExpr assignExpr =
+        setTokenRangeFrom(
+            markDebugSkip(new AssignExpr(lhs, rhs, AssignExpr.Operator.ASSIGN)), source);
+    return setTokenRangeFrom(markDebugSkip(new ExpressionStmt(assignExpr)), source);
   }
 
   private BlockStmt ensureBlockBody(Statement stmt) {
     if (stmt.isBlockStmt()) {
       return stmt.asBlockStmt();
     }
-    return setTokenRangeFrom(new BlockStmt(NodeList.nodeList(stmt)), stmt);
+    return setTokenRangeFrom(markDebugSkip(new BlockStmt(NodeList.nodeList(stmt))), stmt);
   }
 
   private void ensureLoopFlags(BlockStmt body) {
@@ -191,17 +194,20 @@ public class LoopLowering extends GenericVisitorAdapter<Boolean, Boolean> {
         new VariableDeclarator(
             setTokenRangeFrom(PrimitiveType.booleanType(), source),
             name,
-            setTokenRangeFrom(new BooleanLiteralExpr(false), source));
+            setTokenRangeFrom(markDebugSkip(new BooleanLiteralExpr(false)), source));
     setTokenRangeFrom(decl, source);
     VariableDeclarationExpr variableDeclarationExpr =
         setTokenRangeFrom(new VariableDeclarationExpr(decl), source);
-    return setTokenRangeFrom(new ExpressionStmt(variableDeclarationExpr), source);
+    markDebugSkip(decl);
+    markDebugSkip(variableDeclarationExpr);
+    return setTokenRangeFrom(markDebugSkip(new ExpressionStmt(variableDeclarationExpr)), source);
   }
 
   private UnaryExpr skipIsFalseCondition(Statement source) {
     NameExpr skipRef = setTokenRangeFrom(new NameExpr("skip"), source);
+    markDebugSkip(skipRef);
     return setTokenRangeFrom(
-        new UnaryExpr(skipRef, UnaryExpr.Operator.LOGICAL_COMPLEMENT), source);
+        markDebugSkip(new UnaryExpr(skipRef, UnaryExpr.Operator.LOGICAL_COMPLEMENT)), source);
   }
 
   /**
@@ -220,13 +226,16 @@ public class LoopLowering extends GenericVisitorAdapter<Boolean, Boolean> {
       guardedStmts.add(stmts.get(i));
     }
     BlockStmt guardedBody = setTokenRangeFrom(new BlockStmt(guardedStmts), source);
-    IfStmt guard = setTokenRangeFrom(new IfStmt(skipIsFalseCondition(source), guardedBody, null), source);
+    IfStmt guard =
+        setTokenRangeFrom(
+            markDebugSkip(new IfStmt(skipIsFalseCondition(source), guardedBody, null)), source);
     stmts.subList(startIndex, stmts.size()).clear();
     stmts.add(guard);
   }
 
   private void wrapInBlockStmt(Statement stmt) {
-    BlockStmt block = setTokenRangeFrom(new BlockStmt(NodeList.nodeList(stmt.clone())), stmt);
+    BlockStmt block =
+        setTokenRangeFrom(markDebugSkip(new BlockStmt(NodeList.nodeList(stmt.clone()))), stmt);
     stmt.replace(block);
   }
 }

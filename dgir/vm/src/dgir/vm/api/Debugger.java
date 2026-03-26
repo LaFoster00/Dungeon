@@ -64,7 +64,7 @@ public interface Debugger {
    * Called when the VM is resumed after being paused (either by a debug control action or by a
    * debugger attaching to a suspended VM).
    */
-  void onUnpause();
+  void onResume();
 
   /**
    * Called when the VM is paused due to a debug control action (either by returning {@link

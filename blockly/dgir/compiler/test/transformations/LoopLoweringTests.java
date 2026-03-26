@@ -1,5 +1,6 @@
 package transformations;
 
+import blockly.dgir.compiler.java.CompilerUtils;
 import blockly.dgir.compiler.java.transformations.LoopLowering;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.TokenRange;
@@ -12,6 +13,7 @@ import com.github.javaparser.ast.stmt.WhileStmt;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LoopLoweringTests extends TransformationTestBase {
   @Test
@@ -169,6 +171,34 @@ public class RangeLoopClass {
 
     assertEquals(breakLine, beginLine(loweredBreakUpdate.getTokenRange().orElseThrow()));
     assertEquals(nextLine, beginLine(loweredGuard.getTokenRange().orElseThrow()));
+  }
+
+  @Test
+  void generatedLoopLoweringScaffoldingIsMarkedDebugSkip() {
+    String code =
+"""
+public class DebugSkipLoopClass {
+  public void test() {
+    while (true) {
+      continue;
+      int x = 1;
+    }
+  }
+}
+""";
+
+    CompilationUnit cu = StaticJavaParser.parse(code);
+    cu.accept(new LoopLowering(), false);
+
+    WhileStmt loweredWhile = cu.findFirst(WhileStmt.class).orElseThrow();
+    BlockStmt loweredBody = loweredWhile.getBody().asBlockStmt();
+
+    assertTrue(loweredBody.getStatement(0).containsData(CompilerUtils.DEBUG_SKIP_KEY));
+    assertTrue(loweredBody.getStatement(1).containsData(CompilerUtils.DEBUG_SKIP_KEY));
+    assertTrue(loweredBody.getStatement(2).containsData(CompilerUtils.DEBUG_SKIP_KEY));
+    IfStmt guard = loweredBody.getStatement(3).asIfStmt();
+    assertTrue(guard.containsData(CompilerUtils.DEBUG_SKIP_KEY));
+    assertTrue(guard.getCondition().containsData(CompilerUtils.DEBUG_SKIP_KEY));
   }
 
   private static int beginLine(TokenRange tokenRange) {

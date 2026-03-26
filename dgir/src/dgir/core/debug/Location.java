@@ -15,6 +15,8 @@ public record Location(@NotNull String file, int line, int column) {
   /** Sentinel location used when no source position is available. */
   public static final Location UNKNOWN = new Location("<unknown>", -1, -1);
 
+  public static final Location IGNORE = new Location("<ignore>", -1, -1);
+
   /**
    * Parses a serialized location in {@code file:line:column} format.
    *

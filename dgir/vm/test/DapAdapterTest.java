@@ -95,6 +95,18 @@ class DapAdapterTest extends VmTestBase {
     return prog;
   }
 
+  /** Build a program with a synthetic debug-skip operation between two source lines. */
+  static ProgramOp programWithIgnoreLocationOp() {
+    ProgramOp prog = new ProgramOp(new Location("test.java", 1, 1));
+    FuncOp main = prog.addOperation(new FuncOp(new Location("test.java", 2, 2), "main"));
+    var a = main.addOperation(new ConstantOp(new Location("test.java", 3, 3), "A\n"), 0);
+    // Synthetic op introduced by lowering pass; should not be a debugger stop target.
+    main.addOperation(new ConstantOp(Location.IGNORE, "synthetic"), 0);
+    main.addOperation(new PrintOp(new Location("test.java", 4, 3), a.getResult()), 0);
+    main.addOperation(new ReturnOp(new Location("test.java", 5, 2)), 0);
+    return prog;
+  }
+
   /**
    * Build a long-running program with a loop, for testing pause and step.
    *
@@ -588,6 +600,44 @@ class DapAdapterTest extends VmTestBase {
     clearInvocations(h.client());
 
     // ---- finish ----
+    h.adapter().continue_(new ContinueArguments()).get();
+    await(
+        () -> {
+          verify(h.client(), atLeastOnce()).terminated(any());
+          return true;
+        });
+  }
+
+  @Test
+  void next_skipsIgnoreLocation_andStopsAtNextSourceLine() throws Exception {
+    var h = createHandle(programWithIgnoreLocationOp());
+    h.adapter().initialize(new InitializeRequestArguments()).get();
+    h.adapter().launch(Map.of("stopOnEntry", true)).get();
+    h.adapter().configurationDone(new ConfigurationDoneArguments()).get();
+
+    ArgumentCaptor<StoppedEventArguments> cap =
+        ArgumentCaptor.forClass(StoppedEventArguments.class);
+    await(
+        () -> {
+          verify(h.client(), atLeastOnce()).stopped(cap.capture());
+          return true;
+        });
+    assertEquals("entry", cap.getValue().getReason());
+    clearInvocations(h.client());
+
+    h.adapter().next(new NextArguments()).get();
+    await(
+        () -> {
+          verify(h.client(), atLeastOnce()).stopped(cap.capture());
+          return true;
+        });
+
+    StoppedEventArguments stepped = cap.getValue();
+    assertEquals("step", stepped.getReason());
+    assertNotNull(stepped.getDescription());
+    assertEquals("test.java:4:3", stepped.getDescription());
+    verify(h.client(), times(1)).stopped(any());
+
     h.adapter().continue_(new ContinueArguments()).get();
     await(
         () -> {

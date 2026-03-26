@@ -25,6 +25,9 @@ public class DiagnosticUtils {
       logWarning("No range information available for AST node, using default location.");
       return Location.UNKNOWN;
     }
+    if (node.containsData(CompilerUtils.DEBUG_SKIP_KEY)) {
+      return Location.IGNORE;
+    }
     Range r = node.getRange().get();
     return new Location(filename, r.begin.line, r.begin.column);
   }

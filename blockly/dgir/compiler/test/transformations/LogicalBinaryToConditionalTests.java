@@ -1,5 +1,6 @@
 package transformations;
 
+import blockly.dgir.compiler.java.CompilerUtils;
 import blockly.dgir.compiler.java.EmitContext;
 import blockly.dgir.compiler.java.transformations.LogicalBinaryToConditional;
 import com.github.javaparser.StaticJavaParser;
@@ -10,6 +11,7 @@ import com.github.javaparser.ast.expr.ConditionalExpr;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LogicalBinaryToConditionalTests extends TransformationTestBase {
   @Test
@@ -228,6 +230,28 @@ public class RangeOrderClass {
 
     assertEquals(outerLine, beginLine(outer.getTokenRange().orElseThrow()));
     assertEquals(outerLine, beginLine(inner.getTokenRange().orElseThrow()));
+  }
+
+  @Test
+  void generatedConditionalsAreMarkedDebugSkip() {
+    String code =
+"""
+public class DebugSkipLogicalClass {
+  public void test() {
+    boolean a = true;
+    boolean b = false;
+    boolean c = a && b;
+  }
+}
+""";
+
+    CompilationUnit cu = StaticJavaParser.parse(code);
+    new LogicalBinaryToConditional()
+        .visit(cu, new EmitContext("generatedConditionalsAreMarkedDebugSkip"));
+
+    ConditionalExpr conditional = cu.findFirst(ConditionalExpr.class).orElseThrow();
+    assertTrue(conditional.containsData(CompilerUtils.DEBUG_SKIP_KEY));
+    assertTrue(conditional.getElseExpr().containsData(CompilerUtils.DEBUG_SKIP_KEY));
   }
 
   private static int beginLine(TokenRange tokenRange) {

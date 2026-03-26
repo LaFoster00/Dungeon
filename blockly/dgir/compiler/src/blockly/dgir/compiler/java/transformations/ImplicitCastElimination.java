@@ -13,6 +13,7 @@ import com.github.javaparser.resolution.types.ResolvedType;
 import java.util.Objects;
 import java.util.Optional;
 
+import static blockly.dgir.compiler.java.CompilerUtils.markDebugSkip;
 import static blockly.dgir.compiler.java.CompilerUtils.setTokenRangeFrom;
 
 /**
@@ -68,8 +69,9 @@ public class ImplicitCastElimination extends GenericVisitorAdapter<Boolean, Emit
         }
         default -> throw new IllegalStateException("Unexpected value: " + conversion);
       }
-      CastExpr castExpr = new CastExpr(castType, value.clone());
+      CastExpr castExpr = markDebugSkip(new CastExpr(castType, value.clone()));
       setTokenRangeFrom(castExpr, value, n);
+      markDebugSkip(castExpr.getType());
       setTokenRangeFrom(castExpr.getType(), value, n);
       return Optional.of(castExpr);
     }
@@ -117,8 +119,10 @@ public class ImplicitCastElimination extends GenericVisitorAdapter<Boolean, Emit
           };
     if (targetType.isAssignableBy(valueType) || override) {
       CastExpr castExpr =
-          new CastExpr(StaticJavaParser.parseType(targetType.describe()), value.clone());
+          markDebugSkip(
+              new CastExpr(StaticJavaParser.parseType(targetType.describe()), value.clone()));
       setTokenRangeFrom(castExpr, value, n);
+      markDebugSkip(castExpr.getType());
       setTokenRangeFrom(castExpr.getType(), value, n);
       return Optional.of(castExpr);
     }
