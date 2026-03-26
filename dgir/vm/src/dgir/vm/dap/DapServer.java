@@ -196,7 +196,7 @@ public class DapServer implements AutoCloseable {
 
     // Reject if the VM is not running and no debugger is waiting to attach (e.g. after the program
     // has finished but before reloadProgram is called again).
-    if (!isVmRunning() && !adapter.isWaitingForDebugger()) {
+    if (!adapter.isWaitingForDebugger()) {
       LOG.warning("DAP client rejected: VM not running and not waiting for debugger.");
       closeQuietly(socket);
       return;

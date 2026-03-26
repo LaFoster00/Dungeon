@@ -446,7 +446,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
 
   @Override
   public EmitResult<Boolean> visit(DoStmt n, EmitContext context) {
-    var scope = context.insert(new ScfOps.ScopeOp(context.loc(markDebugSkip(n))));
+    var scope = context.insert(new ScfOps.ScopeOp(Location.IGNORE));
     // Make sure the values defined by the condition do not spill outside stmt
     try (var scopeSymScope = new EmitContext.SymbolScope(context, false);
         var scopeInsertion = context.setInsertionPoint(scope.getEntryBlock(), -1)) {
@@ -545,7 +545,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
 
   @Override
   public EmitResult<Boolean> visit(ForStmt n, EmitContext context) {
-    var scope = context.insert(new ScfOps.ScopeOp(context.loc(markDebugSkip(n))));
+    var scope = context.insert(new ScfOps.ScopeOp(Location.IGNORE));
     // Make sure the values defined by the condition do not spill outside stmt
     try (var scopeSymScope = new EmitContext.SymbolScope(context, false);
         var scopeInsertion = context.setInsertionPoint(scope.getEntryBlock(), -1)) {
@@ -566,10 +566,9 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
             context.setInsertionPoint(whileOp.getConditionRegion().getEntryBlock(), -1)) {
           if (n.getCompare().isPresent()) {
             Block conditionContinueBlock = whileOp.getConditionRegion().addBlock(new Block());
-            conditionContinueBlock.addOperation(
-                new ScfOps.ContinueOp(context.loc(markDebugSkip(n))));
+            conditionContinueBlock.addOperation(new ScfOps.ContinueOp(Location.IGNORE));
             Block conditionBreakBlock = whileOp.getConditionRegion().addBlock(new Block());
-            conditionBreakBlock.addOperation(new ScfOps.EndOp(context.loc(markDebugSkip(n))));
+            conditionBreakBlock.addOperation(new ScfOps.EndOp(Location.IGNORE));
 
             EmitResult<Value> compareResult =
                 EmitResult.ofNullable(n.getCompare().get().accept(RValueVisitor.get(), context));
@@ -616,13 +615,13 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
             // Create the break block. This is called if there was a break statement in the loop
             // body.
             Block breakBlock = whileOp.getBodyRegion().addBlock(new Block());
-            breakBlock.addOperation(new ScfOps.EndOp(context.loc(markDebugSkip(n))));
+            breakBlock.addOperation(new ScfOps.EndOp(Location.IGNORE));
 
             // Create the branch to break or continue
             // The second operation is the constant op defining the skip flag
             context.insert(
                 new CfOps.BranchCondOp(
-                    context.loc(markDebugSkip(n)),
+                    Location.IGNORE,
                     whileOp
                         .getBodyRegion()
                         .getEntryBlock()
@@ -647,7 +646,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
 
   @Override
   public EmitResult<Boolean> visit(IfStmt n, EmitContext context) {
-    var scope = context.insert(new ScfOps.ScopeOp(context.loc(markDebugSkip(n))));
+    var scope = context.insert(new ScfOps.ScopeOp(Location.IGNORE));
     // Make sure the values defined by the condition do not spill outside stmt
     try (var scopeSymScope = new EmitContext.SymbolScope(context, false);
         var scopeInsertion = context.setInsertionPoint(scope.getEntryBlock(), -1)) {
@@ -752,7 +751,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
 
   @Override
   public EmitResult<Boolean> visit(WhileStmt n, EmitContext context) {
-    var scope = context.insert(new ScfOps.ScopeOp(context.loc(markDebugSkip(n))));
+    var scope = context.insert(new ScfOps.ScopeOp(Location.IGNORE));
     // Make sure the values defined by the condition do not spill outside stmt
     try (var scopeSymScope = new EmitContext.SymbolScope(context, false);
         var scopeInsertion = context.setInsertionPoint(scope.getEntryBlock(), -1)) {

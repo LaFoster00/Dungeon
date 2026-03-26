@@ -156,20 +156,23 @@ public class LoopLowering extends GenericVisitorAdapter<Boolean, Boolean> {
     // Flag writes are materialized as statements so later passes can consume them.
     BlockStmt updates = setTokenRangeFrom(markDebugSkip(new BlockStmt()), source);
     if (isBreak) {
-      updates.addStatement(assignTrue("skipBreak", source));
+      updates.addStatement(assignTrue("skipBreak", source, false));
     }
-    updates.addStatement(assignTrue("skip", source));
+    updates.addStatement(assignTrue("skip", source, true));
     return updates;
   }
 
-  private Statement assignTrue(String variableName, Statement source) {
+  private Statement assignTrue(String variableName, Statement source, boolean keepSourceLocation) {
     NameExpr lhs = setTokenRangeFrom(new NameExpr(variableName), source);
-    markDebugSkip(lhs);
-    BooleanLiteralExpr rhs = setTokenRangeFrom(markDebugSkip(new BooleanLiteralExpr(true)), source);
+    if (!keepSourceLocation) markDebugSkip(lhs);
+    BooleanLiteralExpr rhs = setTokenRangeFrom(new BooleanLiteralExpr(true), source);
+    if (!keepSourceLocation) markDebugSkip(rhs);
     AssignExpr assignExpr =
-        setTokenRangeFrom(
-            markDebugSkip(new AssignExpr(lhs, rhs, AssignExpr.Operator.ASSIGN)), source);
-    return setTokenRangeFrom(markDebugSkip(new ExpressionStmt(assignExpr)), source);
+        setTokenRangeFrom(new AssignExpr(lhs, rhs, AssignExpr.Operator.ASSIGN), source);
+    if (!keepSourceLocation) markDebugSkip(assignExpr);
+    ExpressionStmt stmt = setTokenRangeFrom(markDebugSkip(new ExpressionStmt(assignExpr)), source);
+    if (!keepSourceLocation) markDebugSkip(stmt);
+    return stmt;
   }
 
   private BlockStmt ensureBlockBody(Statement stmt) {

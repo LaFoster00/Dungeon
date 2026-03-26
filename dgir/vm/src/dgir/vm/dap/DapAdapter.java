@@ -90,6 +90,12 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
   private final @NotNull AtomicReference<Thread> vmThreadRef = new AtomicReference<>();
 
   /**
+   * Set to {@code true} when the VM thread was launched once. After that it always stays {@code
+   * true}
+   */
+  private volatile boolean launched = false;
+
+  /**
    * Set to {@code true} while {@link #reloadProgram} is executing. Suppresses the {@code
    * exited}/{@code terminated} events that the VM thread would normally fire so that the DAP client
    * does not see a "session ended" signal mid-reload.
@@ -197,7 +203,7 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
    * Returns {@code true} if the adapter is waiting for a debugger to attach before starting the VM.
    */
   public boolean isWaitingForDebugger() {
-    return stopOnEntry && !isVmRunning();
+    return (stopOnEntry && !isVmRunning()) || !launched;
   }
 
   /**
@@ -834,6 +840,7 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
     t.setDaemon(true);
     t.start();
     vmThreadRef.set(t);
+    launched = true;
   }
 
   /**
@@ -1008,5 +1015,9 @@ public class DapAdapter implements IDebugProtocolServer, Debugger {
     if (listener != null) {
       listener.accept(paused);
     }
+  }
+
+  public boolean isLaunched() {
+    return launched;
   }
 }
