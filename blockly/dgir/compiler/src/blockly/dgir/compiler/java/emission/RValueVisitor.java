@@ -442,6 +442,20 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
 
   @Override
   public EmitResult<Value> visit(UnaryExpr n, EmitContext context) {
+    boolean valueDiscarded =
+        n.getParentNode().map(node -> node instanceof ExpressionStmt).orElse(false);
+    if (valueDiscarded) {
+      switch (n.getOperator()) {
+        case PLUS, MINUS, LOGICAL_COMPLEMENT, BITWISE_COMPLEMENT -> {
+          context.emitWarning(
+              n,
+              "The result of the unary operator "
+                  + n.getOperator()
+                  + " is discarded. This operator has no side effects, so the entire expression will be discarded.");
+          return EmitResult.of(Value.DUMMY);
+        }
+      }
+    }
     EmitResult<Value> operandResult;
     {
       operandResult = EmitResult.ofNullable(n.getExpression().accept(this, context));
@@ -450,7 +464,6 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
     Value operand = operandResult.get();
 
     boolean postfix = false;
-    boolean invalid = false;
     ArithAttrs.UnaryModeAttr.UnaryMode unaryMode =
         switch (n.getOperator()) {
           case PLUS -> null;
@@ -460,19 +473,27 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
           case LOGICAL_COMPLEMENT -> ArithAttrs.UnaryModeAttr.UnaryMode.LOGICAL_COMPLEMENT;
           case BITWISE_COMPLEMENT -> ArithAttrs.UnaryModeAttr.UnaryMode.COMPLEMENT;
           case POSTFIX_INCREMENT -> {
+            if (valueDiscarded) {
+              // If the value of the increment is not used, we can emit it as a prefix increment
+              // since the result value is not observable.
+              yield ArithAttrs.UnaryModeAttr.UnaryMode.INCREMENT;
+            }
             postfix = true;
             yield ArithAttrs.UnaryModeAttr.UnaryMode.INCREMENT;
           }
           case POSTFIX_DECREMENT -> {
+            if (valueDiscarded) {
+              // If the value of the decrement is not used, we can emit it as a prefix decrement
+              // since the result value is not observable.
+              yield ArithAttrs.UnaryModeAttr.UnaryMode.DECREMENT;
+            }
             postfix = true;
             yield ArithAttrs.UnaryModeAttr.UnaryMode.DECREMENT;
           }
         };
 
     if (unaryMode == null) {
-      if (invalid)
-        return EmitResult.failure(context, n, "Unsupported unary operator " + n.getOperator());
-      else return EmitResult.success(operandResult.get());
+      return EmitResult.success(operandResult.get());
     }
 
     Value result = null;

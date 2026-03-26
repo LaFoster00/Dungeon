@@ -1,7 +1,6 @@
 package blockly.dgir.compiler.java.transformations;
 
 import blockly.dgir.compiler.java.CompilerUtils;
-import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
@@ -25,12 +24,6 @@ public class DebugSkipMarker extends VoidVisitorAdapter<Void> {
 
   @Override
   public void visit(WhileStmt n, Void arg) {
-    super.visit(n, null);
-    markDebugSkip(n.getCondition());
-  }
-
-  @Override
-  public void visit(DoStmt n, Void arg) {
     super.visit(n, null);
     markDebugSkip(n.getCondition());
   }

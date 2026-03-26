@@ -4,10 +4,7 @@ import blockly.dgir.compiler.java.CompilerUtils;
 import blockly.dgir.compiler.java.EmitContext;
 import blockly.dgir.compiler.java.EmitResult;
 import blockly.dgir.compiler.java.IntrinsicRegistry;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.Modifier;
-import com.github.javaparser.ast.PackageDeclaration;
+import com.github.javaparser.ast.*;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
@@ -530,9 +527,9 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
               context.setInsertionPoint(whileOp.getConditionRegion().getEntryBlock(), -1)) {
             if (n.getCompare().isPresent()) {
               Block continueBlock = whileOp.getConditionRegion().addBlock(new Block());
-              continueBlock.addOperation(new ScfOps.ContinueOp(Location.IGNORE));
+              continueBlock.addOperation(new ScfOps.ContinueOp(context.loc(n)));
               Block breakBlock = whileOp.getConditionRegion().addBlock(new Block());
-              breakBlock.addOperation(new ScfOps.EndOp(Location.IGNORE));
+              breakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
 
               EmitResult<Value> compareResult =
                   EmitResult.ofNullable(n.getCompare().get().accept(RValueVisitor.get(), context));
@@ -576,7 +573,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
                   return EmitResult.failure();
                 }
               }
-              emitBreakHandling(whileOp, context, updateBlock);
+              emitBreakHandling(whileOp, context, updateBlock, n);
             } else {
               EmitResult<List<Value>> updateResult = visitRValueNodeList(n.getUpdate(), context);
               if (updateResult.isFailure()) {
@@ -593,11 +590,11 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
   }
 
   private static void emitBreakHandling(
-      ScfOps.WhileOp whileOp, EmitContext context, Block updateBlock) {
+      ScfOps.WhileOp whileOp, EmitContext context, Block updateBlock, Node n) {
     // Create the break block. This is called if there was a break statement in the loop
     // body.
     Block breakBlock = whileOp.getBodyRegion().addBlock(new Block());
-    breakBlock.addOperation(new ScfOps.EndOp(Location.IGNORE));
+    breakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
 
     // Create the branch to break or continue
     // The second operation is the constant op defining the skip flag
@@ -727,9 +724,9 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
           try (var conditionInsertion =
               context.setInsertionPoint(whileOp.getConditionRegion().getEntryBlock(), -1)) {
             Block continueBlock = whileOp.getConditionRegion().addBlock(new Block());
-            continueBlock.addOperation(new ScfOps.ContinueOp(Location.IGNORE));
+            continueBlock.addOperation(new ScfOps.ContinueOp(context.loc(n)));
             Block breakBlock = whileOp.getConditionRegion().addBlock(new Block());
-            breakBlock.addOperation(new ScfOps.EndOp(Location.IGNORE));
+            breakBlock.addOperation(new ScfOps.EndOp(context.loc(n)));
 
             if (emitLoopCondition(context, continueBlock, breakBlock, n.getCondition()))
               return EmitResult.failure(context, n, "Failed to emit condition");
@@ -754,7 +751,7 @@ public class NonValueVisitor extends GenericVisitorAdapter<EmitResult<Boolean>, 
               // where hit.
               Block continueBlock = whileOp.getBodyRegion().addBlock(new Block());
               continueBlock.addOperation(new ScfOps.ContinueOp(context.loc(n)));
-              emitBreakHandling(whileOp, context, continueBlock);
+              emitBreakHandling(whileOp, context, continueBlock, n);
             }
           }
         }

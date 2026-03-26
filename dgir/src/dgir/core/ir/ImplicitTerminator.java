@@ -27,16 +27,15 @@ public interface ImplicitTerminator {
       for (Block block : region.getBlocks()) {
         if (block.getTerminator().isEmpty()) {
           try {
-            Location trueLocation;
-
-            if (block.getOperations().isEmpty())
-              trueLocation = block.getParentOperation().orElseThrow().getLocation();
-            else trueLocation = block.getOperations().getLast().getLocation();
-            Location debugLocation =
-                new Location(
-                    trueLocation.file(),
-                    trueLocation.line() + (trueLocation.equals(Location.IGNORE) ? 0 : 1),
-                    trueLocation.column());
+            Location debugLocation;
+            if (op.getLocation().equals(Location.IGNORE)) debugLocation = Location.IGNORE;
+            else {
+              Location trueLocation = op.getLocation();
+              if (!block.getOperations().isEmpty())
+                trueLocation = block.getOperations().getLast().getLocation();
+              debugLocation =
+                  new Location(trueLocation.file(), trueLocation.line() + 1, trueLocation.column());
+            }
             Op terminator = (Op) getImplicitTerminatorType().newInstance(debugLocation);
             block.addOperation(terminator);
           } catch (Exception e) {
