@@ -1,7 +1,7 @@
 [versions]
-spotless = "8.3.0"
+spotless = "8.4.0"
 
-protobuf = "4.34.0"
+protobuf = "4.34.1"
 protobufGradlePlugin = "0.9.6"
 
 errorprone = "2.46.0"
