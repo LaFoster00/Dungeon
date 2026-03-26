@@ -16,6 +16,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.stream.Collectors;
 
 import static blockly.dgir.compiler.java.DiagnosticUtils.formatDiagnostic;
 
@@ -74,11 +79,11 @@ public final class EmitContext {
     }
   }
 
-  private static final java.util.logging.Logger logger =
-      java.util.logging.Logger.getLogger(EmitContext.class.getName());
-  private final List<String> info = new ArrayList<>();
-  private final List<String> warnings = new ArrayList<>();
-  private final List<String> errors = new ArrayList<>();
+  private static final Logger LOGGER = Logger.getLogger(EmitContext.class.getName());
+  private static final StackWalker CALLER_WALKER =
+      StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
+  private final List<LogRecord> diagnostics = new ArrayList<>();
 
   private final @NotNull String filename;
   private final @Nullable List<String> sourceLines;
@@ -102,7 +107,8 @@ public final class EmitContext {
   }
 
   public boolean compilationSuccessful() {
-    return errors.isEmpty();
+    return diagnostics.stream()
+        .noneMatch(record -> record.getLevel().intValue() >= Level.SEVERE.intValue());
   }
 
   @NotNull
@@ -185,7 +191,9 @@ public final class EmitContext {
    *     to the message.
    */
   public void emitError(Node node, String message, Object... args) {
-    errors.add(formatDiagnostic(filename, sourceLines, "error", node, message, args));
+    String diagnostic = formatDiagnostic(filename, sourceLines, node, message, args);
+    diagnostics.add(getLogRecord(Level.SEVERE, diagnostic));
+    LOGGER.log(Level.SEVERE, diagnostic);
   }
 
   /**
@@ -197,7 +205,9 @@ public final class EmitContext {
    *     to the message.
    */
   public void emitWarning(Node node, String message, Object... args) {
-    warnings.add(formatDiagnostic(filename, sourceLines, "warning", node, message, args));
+    String diagnostic = formatDiagnostic(filename, sourceLines, node, message, args);
+    diagnostics.add(getLogRecord(Level.WARNING, diagnostic));
+    LOGGER.log(Level.WARNING, diagnostic);
   }
 
   /**
@@ -209,24 +219,38 @@ public final class EmitContext {
    *     to the message.
    */
   public void emitInfo(Node node, String message, Object... args) {
-    info.add(formatDiagnostic(filename, sourceLines, "note", node, message, args));
+    String diagnostic = formatDiagnostic(filename, sourceLines, node, message, args);
+    diagnostics.add(getLogRecord(Level.INFO, diagnostic));
+    LOGGER.log(Level.INFO, diagnostic);
   }
 
   public CompilationResult asCompilationResult() {
     if (compilationSuccessful()) {
       assert program != null : "Program must be set before returning a CompilationResult.";
-      return new CompilationResult.Success(program, info, warnings);
+      return new CompilationResult.Success(program, diagnostics);
     } else {
-      return new CompilationResult.Failure(errors, warnings, info);
+      return new CompilationResult.Failure(diagnostics);
     }
   }
 
   public void printDiagnostics() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("Diagnostics:\n");
-    sb.append("ERRORS:\n").append(String.join("\n", errors));
-    sb.append("\n\nWARNINGS:\n").append(String.join("\n", warnings));
-    sb.append("\n\nINFO:\n").append(String.join("\n", info));
-    System.out.println(sb.toString());
+    SimpleFormatter formatter = new SimpleFormatter();
+    System.err.println(
+        diagnostics.stream().map(formatter::format).collect(Collectors.joining("\n")));
+  }
+
+  private LogRecord getLogRecord(Level level, String diagnostic) {
+    Optional<StackWalker.StackFrame> caller = callerFrame();
+    LogRecord record = new LogRecord(level, diagnostic);
+    record.setLoggerName(LOGGER.getName());
+    caller.map(StackWalker.StackFrame::getClassName).ifPresent(record::setSourceClassName);
+    caller.map(StackWalker.StackFrame::getMethodName).ifPresent(record::setSourceMethodName);
+    return record;
+  }
+
+  private Optional<StackWalker.StackFrame> callerFrame() {
+    return CALLER_WALKER.walk(
+        frames ->
+            frames.dropWhile(frame -> frame.getDeclaringClass() == EmitContext.class).findFirst());
   }
 }

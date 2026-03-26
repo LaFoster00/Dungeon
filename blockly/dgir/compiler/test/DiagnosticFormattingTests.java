@@ -20,11 +20,11 @@ public class ParseDemo {
     assertInstanceOf(CompilationResult.Failure.class, result);
 
     CompilationResult.Failure failure = (CompilationResult.Failure) result;
-    assertFalse(failure.errors().isEmpty());
+    assertFalse(failure.diagnostics().isEmpty());
 
-    String firstError = failure.errors().getFirst();
+    String firstError = failure.toString();
+    assertTrue(firstError.contains("SEVERE: "));
     assertTrue(firstError.contains("ParseDemo.java:3:"));
-    assertTrue(firstError.contains(": error: "));
     assertTrue(firstError.contains("int x = ;"));
     assertTrue(firstError.contains("^"));
   }
@@ -44,11 +44,11 @@ public class SemanticDemo {
     assertInstanceOf(CompilationResult.Failure.class, result);
 
     CompilationResult.Failure failure = (CompilationResult.Failure) result;
-    assertFalse(failure.errors().isEmpty());
+    assertFalse(failure.diagnostics().isEmpty());
 
-    String firstError = failure.errors().getFirst();
+    String firstError = failure.toString();
+    assertTrue(firstError.contains("SEVERE: "));
     assertTrue(firstError.contains("SemanticDemo.java:3:"));
-    assertTrue(firstError.contains(": error: "));
     assertTrue(firstError.contains("int x = null;"));
     assertTrue(firstError.contains("^"));
   }
@@ -68,8 +68,7 @@ public class StringifyDemo {
     assertInstanceOf(CompilationResult.Failure.class, result);
 
     String rendered = result.toString();
-    assertFalse(rendered.contains("Failure["));
+    assertTrue(rendered.contains("SEVERE: "));
     assertTrue(rendered.contains("StringifyDemo.java:3:"));
-    assertTrue(rendered.contains(": error: "));
   }
 }

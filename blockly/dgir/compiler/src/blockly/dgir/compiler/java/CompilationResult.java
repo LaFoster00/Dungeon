@@ -7,42 +7,42 @@ import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.logging.LogRecord;
+import java.util.logging.SimpleFormatter;
+import java.util.stream.Collectors;
 
 public sealed interface CompilationResult {
-  record Success(
-      @NotNull BuiltinOps.ProgramOp program,
-      @NotNull List<String> infos,
-      @NotNull List<String> warnings)
+  record Success(@NotNull BuiltinOps.ProgramOp program, @NotNull List<LogRecord> diagnostics)
       implements CompilationResult {
     @Override
     public @NonNull String toString() {
+      SimpleFormatter formatter = new SimpleFormatter();
       StringBuilder sb = new StringBuilder();
       sb.append("Success[\n");
       sb.append("PROGRAM=\n\n")
           .append(DgirCoreUtils.indent(IrToText.toText(program.getOperation()), 1));
-      sb.append("\n\nINFOS=\n").append(DgirCoreUtils.indent(String.join("\n", infos), 1));
-      sb.append("\n\nWARNINGS=\n").append(DgirCoreUtils.indent(String.join("\n", warnings), 1));
+      sb.append("\n\n");
+      sb.append("DIAGNOSTICS=\n")
+          .append(
+              DgirCoreUtils.indent(
+                  diagnostics.stream()
+                      .map(formatter::format)
+                      .map(s -> s.substring(s.indexOf("\n") + 1))
+                      .collect(Collectors.joining("/n", "", "/n")),
+                  1));
       sb.append("]");
       return sb.toString();
     }
   }
 
-  record Failure(
-      @NotNull List<String> errors, @NotNull List<String> warnings, @NotNull List<String> infos)
-      implements CompilationResult {
+  record Failure(@NotNull List<LogRecord> diagnostics) implements CompilationResult {
     @Override
     public @NonNull String toString() {
-      StringBuilder diagnostics = new StringBuilder();
-      if (!errors.isEmpty()) diagnostics.append(String.join("\n", errors));
-      if (!warnings.isEmpty()) {
-        if (!diagnostics.isEmpty()) diagnostics.append("\n");
-        diagnostics.append(String.join("\n", warnings));
-      }
-      if (!infos.isEmpty()) {
-        if (!diagnostics.isEmpty()) diagnostics.append("\n");
-        diagnostics.append(String.join("\n", infos));
-      }
-      return diagnostics.toString();
+      SimpleFormatter formatter = new SimpleFormatter();
+      return diagnostics.stream()
+          .map(formatter::format)
+          .map(s -> s.substring(s.indexOf("\n") + 1))
+          .collect(Collectors.joining("\n", "", "\n"));
     }
   }
 }

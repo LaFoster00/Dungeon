@@ -220,10 +220,10 @@ function displayErrorsInEditor(
         errorLines.map((l, i) => `[${i}]: ${JSON.stringify(l)}`),
     );
 
-    const errorRegex = /^(.*):(\d+):(\d+):\s*([eE]rror|[wW]arning):\s*(.+)$/;
+    const errorRegex = /^(SEVERE|WARNING):\s*(.*):(\d+):(\d+):\s*(.+)$/;
     // Try to determine a more specific range for the error
     // For example, if the error message mentions a specific symbol
-    const symbolRegex = /[sS]ymbol:\s+([mM]ethode|[vV]ariable)\s+([^\s(]+)/;
+    const symbolRegex = /[sS]ymbol:\s+([mM]ethod|[vV]ariable)\s+([^\s(]+)/;
     const offsetRegex = /^(\s*)\^/; // only spaces and one ^
 
     let currentLineNum: number = -1;
@@ -261,9 +261,9 @@ function displayErrorsInEditor(
             }
 
             // Parse new error
-            const parsedLine = parseInt(errorMatch[2], 10);
-            const parsedColumn = errorMatch[3]
-                ? Math.max(parseInt(errorMatch[3], 10) - 1, 0)
+            const parsedLine = parseInt(errorMatch[3], 10);
+            const parsedColumn = errorMatch[4]
+                ? Math.max(parseInt(errorMatch[4], 10) - 1, 0)
                 : -1;
 
             currentLineNum = completeProgramMode

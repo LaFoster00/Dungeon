@@ -6,16 +6,23 @@ import dgir.core.debug.Location;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class DiagnosticUtils {
   private static final Logger LOGGER = Logger.getLogger(DiagnosticUtils.class.getName());
+  private static final StackWalker CALLER_WALKER =
+      StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
   @NotNull
   public static Location loc(@NotNull String filename, @NotNull Node node) {
     if (node.getRange().isEmpty()) {
-      LOGGER.warning("No range information available for AST node, using default location.");
+      logWarning("No range information available for AST node, using default location.");
       return Location.UNKNOWN;
     }
     Range r = node.getRange().get();
@@ -26,27 +33,16 @@ public class DiagnosticUtils {
       @NotNull String filename,
       Integer line,
       Integer column,
-      @NotNull String severity,
       @NotNull String message,
       String sourceLine) {
     StringBuilder formatted = new StringBuilder();
-    appendBaseMessage(formatted, filename, severity, message, line, column, sourceLine);
+    appendBaseMessage(formatted, filename, message, line, column, sourceLine);
     return formatted.toString();
-  }
-
-  public @NotNull String formatDiagnostic(
-      @NotNull String filename,
-      @Nullable List<String> sourceLines,
-      Node node,
-      @NotNull String message,
-      Object... args) {
-    return formatDiagnostic(filename, sourceLines, "error", node, message, args);
   }
 
   public static @NotNull String formatDiagnostic(
       @NotNull String filename,
       @Nullable List<String> sourceLines,
-      @NotNull String severity,
       Node node,
       @NotNull String message,
       Object... details) {
@@ -54,7 +50,6 @@ public class DiagnosticUtils {
     String sourceLine = getSourceLine(loc.line(), sourceLines);
     return formatDiagnostic(
         filename,
-        severity,
         message,
         loc.line() > 0 ? loc.line() : null,
         loc.column() > 0 ? loc.column() : null,
@@ -64,37 +59,36 @@ public class DiagnosticUtils {
 
   public static @NotNull String formatDiagnostic(
       @NotNull String filename,
-      @NotNull String severity,
       @NotNull String message,
       @Nullable Integer line,
       @Nullable Integer column,
       @Nullable String sourceLine,
       Object... details) {
     StringBuilder formatted = new StringBuilder();
-    appendBaseMessage(formatted, filename, severity, message, line, column, sourceLine);
-    for (Object detail : details) {
-      formatted.append("\n");
-      appendHeader(formatted, filename, "note", String.valueOf(detail), line, column);
+    appendBaseMessage(formatted, filename, message, line, column, sourceLine);
+    if (details.length == 0) {
+      return formatted.toString();
     }
+    formatted.append("\nAdditional Details:");
+    formatted.append(
+        Arrays.stream(details).map(Object::toString).collect(Collectors.joining("\n", "", "")));
     return formatted.toString();
   }
 
   public static void appendBaseMessage(
       @NotNull StringBuilder formatted,
       @NotNull String filename,
-      @NotNull String severity,
       @NotNull String message,
       @Nullable Integer line,
       @Nullable Integer column,
       @Nullable String sourceLine) {
-    appendHeader(formatted, filename, severity, message, line, column);
+    appendHeader(formatted, filename, message, line, column);
     appendSourceLine(formatted, filename, sourceLine, column);
   }
 
   public static void appendHeader(
       @NotNull StringBuilder formatted,
       @NotNull String filename,
-      @NotNull String severity,
       @NotNull String message,
       @Nullable Integer line,
       @Nullable Integer column) {
@@ -105,7 +99,7 @@ public class DiagnosticUtils {
         formatted.append(":").append(column);
       }
     }
-    formatted.append(": ").append(severity).append(": ").append(message);
+    formatted.append(": ").append(message);
   }
 
   public static void appendSourceLine(
@@ -134,5 +128,30 @@ public class DiagnosticUtils {
       return null;
     }
     return sourceLines.get(oneBasedLine - 1);
+  }
+
+  private static void logWarning(@NotNull String message) {
+    if (!LOGGER.isLoggable(Level.WARNING)) {
+      return;
+    }
+
+    Optional<StackWalker.StackFrame> caller = callerFrame();
+
+    LogRecord record = new LogRecord(Level.WARNING, message);
+    record.setLoggerName(LOGGER.getName());
+    caller.map(StackWalker.StackFrame::getClassName).ifPresent(record::setSourceClassName);
+    caller.map(StackWalker.StackFrame::getMethodName).ifPresent(record::setSourceMethodName);
+    LOGGER.log(record);
+  }
+
+  private static Optional<StackWalker.StackFrame> callerFrame() {
+    return CALLER_WALKER.walk(
+        frames ->
+            frames
+                .dropWhile(
+                    frame ->
+                        frame.getDeclaringClass() == DiagnosticUtils.class
+                            || frame.getDeclaringClass() == EmitContext.class)
+                .findFirst());
   }
 }
