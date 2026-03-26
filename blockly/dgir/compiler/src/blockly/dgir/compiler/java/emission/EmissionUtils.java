@@ -23,7 +23,6 @@ import static blockly.dgir.compiler.java.Access.isDeclarationAccessibleFrom;
 import static blockly.dgir.compiler.java.CompilerUtils.fromAstType;
 import static blockly.dgir.compiler.java.CompilerUtils.resolve;
 import static blockly.dgir.compiler.java.emission.Intrinsics.emitIntrinsic;
-import static blockly.dgir.compiler.java.emission.Intrinsics.emitStringIntrinsicMethods;
 
 public class EmissionUtils {
   public static @NotNull Optional<Value> resolveName(
@@ -96,11 +95,6 @@ public class EmissionUtils {
       return EmitResult.failure(context, n, "Failed to resolve method call " + n.getName());
     }
     ResolvedMethodDeclaration targetMethod = targetMethodOpt.get();
-    // If at any point we want to use the string just emit all the methods upfront.
-    if (targetMethod.declaringType().getQualifiedName().equals("java.lang.String")) {
-      emitStringIntrinsicMethods(targetMethod.declaringType(), context);
-    }
-
     ResolvedReferenceTypeDeclaration callingClass;
     {
       // Make sure the target method is accessible from the current context. This also checks that
@@ -177,7 +171,8 @@ public class EmissionUtils {
       args.addFirst(scopeResult.get());
     }
 
-    if (IntrinsicRegistry.intrinsics.contains(targetMethod.getQualifiedSignature())) {
+    if (IntrinsicRegistry.intrinsics.contains(targetMethod.getQualifiedSignature())
+        || targetMethod.declaringType().getQualifiedName().equals("java.lang.String")) {
       var resultOpt = emitIntrinsic(n, targetMethod.getQualifiedSignature(), args, context);
       if (resultOpt.isFailure()) {
         return EmitResult.failure();

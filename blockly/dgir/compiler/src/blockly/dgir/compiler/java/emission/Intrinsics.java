@@ -4,20 +4,14 @@ import blockly.dgir.compiler.java.EmitContext;
 import blockly.dgir.compiler.java.EmitResult;
 import blockly.dgir.dialect.dg.DgOps;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
-import dgir.core.SymbolTable;
-import dgir.core.debug.Location;
 import dgir.core.ir.Value;
 import dgir.dialect.arith.ArithAttrs;
 import dgir.dialect.arith.ArithOps;
 import dgir.dialect.builtin.BuiltinTypes;
-import dgir.dialect.func.FuncOps;
-import dgir.dialect.func.FuncTypes;
 import dgir.dialect.io.IoOps;
 import dgir.dialect.mem.MemOps;
 import dgir.dialect.str.StrOps;
 import dgir.dialect.str.StrTypes;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -171,298 +165,87 @@ public class Intrinsics {
         return EmitResult.of(Optional.of(op.getResult()));
       }
 
+      // String Operations
+
+      case "java.lang.String.length()" -> {
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.LengthOp(context.loc(n), args.getFirst()));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.equals(java.lang.Object)" -> {
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.EqualsOp(context.loc(n), args.getFirst(), args.get(1)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.charAt(int)" -> {
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.CharAtOp(context.loc(n), args.getFirst(), args.get(1)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.isEmpty()" -> {
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.IsEmptyOp(context.loc(n), args.getFirst()));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.toLowerCase()" -> {
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.ToLowerCaseOp(context.loc(n), args.getFirst()));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.toUpperCase()" -> {
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.ToUpperCaseOp(context.loc(n), args.getFirst()));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.trim()" -> {
+        if (args.size() != 1) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.TrimOp(context.loc(n), args.getFirst()));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.substring(int)" -> {
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op =
+            context.insert(new StrOps.SubstringOp(context.loc(n), args.getFirst(), args.get(1)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.substring(int, int)" -> {
+        if (args.size() != 3) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op =
+            context.insert(
+                new StrOps.SubstringOp(context.loc(n), args.getFirst(), args.get(1), args.get(2)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.concat(java.lang.String)" -> {
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.ConcatOp(context.loc(n), args.getFirst(), args.get(1)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.startsWith(java.lang.String)" -> {
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op =
+            context.insert(new StrOps.StartsWithOp(context.loc(n), args.getFirst(), args.get(1)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.endsWith(java.lang.String)" -> {
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op =
+            context.insert(new StrOps.EndsWithOp(context.loc(n), args.getFirst(), args.get(1)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.indexOf(java.lang.String)" -> {
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op = context.insert(new StrOps.IndexOfOp(context.loc(n), args.getFirst(), args.get(1)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+      case "java.lang.String.lastIndexOf(java.lang.String)" -> {
+        if (args.size() != 2) return EmitResult.failure(context, n, "Invalid number of arguments");
+        var op =
+            context.insert(new StrOps.LastIndexOfOp(context.loc(n), args.getFirst(), args.get(1)));
+        return EmitResult.of(Optional.of(op.getResult()));
+      }
+
       default -> context.emitError(n, "Intrinsic method " + intrinsicName + " is not supported.");
     }
     return EmitResult.success(Optional.empty());
-  }
-
-  /**
-   * Emit intrinsic methods for the String class, such as length() and charAt(int index).
-   *
-   * @param n the class declaration to check if it is the String class and emit the intrinsic
-   *     methods for it.
-   * @param context the emit context.
-   */
-  public static void emitStringIntrinsicMethods(
-      @NotNull ResolvedReferenceTypeDeclaration n, @NotNull EmitContext context) {
-    if (!n.getName().equals("String")) {
-      return;
-    }
-    Location loc = Location.UNKNOWN;
-
-    if (SymbolTable.lookupSymbolIn(
-            context.getProgramBlock().orElseThrow().getParentOperation().orElseThrow(),
-            "java.lang.String.length()")
-        != null) {
-      return;
-    }
-
-    // Insert the operations at the end of the program
-    try (var endOfProgramInsertion =
-        context.setInsertionPoint(
-            context.getProgramBlock().orElseThrow(),
-            context.getProgramBlock().orElseThrow().getOperations().size())) {
-
-      // Emit length() method
-      {
-        FuncOps.FuncOp lengthFunc =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.length()",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE), BuiltinTypes.IntegerT.INT32)));
-        try (var bodyInsertion = context.setInsertionPoint(lengthFunc.getEntryBlock(), -1)) {
-          StrOps.LengthOp lengthOp =
-              context.insert(new StrOps.LengthOp(loc, lengthFunc.getArgument(0).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, lengthOp.getResult()));
-        }
-      }
-
-      // Emit equals() method
-      {
-        FuncOps.FuncOp equalsFunc =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.equals(java.lang.Object)",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE, StrTypes.StringT.INSTANCE),
-                        BuiltinTypes.IntegerT.BOOL)));
-        try (var bodyInsertion = context.setInsertionPoint(equalsFunc.getEntryBlock(), -1)) {
-          StrOps.EqualsOp equalsOp =
-              context.insert(
-                  new StrOps.EqualsOp(
-                      loc,
-                      equalsFunc.getArgument(0).orElseThrow(),
-                      equalsFunc.getArgument(1).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, equalsOp.getResult()));
-        }
-      }
-
-      // Emit charAt(int index) method
-      {
-        FuncOps.FuncOp charAtFunc =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.charAt(int)",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE, BuiltinTypes.IntegerT.INT32),
-                        BuiltinTypes.IntegerT.UINT16)));
-        try (var bodyInsertion = context.setInsertionPoint(charAtFunc.getEntryBlock(), -1)) {
-          StrOps.CharAtOp charAtOp =
-              context.insert(
-                  new StrOps.CharAtOp(
-                      loc,
-                      charAtFunc.getArgument(0).orElseThrow(),
-                      charAtFunc.getArgument(1).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, charAtOp.getResult()));
-        }
-      }
-
-      // Emit isEmpty() method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.isEmpty()",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE), BuiltinTypes.IntegerT.BOOL)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.IsEmptyOp op =
-              context.insert(new StrOps.IsEmptyOp(loc, func.getArgument(0).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit toLowerCase(Locale) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.toLowerCase()",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE), StrTypes.StringT.INSTANCE)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.ToLowerCaseOp op =
-              context.insert(new StrOps.ToLowerCaseOp(loc, func.getArgument(0).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit toUpperCase(Locale) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.toUpperCase()",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE), StrTypes.StringT.INSTANCE)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.ToUpperCaseOp op =
-              context.insert(new StrOps.ToUpperCaseOp(loc, func.getArgument(0).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit trim() method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.trim()",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE), StrTypes.StringT.INSTANCE)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.TrimOp op =
-              context.insert(new StrOps.TrimOp(loc, func.getArgument(0).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit substring(int) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.substring(int)",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE, BuiltinTypes.IntegerT.INT32),
-                        StrTypes.StringT.INSTANCE)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.SubstringOp op =
-              context.insert(
-                  new StrOps.SubstringOp(
-                      loc, func.getArgument(0).orElseThrow(), func.getArgument(1).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit substring(int, int) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.substring(int, int)",
-                    FuncTypes.FuncType.of(
-                        List.of(
-                            StrTypes.StringT.INSTANCE,
-                            BuiltinTypes.IntegerT.INT32,
-                            BuiltinTypes.IntegerT.INT32),
-                        StrTypes.StringT.INSTANCE)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.SubstringOp op =
-              context.insert(
-                  new StrOps.SubstringOp(
-                      loc,
-                      func.getArgument(0).orElseThrow(),
-                      func.getArgument(1).orElseThrow(),
-                      func.getArgument(2).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit concat(String) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.concat(java.lang.String)",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE, StrTypes.StringT.INSTANCE),
-                        StrTypes.StringT.INSTANCE)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.ConcatOp op =
-              context.insert(
-                  new StrOps.ConcatOp(
-                      loc, func.getArgument(0).orElseThrow(), func.getArgument(1).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit startsWith(String) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.startsWith(java.lang.String)",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE, StrTypes.StringT.INSTANCE),
-                        BuiltinTypes.IntegerT.BOOL)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.StartsWithOp op =
-              context.insert(
-                  new StrOps.StartsWithOp(
-                      loc, func.getArgument(0).orElseThrow(), func.getArgument(1).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit endsWith(String) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.endsWith(java.lang.String)",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE, StrTypes.StringT.INSTANCE),
-                        BuiltinTypes.IntegerT.BOOL)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.EndsWithOp op =
-              context.insert(
-                  new StrOps.EndsWithOp(
-                      loc, func.getArgument(0).orElseThrow(), func.getArgument(1).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-
-      // Emit indexOf(String) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.indexOf(java.lang.String)",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE, StrTypes.StringT.INSTANCE),
-                        BuiltinTypes.IntegerT.INT32)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.IndexOfOp op =
-              context.insert(
-                  new StrOps.IndexOfOp(
-                      loc, func.getArgument(0).orElseThrow(), func.getArgument(1).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(Location.UNKNOWN, op.getResult()));
-        }
-      }
-
-      // Emit lastIndexOf(String) method
-      {
-        FuncOps.FuncOp func =
-            context.insert(
-                new FuncOps.FuncOp(
-                    loc,
-                    "java.lang.String.lastIndexOf(java.lang.String)",
-                    FuncTypes.FuncType.of(
-                        List.of(StrTypes.StringT.INSTANCE, StrTypes.StringT.INSTANCE),
-                        BuiltinTypes.IntegerT.INT32)));
-        try (var bodyInsertion = context.setInsertionPoint(func.getEntryBlock(), -1)) {
-          StrOps.LastIndexOfOp op =
-              context.insert(
-                  new StrOps.LastIndexOfOp(
-                      loc, func.getArgument(0).orElseThrow(), func.getArgument(1).orElseThrow()));
-          context.insert(new FuncOps.ReturnOp(loc, op.getResult()));
-        }
-      }
-    }
   }
 }
