@@ -61,10 +61,22 @@ jar {
 // jar with the main class set to DgirDebugServer.
 // Build with:  ./gradlew :dgir:vm:jarDgirDebugServer
 // Run with:    java -jar dgir/vm/build/libs/DgirDebugServer.jar --program my.dgir
-tasks.register('jarDgirDebugServer', ShadowJar) {
-    archiveBaseName.set('DgirDebugServer')
-    mainClass = 'dgir.vm.DgirDebugServer'
-    // Include this subproject's compiled classes
-    from sourceSets.main.output
+tasks.register("jarDgirDebugServer", ShadowJar) {
+    description = "Creates a self-contained executable jar for the DAP debug server."
+    from sourceSets.named("main").map { it.output }
+    configurations = project.configurations.named("runtimeClasspath").map { [it] }
+    archiveBaseName = "DgirDebugServer"
+    archiveClassifier = ""
+
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+
+    manifest {
+        attributes(
+            "Main-Class": "dgir.vm.DgirDebugServer"
+        )
+    }
 }
 
+tasks.named("assemble") {
+    dependsOn("jarDgirDebugServer")
+}
