@@ -4,7 +4,6 @@ import client.Client;
 import contrib.components.AIComponent;
 import contrib.components.BlockComponent;
 import contrib.utils.EntityUtils;
-import core.Component;
 import core.Entity;
 import core.Game;
 import core.components.PositionComponent;
@@ -24,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 /** Base component for all hero actions, such as moving, interaction, etc. */
-public sealed interface HeroActionComponent extends Component, VmManagedComponent {
+public sealed interface HeroActionComponent extends VmManagedComponent {
   String MOVEMENT_FORCE_ID = "Movement";
 
   void tick();

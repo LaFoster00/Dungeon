@@ -1,5 +1,7 @@
 package components;
 
+import core.Component;
+
 /**
  * Marker interface for components that are managed by the VM. These are components that are added
  * by the VM and depend on the VM to remove them again. These components might need to be removed
@@ -7,6 +9,6 @@ package components;
  *
  * @see HeroActionComponent.Move
  */
-public interface VmManagedComponent {
+public interface VmManagedComponent extends Component {
   void destroyVmManagedComponent();
 }
