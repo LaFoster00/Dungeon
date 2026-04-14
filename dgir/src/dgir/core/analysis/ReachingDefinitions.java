@@ -10,7 +10,8 @@ import java.util.*;
 
 /**
  * Forward must-reaching-definitions analysis for DGIR. Tracks, for each block, the set of values
- * that are definitely defined on all incoming paths.
+ * that are definitely defined on all incoming paths. Based on <a
+ * href="https://en.wikipedia.org/wiki/Reaching_definition">...</a>
  */
 public final class ReachingDefinitions {
   /** A missing-definition diagnostic. */
@@ -21,17 +22,6 @@ public final class ReachingDefinitions {
 
   /**
    * Entry point for clients: run a must-reaching-definitions pass starting at {@code root}.
-   *
-   * <p>Algorithm sketch (non-SSA):
-   *
-   * <ul>
-   *   <li>Lattice element: set of {@link Value} instances that are known to be defined on all
-   *       paths.
-   *   <li>Direction: forward; Meet: intersection across predecessors (must analysis).
-   *   <li>Transfer: start from IN, add each op's output to the running set.
-   *   <li>Nesting: for each child {@link Region}, recurse with the current state as entry facts.
-   * </ul>
-   *
    * The result is a list of diagnostics for operands that are used before being definitely defined.
    */
   @Contract(pure = true)
@@ -66,13 +56,11 @@ public final class ReachingDefinitions {
     // The inputs of each block
     Map<Block, Set<Value>> in = new HashMap<>();
     // The outputs of each block. These are filled as we process blocks since they can also contain
-    // values defined in
-    // previous blocks, such as the entry block.
+    // values defined in previous blocks, such as the entry block.
     Map<Block, Set<Value>> out = new HashMap<>();
 
     // The list of blocks that still needs to be processed. Start with all blocks, since we don't
-    // know which ones are
-    // reachable until we propagate facts.
+    // know which ones are reachable until we propagate facts.
     Deque<Block> worklist = new ArrayDeque<>(blocks);
     while (!worklist.isEmpty()) {
       Block block = worklist.removeFirst();
@@ -167,8 +155,7 @@ public final class ReachingDefinitions {
     }
 
     // Must-analysis: intersect the OUT sets of all predecessors. Start with the first predecessor's
-    // OUT as the initial set,
-    // then retainAll for each subsequent predecessor.
+    // OUT as the initial set, then retainAll for each subsequent predecessor.
     Set<Value> accumulator = null;
     for (Block pred : predBlocks) {
       // Must-analysis: start with first predecessor OUT, then intersect.
@@ -216,20 +203,13 @@ public final class ReachingDefinitions {
   }
 
   /**
-   * Seed facts when entering a region of an operation: include the operation operands, the region's
-   * body values, and optionally the parent state if the operation is not isolated-from-above.
+   * Seed facts when entering a region of an operation: include the region's body values, and
+   * optionally the parent state if the operation is not isolated-from-above.
    */
   @Contract(pure = true)
   private static @NotNull Set<Value> seedForRegion(
       @NotNull Operation op, @NotNull Region region, @NotNull Set<Value> parentState) {
-    Set<Value> seed = new HashSet<>();
-    op.getOperands()
-        .forEach(
-            o ->
-                seed.add(
-                    o.getValue()
-                        .orElseThrow(() -> new AssertionError("Operand value must be present"))));
-    seed.addAll(region.getBodyValues());
+    Set<Value> seed = new HashSet<>(region.getBodyValues());
     if (!op.hasTrait(IIsolatedFromAbove.class)) {
       seed.addAll(parentState);
     }
