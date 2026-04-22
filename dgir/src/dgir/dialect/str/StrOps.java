@@ -182,7 +182,7 @@ public sealed interface StrOps {
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
         LengthOp lengthOp = operation.as(LengthOp.class).orElseThrow();
-        if (!lengthOp.getResultType().equals(BuiltinTypes.IntegerT.INT32)) {
+        if (!lengthOp.getResultType().equals(BuiltinTypes.IntegerT.INT32())) {
           operation.emitError("Result type must be int");
           return false;
         }
@@ -210,7 +210,7 @@ public sealed interface StrOps {
     public LengthOp(@NotNull Location location, @NotNull Value operand) {
       setOperation(
           true,
-          Operation.Create(location, this, List.of(operand), null, BuiltinTypes.IntegerT.INT32));
+          Operation.Create(location, this, List.of(operand), null, BuiltinTypes.IntegerT.INT32()));
     }
   }
 
@@ -246,7 +246,7 @@ public sealed interface StrOps {
           operation.emitError("LHS operand must be string");
           return false;
         }
-        if (!charAtOp.getRhs().getType().equals(BuiltinTypes.IntegerT.INT32)) {
+        if (!charAtOp.getRhs().getType().equals(BuiltinTypes.IntegerT.INT32())) {
           operation.emitError("RHS operand must be int");
           return false;
         }
@@ -300,7 +300,7 @@ public sealed interface StrOps {
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
         EqualsOp equalsOp = operation.as(EqualsOp.class).orElseThrow();
-        if (!equalsOp.getResultType().equals(BuiltinTypes.IntegerT.BOOL)) {
+        if (!equalsOp.getResultType().equals(BuiltinTypes.IntegerT.BOOL())) {
           operation.emitError("Result type must be bool");
           return false;
         }
@@ -332,7 +332,8 @@ public sealed interface StrOps {
     public EqualsOp(@NotNull Location location, @NotNull Value left, @NotNull Value right) {
       setOperation(
           true,
-          Operation.Create(location, this, List.of(left, right), null, BuiltinTypes.IntegerT.BOOL));
+          Operation.Create(
+              location, this, List.of(left, right), null, BuiltinTypes.IntegerT.BOOL()));
     }
   }
 
@@ -360,7 +361,7 @@ public sealed interface StrOps {
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
         IsEmptyOp isEmptyOp = operation.as(IsEmptyOp.class).orElseThrow();
-        if (!isEmptyOp.getResultType().equals(BuiltinTypes.IntegerT.BOOL)) {
+        if (!isEmptyOp.getResultType().equals(BuiltinTypes.IntegerT.BOOL())) {
           operation.emitError("Result type must be bool");
           return false;
         }
@@ -387,7 +388,7 @@ public sealed interface StrOps {
     public IsEmptyOp(@NotNull Location location, @NotNull Value operand) {
       setOperation(
           true,
-          Operation.Create(location, this, List.of(operand), null, BuiltinTypes.IntegerT.BOOL));
+          Operation.Create(location, this, List.of(operand), null, BuiltinTypes.IntegerT.BOOL()));
     }
   }
 
@@ -595,12 +596,15 @@ public sealed interface StrOps {
           operation.emitError("LHS operand (string) must be string");
           return false;
         }
-        if (!op.getOperandValue(1).orElseThrow().getType().equals(BuiltinTypes.IntegerT.INT32)) {
+        if (!op.getOperandValue(1).orElseThrow().getType().equals(BuiltinTypes.IntegerT.INT32())) {
           operation.emitError("RHS operand (beginIndex) must be int");
           return false;
         }
         if (operation.getOperands().size() == 3
-            && !op.getOperandValue(2).orElseThrow().getType().equals(BuiltinTypes.IntegerT.INT32)) {
+            && !op.getOperandValue(2)
+                .orElseThrow()
+                .getType()
+                .equals(BuiltinTypes.IntegerT.INT32())) {
           operation.emitError("Optional third operand (endIndex) must be int");
           return false;
         }
@@ -731,7 +735,7 @@ public sealed interface StrOps {
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
         StartsWithOp op = operation.as(StartsWithOp.class).orElseThrow();
-        if (!op.getResultType().equals(BuiltinTypes.IntegerT.BOOL)) {
+        if (!op.getResultType().equals(BuiltinTypes.IntegerT.BOOL())) {
           operation.emitError("Result type must be bool");
           return false;
         }
@@ -757,7 +761,7 @@ public sealed interface StrOps {
       setOperation(
           true,
           Operation.Create(
-              location, this, List.of(string, prefix), null, BuiltinTypes.IntegerT.BOOL));
+              location, this, List.of(string, prefix), null, BuiltinTypes.IntegerT.BOOL()));
     }
   }
 
@@ -807,7 +811,7 @@ public sealed interface StrOps {
       setOperation(
           true,
           Operation.Create(
-              location, this, List.of(string, suffix), null, BuiltinTypes.IntegerT.BOOL));
+              location, this, List.of(string, suffix), null, BuiltinTypes.IntegerT.BOOL()));
     }
   }
 
@@ -836,7 +840,7 @@ public sealed interface StrOps {
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
         IndexOfOp op = operation.as(IndexOfOp.class).orElseThrow();
-        if (!op.getResultType().equals(BuiltinTypes.IntegerT.INT32)) {
+        if (!op.getResultType().equals(BuiltinTypes.IntegerT.INT32())) {
           operation.emitError("Result type must be int");
           return false;
         }
@@ -862,7 +866,7 @@ public sealed interface StrOps {
       setOperation(
           true,
           Operation.Create(
-              location, this, List.of(string, substring), null, BuiltinTypes.IntegerT.INT32));
+              location, this, List.of(string, substring), null, BuiltinTypes.IntegerT.INT32()));
     }
   }
 
@@ -891,7 +895,7 @@ public sealed interface StrOps {
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
         LastIndexOfOp op = operation.as(LastIndexOfOp.class).orElseThrow();
-        if (!op.getResultType().equals(BuiltinTypes.IntegerT.INT32)) {
+        if (!op.getResultType().equals(BuiltinTypes.IntegerT.INT32())) {
           operation.emitError("Result type must be int");
           return false;
         }
@@ -918,7 +922,7 @@ public sealed interface StrOps {
       setOperation(
           true,
           Operation.Create(
-              location, this, List.of(string, substring), null, BuiltinTypes.IntegerT.INT32));
+              location, this, List.of(string, substring), null, BuiltinTypes.IntegerT.INT32()));
     }
   }
 }

@@ -148,14 +148,14 @@ public class CompilerUtils {
         result =
             Optional.ofNullable(
                 switch (primitiveType) {
-                  case BOOLEAN -> BuiltinTypes.IntegerT.BOOL;
-                  case BYTE -> BuiltinTypes.IntegerT.INT8;
-                  case CHAR -> BuiltinTypes.IntegerT.UINT16;
-                  case SHORT -> BuiltinTypes.IntegerT.INT16;
-                  case INT -> BuiltinTypes.IntegerT.INT32;
-                  case LONG -> BuiltinTypes.IntegerT.INT64;
-                  case FLOAT -> BuiltinTypes.FloatT.FLOAT32;
-                  case DOUBLE -> BuiltinTypes.FloatT.FLOAT64;
+                  case BOOLEAN -> BuiltinTypes.IntegerT.BOOL();
+                  case BYTE -> BuiltinTypes.IntegerT.INT8();
+                  case CHAR -> BuiltinTypes.IntegerT.UINT16();
+                  case SHORT -> BuiltinTypes.IntegerT.INT16();
+                  case INT -> BuiltinTypes.IntegerT.INT32();
+                  case LONG -> BuiltinTypes.IntegerT.INT64();
+                  case FLOAT -> BuiltinTypes.FloatT.FLOAT32();
+                  case DOUBLE -> BuiltinTypes.FloatT.FLOAT64();
                 });
       }
       case ResolvedReferenceType referenceType -> {

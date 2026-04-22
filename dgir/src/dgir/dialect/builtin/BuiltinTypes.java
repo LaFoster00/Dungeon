@@ -3,6 +3,8 @@ package dgir.dialect.builtin;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import dgir.core.Dialect;
 import dgir.core.ir.Type;
+import dgir.core.ir.TypeDescriptor;
+import dgir.core.ir.TypeDetails;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,14 +12,155 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Sealed marker interface for all types contributed by the {@link BuiltinDialect}.
  *
- * <p>Every concrete type must extend {@link BuiltinType} and implement this interface so that
- * {@link Dialect#allTypes(Class)} can discover it automatically via reflection.
+ * <p>Every concrete type must implement this interface so that {@link Dialect#allTypes(Class)} can
+ * discover it automatically via reflection.
  */
 public sealed interface BuiltinTypes {
+  /** Abstract base class for all type-descriptors contributed by the {@link BuiltinDialect}. */
+  sealed interface BuiltinTypeDescriptor extends TypeDescriptor {
+    @Override
+    default @NotNull String getNamespace() {
+      return "";
+    }
+
+    @Override
+    default @NotNull Class<? extends Dialect> getDialect() {
+      return BuiltinDialect.class;
+    }
+
+    // =========================================================================
+    // Type Info
+    // =========================================================================
+
+    final class IntegerDescriptor implements BuiltinTypeDescriptor {
+      private final String ident;
+      private final @NotNull Supplier<Type> nonParametricInstance;
+      private final Function<Object, Boolean> validator;
+
+      IntegerDescriptor() {
+        this(1, true);
+      }
+
+      public IntegerDescriptor(int width, boolean signed) {
+        assert width == 1 || width == 8 || width == 16 || width == 32 || width == 64
+            : "Invalid integer width: " + width;
+        this.ident = IntegerT.identFromWidthAndSign(width, signed);
+        this.nonParametricInstance =
+            switch (width) {
+              case 1 -> IntegerT::BOOL;
+              case 8 -> signed ? IntegerT::INT8 : IntegerT::UINT8;
+              case 16 -> signed ? IntegerT::INT16 : IntegerT::UINT16;
+              case 32 -> signed ? IntegerT::INT32 : IntegerT::UINT32;
+              case 64 -> signed ? IntegerT::INT64 : IntegerT::UINT64;
+              default -> throw new IllegalArgumentException("Invalid integer width: " + width);
+            };
+        this.validator =
+            value -> {
+              if (!(value instanceof Number number)) return false;
+
+              return switch (number) {
+                case Byte ignored when width == 1 || width == 8 -> true;
+                case Short ignored when width == 16 -> true;
+                case Integer ignored when width == 32 -> true;
+                case Long ignored when width == 64 -> true;
+                default -> false;
+              };
+            };
+      }
+
+      @Override
+      public @NotNull Class<? extends Type> getTypeClass() {
+        return IntegerT.class;
+      }
+
+      @Override
+      public @NotNull Supplier<Type> getNonParametricInstance() {
+        return nonParametricInstance;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return ident;
+      }
+
+      @Override
+      public Function<Object, Boolean> getValidator() {
+        return validator;
+      }
+
+      @Override
+      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of(
+            new IntegerDescriptor(1, true),
+            new IntegerDescriptor(8, true),
+            new IntegerDescriptor(16, true),
+            new IntegerDescriptor(32, true),
+            new IntegerDescriptor(64, true),
+            new IntegerDescriptor(8, false),
+            new IntegerDescriptor(16, false),
+            new IntegerDescriptor(32, false),
+            new IntegerDescriptor(64, false));
+      }
+    }
+
+    final class FloatDescriptor implements BuiltinTypeDescriptor {
+      private final String ident;
+      private final @NotNull Supplier<Type> nonParametricInstance;
+      private final Function<Object, Boolean> validator;
+
+      public FloatDescriptor(int width) {
+        assert width == 32 || width == 64 : "Invalid float width: " + width;
+        this.ident = FloatT.identFromWidth(width);
+        this.nonParametricInstance =
+            switch (width) {
+              case 32 -> FloatT::FLOAT32;
+              case 64 -> FloatT::FLOAT64;
+              default -> throw new IllegalArgumentException("Invalid float width: " + width);
+            };
+        this.validator =
+            value -> {
+              if (!(value instanceof Number)) return false;
+
+              return switch (value) {
+                case Float ignored when width == 32 -> true;
+                case Double ignored when width == 64 -> true;
+                default -> false;
+              };
+            };
+      }
+
+      @Override
+      public @NotNull Class<? extends Type> getTypeClass() {
+        return FloatT.class;
+      }
+
+      @Override
+      public @NotNull Supplier<Type> getNonParametricInstance() {
+        return nonParametricInstance;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return ident;
+      }
+
+      @Override
+      public Function<Object, Boolean> getValidator() {
+        return validator;
+      }
+
+      @Override
+      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of(new FloatDescriptor(32), new FloatDescriptor(64));
+      }
+    }
+  }
+
   // =========================================================================
   // Utility Helpers
   // =========================================================================
@@ -53,7 +196,7 @@ public sealed interface BuiltinTypes {
       int rhsIntWidth = rhsType instanceof IntegerT intT ? intT.getWidth() : 0;
       int desiredWidth =
           Math.max(Math.max(lhsFloatWidth, rhsFloatWidth), Math.max(lhsIntWidth, rhsIntWidth));
-      return desiredWidth > 32 ? FloatT.FLOAT64 : FloatT.FLOAT32;
+      return desiredWidth > 32 ? FloatT.FLOAT64() : FloatT.FLOAT32();
     }
 
     int lhsWidth = ((IntegerT) lhsType).getWidth();
@@ -85,32 +228,13 @@ public sealed interface BuiltinTypes {
    */
   static @NotNull IntegerT integerTypeByWidth(int width, boolean isSigned) {
     return switch (width) {
-      case 1 -> IntegerT.INT1;
-      case 8 -> isSigned ? IntegerT.INT8 : IntegerT.UINT8;
-      case 16 -> isSigned ? IntegerT.INT16 : IntegerT.UINT16;
-      case 32 -> isSigned ? IntegerT.INT32 : IntegerT.UINT32;
-      case 64 -> isSigned ? IntegerT.INT64 : IntegerT.UINT64;
+      case 1 -> IntegerT.INT1();
+      case 8 -> isSigned ? IntegerT.INT8() : IntegerT.UINT8();
+      case 16 -> isSigned ? IntegerT.INT16() : IntegerT.UINT16();
+      case 32 -> isSigned ? IntegerT.INT32() : IntegerT.UINT32();
+      case 64 -> isSigned ? IntegerT.INT64() : IntegerT.UINT64();
       default -> throw new IllegalArgumentException("Invalid integer width: " + width);
     };
-  }
-
-  /**
-   * Abstract base class for all types contributed by the {@link BuiltinDialect}.
-   *
-   * <p>Subclasses must implement {@link #getIdent()}, {@link #getValidator()}, and, for
-   * parameterized types, {@link #getParameterizedIdent()} and {@link
-   * #getParameterizedStringFactory()}.
-   */
-  abstract class BuiltinType extends Type {
-    @Override
-    public @NotNull String getNamespace() {
-      return "";
-    }
-
-    @Override
-    public @NotNull Class<? extends Dialect> getDialect() {
-      return BuiltinDialect.class;
-    }
   }
 
   /**
@@ -135,41 +259,80 @@ public sealed interface BuiltinTypes {
    *   IntegerT.UINT64                — 64-bit unsigned integer
    * </pre>
    */
-  final class IntegerT extends BuiltinType implements BuiltinTypes {
+  final class IntegerT extends Type implements BuiltinTypes {
 
     // =========================================================================
     // Static Fields
     // =========================================================================
 
+    private static final IntegerT[] integerTypeCache = new IntegerT[9];
+
+    public static void populateCache() {
+      if (integerTypeCache[0] != null) return; // already populated
+      if (TypeDetails.get("int1").isEmpty()) {
+        throw new IllegalStateException(
+            "IntegerT cache must be populated after type registration. Ensure that BuiltinDialect is registered before any types are accessed.");
+      }
+      integerTypeCache[0] = new IntegerT(1, true);
+      integerTypeCache[1] = new IntegerT(8, true);
+      integerTypeCache[2] = new IntegerT(16, true);
+      integerTypeCache[3] = new IntegerT(32, true);
+      integerTypeCache[4] = new IntegerT(64, true);
+      integerTypeCache[5] = new IntegerT(8, false);
+      integerTypeCache[6] = new IntegerT(16, false);
+      integerTypeCache[7] = new IntegerT(32, false);
+      integerTypeCache[8] = new IntegerT(64, false);
+    }
+
     /** 1-bit integer used as a boolean ({@code false} = 0, {@code true} = 1). */
-    public static final IntegerT INT1 = new IntegerT(1, true);
+    public static IntegerT INT1() {
+      return integerTypeCache[0];
+    }
 
     /** Alias for {@link #INT1}. */
-    public static final IntegerT BOOL = INT1;
+    public static IntegerT BOOL() {
+      return INT1();
+    }
 
     /** 8-bit signed integer. */
-    public static final IntegerT INT8 = new IntegerT(8, true);
+    public static IntegerT INT8() {
+      return integerTypeCache[1];
+    }
 
     /** 16-bit signed integer. */
-    public static final IntegerT INT16 = new IntegerT(16, true);
+    public static IntegerT INT16() {
+      return integerTypeCache[2];
+    }
 
     /** 32-bit signed integer. */
-    public static final IntegerT INT32 = new IntegerT(32, true);
+    public static IntegerT INT32() {
+      return integerTypeCache[3];
+    }
 
     /** 64-bit signed integer. */
-    public static final IntegerT INT64 = new IntegerT(64, true);
+    public static IntegerT INT64() {
+      return integerTypeCache[4];
+    }
 
     /** 8-bit unsigned integer. */
-    public static final IntegerT UINT8 = new IntegerT(8, false);
+    public static IntegerT UINT8() {
+      return integerTypeCache[5];
+    }
 
     /** 16-bit unsigned integer. */
-    public static final IntegerT UINT16 = new IntegerT(16, false);
+    public static IntegerT UINT16() {
+      return integerTypeCache[6];
+    }
 
     /** 32-bit unsigned integer. */
-    public static final IntegerT UINT32 = new IntegerT(32, false);
+    public static IntegerT UINT32() {
+      return integerTypeCache[7];
+    }
 
     /** 64-bit unsigned integer. */
-    public static final IntegerT UINT64 = new IntegerT(64, false);
+    public static IntegerT UINT64() {
+      return integerTypeCache[8];
+    }
 
     public static final byte FALSE = 0;
     public static final byte TRUE = 1;
@@ -182,13 +345,8 @@ public sealed interface BuiltinTypes {
       return value == TRUE;
     }
 
-    // =========================================================================
-    // Type Info
-    // =========================================================================
-
-    @Override
-    public @NotNull String getIdent() {
-      return (isSigned() ? "" : "u") + "int" + getWidth();
+    public static String identFromWidthAndSign(int width, boolean isSigned) {
+      return (isSigned ? "" : "u") + "int" + width;
     }
 
     /**
@@ -206,26 +364,6 @@ public sealed interface BuiltinTypes {
       return false;
     }
 
-    @Override
-    public Function<Object, Boolean> getValidator() {
-      return value -> {
-        if (!(value instanceof Number number)) return false;
-
-        return switch (number) {
-          case Byte ignored when getWidth() == 1 || getWidth() == 8 -> true;
-          case Short ignored when getWidth() == 16 -> true;
-          case Integer ignored when getWidth() == 32 -> true;
-          case Long ignored when getWidth() == 64 -> true;
-          default -> false;
-        };
-      };
-    }
-
-    @Override
-    public @NotNull @Unmodifiable List<Type> getDefaultTypeInstances() {
-      return List.of(INT1, INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64);
-    }
-
     // =========================================================================
     // Members
     // =========================================================================
@@ -240,20 +378,6 @@ public sealed interface BuiltinTypes {
     // Constructors
     // =========================================================================
 
-    /** Create a default 32-bit integer type. */
-    IntegerT() {
-      this(32);
-    }
-
-    /**
-     * Create a signed integer type with the given bit-width.
-     *
-     * @param width must be one of 1, 8, 16, 32, or 64.
-     */
-    private IntegerT(int width) {
-      this(width, true);
-    }
-
     /**
      * Create an integer type with the given bit-width and signedness.
      *
@@ -261,8 +385,7 @@ public sealed interface BuiltinTypes {
      * @param isSigned whether this type is signed.
      */
     private IntegerT(int width, boolean isSigned) {
-      assert width == 1 || width == 8 || width == 16 || width == 32 || width == 64
-          : "Invalid integer width: " + width;
+      super(identFromWidthAndSign(width, isSigned));
       this.width = width;
       this.signed = isSigned;
     }
@@ -357,43 +480,35 @@ public sealed interface BuiltinTypes {
    *   FloatT.FLOAT64 — 64-bit IEEE 754 double
    * </pre>
    */
-  final class FloatT extends BuiltinType implements BuiltinTypes {
+  final class FloatT extends Type implements BuiltinTypes {
 
     // =========================================================================
     // Static Fields
     // =========================================================================
+    private static final FloatT[] floatTypeCache = new FloatT[2];
+
+    public static void populateCache() {
+      if (floatTypeCache[0] != null) return; // already populated
+      if (TypeDetails.get("int1").isEmpty()) {
+        throw new IllegalStateException(
+            "FloatT cache must be populated after type registration. Ensure that BuiltinDialect is registered before any types are accessed.");
+      }
+      floatTypeCache[0] = new FloatT(32);
+      floatTypeCache[1] = new FloatT(64);
+    }
 
     /** 32-bit single-precision floating-point type. */
-    public static final FloatT FLOAT32 = new FloatT(32);
+    public static FloatT FLOAT32() {
+      return floatTypeCache[0];
+    }
 
     /** 64-bit double-precision floating-point type. */
-    public static final FloatT FLOAT64 = new FloatT(64);
-
-    // =========================================================================
-    // Type Info
-    // =========================================================================
-
-    @Override
-    public @NotNull String getIdent() {
-      return "float" + getWidth();
+    public static FloatT FLOAT64() {
+      return floatTypeCache[1];
     }
 
-    @Override
-    public Function<Object, Boolean> getValidator() {
-      return value -> {
-        if (!(value instanceof Number)) return false;
-
-        return switch (value) {
-          case Float ignored when getWidth() == 32 -> true;
-          case Double ignored when getWidth() == 64 -> true;
-          default -> false;
-        };
-      };
-    }
-
-    @Override
-    public @NotNull @Unmodifiable List<Type> getDefaultTypeInstances() {
-      return List.of(FLOAT32, FLOAT64);
+    public static String identFromWidth(float width) {
+      return "float" + width;
     }
 
     // =========================================================================
@@ -418,7 +533,7 @@ public sealed interface BuiltinTypes {
      * @param width must be either 32 or 64.
      */
     private FloatT(int width) {
-      assert width == 32 || width == 64 : "Invalid float width: " + width;
+      super(identFromWidth(width));
       this.width = width;
     }
 

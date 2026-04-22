@@ -52,18 +52,11 @@ public class DGIRContext {
   // Types
   // =========================================================================
 
-  /** Unregistered cache: class → impl. */
-  public static final @NotNull Map<Class<? extends Type>, TypeDetails> types = new HashMap<>();
-
-  /** Unregistered cache: ident → impl. */
-  public static final @NotNull Map<String, TypeDetails> typesByIdent = new HashMap<>();
-
   /** Registered types by class. */
-  public static final Map<Class<? extends Type>, TypeDetails.Registered> registeredTypes =
-      new HashMap<>();
+  public static final Map<Class<? extends Type>, TypeDetails> registeredTypes = new HashMap<>();
 
   /** Registered types by ident. */
-  public static final Map<String, TypeDetails.Registered> registeredTypesByIdent = new HashMap<>();
+  public static final Map<String, TypeDetails> registeredTypesByIdent = new HashMap<>();
 
   // =========================================================================
   // Dialects

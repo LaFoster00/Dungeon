@@ -285,7 +285,7 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
                     context.loc(n),
                     new BuiltinAttrs.FloatAttribute(
                         n.asDouble(),
-                        isFloat ? BuiltinTypes.FloatT.FLOAT32 : BuiltinTypes.FloatT.FLOAT64)))
+                        isFloat ? BuiltinTypes.FloatT.FLOAT32() : BuiltinTypes.FloatT.FLOAT64())))
             .getResult());
   }
 
@@ -390,7 +390,7 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
                 new ArithOps.ConstantOp(
                     context.loc(n),
                     new BuiltinAttrs.IntegerAttribute(
-                        n.asNumber().longValue(), BuiltinTypes.IntegerT.INT32)))
+                        n.asNumber().longValue(), BuiltinTypes.IntegerT.INT32())))
             .getResult());
   }
 
@@ -402,7 +402,7 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
                 new ArithOps.ConstantOp(
                     context.loc(n),
                     new BuiltinAttrs.IntegerAttribute(
-                        n.asNumber().longValue(), BuiltinTypes.IntegerT.INT64)))
+                        n.asNumber().longValue(), BuiltinTypes.IntegerT.INT64())))
             .getResult());
   }
 

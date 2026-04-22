@@ -542,7 +542,8 @@ public sealed interface MemOps {
      * @param array the array whose size should be computed.
      */
     public SizeofOp(@NotNull Location loc, @NotNull Value array) {
-      setOperation(Operation.Create(loc, this, List.of(array), null, BuiltinTypes.IntegerT.INT64));
+      setOperation(
+          Operation.Create(loc, this, List.of(array), null, BuiltinTypes.IntegerT.INT64()));
     }
   }
 

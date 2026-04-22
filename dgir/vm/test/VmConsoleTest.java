@@ -166,7 +166,7 @@ public class VmConsoleTest extends VmTestBase {
     // Helper function: returns true (int1)
     FuncOp condFunc =
         programOp.addOperation(
-            new FuncOp(LOC, "getCondition", FuncType.of(List.of(), IntegerT.BOOL)));
+            new FuncOp(LOC, "getCondition", FuncType.of(List.of(), IntegerT.BOOL())));
     {
       var t = condFunc.addOperation(new ConstantOp(LOC, true), 0);
       condFunc.addOperation(new ReturnOp(LOC, t.getResult()), 0);
@@ -212,7 +212,7 @@ public class VmConsoleTest extends VmTestBase {
     // Helper function: takes an int1 parameter and prints "positive\n" or "non-positive\n"
     FuncOp printFunc =
         programOp.addOperation(
-            new FuncOp(LOC, "printBranch", FuncType.of(List.of(IntegerT.BOOL), null)));
+            new FuncOp(LOC, "printBranch", FuncType.of(List.of(IntegerT.BOOL()), null)));
     {
       Block funcEntry = printFunc.getEntryBlock();
       Block posBlock = printFunc.addBlock(new Block());
@@ -267,7 +267,7 @@ public class VmConsoleTest extends VmTestBase {
     Block mergeBlock = mainOp.addBlock(new Block());
 
     // Entry: read input from console, compare to "yes", branch conditionally
-    var input = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.BOOL));
+    var input = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.BOOL()));
     entryBlock.addOperation(new BranchCondOp(LOC, input.getResult(), yesBlock, noBlock));
 
     // Yes block: print "You said true!\n", jump to merge
@@ -309,7 +309,7 @@ public class VmConsoleTest extends VmTestBase {
     FuncOp mainOp = programOp.addOperation(new FuncOp(LOC, "main"));
 
     // Read an INT32 from the console
-    var input = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32), 0);
+    var input = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()), 0);
     // Print it back
     mainOp.addOperation(new PrintOp(LOC, input.getResult()), 0);
     mainOp.addOperation(new ReturnOp(LOC), 0);
@@ -369,8 +369,8 @@ public class VmConsoleTest extends VmTestBase {
 
     // Format string constant
     var fmt = mainOp.addOperation(new ConstantOp(LOC, "The answer is %d.\n"), 0);
-    // Read an INT32 from the console
-    var number = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32), 0);
+    // Read an INT32() from the console
+    var number = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()), 0);
     // Print formatted: "The answer is <number>.\n"
     mainOp.addOperation(new PrintOp(LOC, fmt.getResult(), number.getResult()), 0);
     mainOp.addOperation(new ReturnOp(LOC), 0);
@@ -391,7 +391,7 @@ public class VmConsoleTest extends VmTestBase {
     // Format string constant
     var fmt = mainOp.addOperation(new ConstantOp(LOC, "Pi is approximately %.2f.\n"), 0);
     // Read a FLOAT32 from the console
-    var number = mainOp.addOperation(new ConsoleInOp(LOC, FloatT.FLOAT32), 0);
+    var number = mainOp.addOperation(new ConsoleInOp(LOC, FloatT.FLOAT32()), 0);
     // Print formatted: "Pi is approximately <number>.\n"
     mainOp.addOperation(new PrintOp(LOC, fmt.getResult(), number.getResult()), 0);
     mainOp.addOperation(new ReturnOp(LOC), 0);
@@ -429,12 +429,12 @@ public class VmConsoleTest extends VmTestBase {
     Block mergeBlock = mainOp.addBlock(new Block());
 
     // Entry: read a bool from console, branch on it
-    var flag = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.BOOL));
+    var flag = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.BOOL()));
     entryBlock.addOperation(new BranchCondOp(LOC, flag.getResult(), trueBlock, falseBlock));
 
     // True block: read an integer from console, print it formatted, jump to merge
     var fmt = trueBlock.addOperation(new ConstantOp(LOC, "You entered: %d\n"));
-    var n = trueBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32));
+    var n = trueBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()));
     trueBlock.addOperation(new PrintOp(LOC, fmt.getResult(), n.getResult()));
     trueBlock.addOperation(new BranchOp(LOC, mergeBlock));
 
@@ -473,7 +473,7 @@ public class VmConsoleTest extends VmTestBase {
     var fmt = mainOp.addOperation(new ConstantOp(LOC, "%s scored %d points.\n"), 0);
     // Read a name (string) then a score (int)
     var nameIn = mainOp.addOperation(new ConsoleInOp(LOC, StringT.INSTANCE), 0);
-    var scoreIn = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32), 0);
+    var scoreIn = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()), 0);
     // Print formatted
     mainOp.addOperation(
         new PrintOp(LOC, fmt.getResult(), nameIn.getResult(), scoreIn.getResult()), 0);
@@ -594,8 +594,8 @@ public class VmConsoleTest extends VmTestBase {
     ProgramOp programOp = new ProgramOp(LOC);
     FuncOp mainOp = programOp.addOperation(new FuncOp(LOC, "main"));
 
-    var a = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32), 0);
-    var b = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32), 0);
+    var a = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()), 0);
+    var b = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()), 0);
     var sum =
         mainOp.addOperation(
             new BinaryOp(LOC, a.getResult(), b.getResult(), BinModeAttr.BinMode.ADD), 0);
@@ -624,8 +624,8 @@ public class VmConsoleTest extends VmTestBase {
     Block mergeBlock = mainOp.addBlock(new Block());
 
     // Read two integers, compare a >= b
-    var a = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32));
-    var b = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32));
+    var a = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()));
+    var b = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()));
     var cmp =
         entryBlock.addOperation(
             new BinaryOp(LOC, a.getResult(), b.getResult(), BinModeAttr.BinMode.GE));
@@ -674,8 +674,8 @@ public class VmConsoleTest extends VmTestBase {
     Block mergeBlock = mainOp.addBlock(new Block());
 
     // Read a and b, compute product, compare product > 100
-    var a = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32));
-    var b = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32));
+    var a = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()));
+    var b = entryBlock.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()));
     var product =
         entryBlock.addOperation(
             new BinaryOp(LOC, a.getResult(), b.getResult(), BinModeAttr.BinMode.MUL));

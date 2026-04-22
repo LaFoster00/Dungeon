@@ -3,7 +3,7 @@ package blockly.dgir.dialect.dg;
 import dgir.core.Dialect;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
-import dgir.core.ir.Type;
+import dgir.core.ir.TypeDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -37,7 +37,7 @@ public class DungeonDialect extends Dialect {
   @NotNull
   @Unmodifiable
   @Override
-  public List<Type> allTypes() {
+  public List<TypeDescriptor> allTypes() {
     return List.of();
   }
 

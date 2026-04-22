@@ -36,7 +36,7 @@ public sealed interface ArithRunners {
       return switch (operandType) {
         case BuiltinTypes.FloatT floatT ->
             floatT.convertToValidNumber(unaryDoubleOperation(number.doubleValue(), mode));
-        case BuiltinTypes.IntegerT integerT when integerT.equals(BuiltinTypes.IntegerT.BOOL) ->
+        case BuiltinTypes.IntegerT integerT when integerT.equals(BuiltinTypes.IntegerT.BOOL()) ->
             integerT.convertToValidNumber(unaryBooleanOperation(number.byteValue(), mode));
         case BuiltinTypes.IntegerT integerT ->
             integerT.convertToValidNumber(unaryLongOperation(number.longValue(), mode));
@@ -139,7 +139,7 @@ public sealed interface ArithRunners {
         @NotNull Type resultType,
         @NotNull ArithAttrs.BinModeAttr.BinMode binMode) {
       if (!(resultType instanceof BuiltinTypes.IntegerT boolType)
-          || !boolType.equals(BuiltinTypes.IntegerT.BOOL)) {
+          || !boolType.equals(BuiltinTypes.IntegerT.BOOL())) {
         throw new IllegalArgumentException("Comparison result type must be bool: " + resultType);
       }
 
@@ -181,7 +181,7 @@ public sealed interface ArithRunners {
         @NotNull Type resultType,
         @NotNull ArithAttrs.BinModeAttr.BinMode binMode) {
       if (!(resultType instanceof BuiltinTypes.IntegerT integerT)
-          || !integerT.equals(BuiltinTypes.IntegerT.BOOL)) {
+          || !integerT.equals(BuiltinTypes.IntegerT.BOOL())) {
         throw new IllegalArgumentException(
             "Logical operation result type must be bool: " + resultType);
       }

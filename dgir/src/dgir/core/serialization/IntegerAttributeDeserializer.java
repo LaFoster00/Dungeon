@@ -68,7 +68,7 @@ public class IntegerAttributeDeserializer extends StdDeserializer<BuiltinAttrs.I
   private static long parseValue(
       JsonNode valueNode, BuiltinTypes.IntegerT integerType, DeserializationContext ctxt)
       throws JacksonException {
-    if (integerType.equals(BuiltinTypes.IntegerT.BOOL)) {
+    if (integerType.equals(BuiltinTypes.IntegerT.BOOL())) {
       if (valueNode.isBoolean()) {
         return (valueNode.booleanValue() ? 1 : 0);
       }

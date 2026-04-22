@@ -89,7 +89,7 @@ public sealed interface MemTypes {
      * @return an empty list because array types are parameterized.
      */
     @Override
-    public @NotNull @Unmodifiable List<Type> getDefaultTypeInstances() {
+    public @NotNull @Unmodifiable List<Type> getDescriptors() {
       return List.of();
     }
 

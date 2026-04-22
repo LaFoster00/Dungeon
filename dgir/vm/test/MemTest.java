@@ -27,7 +27,7 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var sizeOp = main.addOperation(new ConstantOp(LOC, 5), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, sizeOp.getResult()), 0);
+    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), sizeOp.getResult()), 0);
     var sizeofOp = main.addOperation(new SizeofOp(LOC, allocOp.getResult()), 0);
 
     main.addOperation(new PrintOp(LOC, sizeofOp.getResult()), 0);
@@ -42,7 +42,8 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var initialSize = main.addOperation(new ConstantOp(LOC, 3), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, initialSize.getResult()), 0);
+    var allocOp =
+        main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), initialSize.getResult()), 0);
 
     var newSize = main.addOperation(new ConstantOp(LOC, 8), 0);
     var reallocOp =
@@ -61,7 +62,8 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var initialSize = main.addOperation(new ConstantOp(LOC, 10), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, initialSize.getResult()), 0);
+    var allocOp =
+        main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), initialSize.getResult()), 0);
 
     var newSize = main.addOperation(new ConstantOp(LOC, 4), 0);
     var reallocOp =
@@ -80,7 +82,8 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var initialSize = main.addOperation(new ConstantOp(LOC, 5), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, initialSize.getResult()), 0);
+    var allocOp =
+        main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), initialSize.getResult()), 0);
 
     // Set some elements
     var idx0 = main.addOperation(new ConstantOp(LOC, 0), 0);
@@ -117,13 +120,13 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var size = main.addOperation(new ConstantOp(LOC, 7), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
+    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), size.getResult()), 0);
 
     // Cast to static-size array
     var castOp =
         main.addOperation(
             new CastOp(
-                LOC, MemTypes.ArrayT.of(IntegerT.INT32, OptionalInt.of(7)), allocOp.getResult()),
+                LOC, MemTypes.ArrayT.of(IntegerT.INT32(), OptionalInt.of(7)), allocOp.getResult()),
             0);
     var sizeofOp = main.addOperation(new SizeofOp(LOC, castOp.getResult()), 0);
 
@@ -139,13 +142,13 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var size = main.addOperation(new ConstantOp(LOC, 4), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
+    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), size.getResult()), 0);
 
     // Cast to static size
     var castStatic =
         main.addOperation(
             new CastOp(
-                LOC, MemTypes.ArrayT.of(IntegerT.INT32, OptionalInt.of(4)), allocOp.getResult()),
+                LOC, MemTypes.ArrayT.of(IntegerT.INT32(), OptionalInt.of(4)), allocOp.getResult()),
             0);
 
     // Cast back to dynamic
@@ -153,7 +156,7 @@ public class MemTest extends VmTestBase {
         main.addOperation(
             new CastOp(
                 LOC,
-                MemTypes.ArrayT.of(IntegerT.INT32, OptionalInt.empty()),
+                MemTypes.ArrayT.of(IntegerT.INT32(), OptionalInt.empty()),
                 castStatic.getResult()),
             0);
     var sizeofOp = main.addOperation(new SizeofOp(LOC, castDynamic.getResult()), 0);
@@ -170,7 +173,7 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var size = main.addOperation(new ConstantOp(LOC, 3), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
+    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), size.getResult()), 0);
 
     // Set multiple elements
     for (int i = 0; i < 3; i++) {
@@ -199,7 +202,7 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var size = main.addOperation(new ConstantOp(LOC, 2), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
+    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), size.getResult()), 0);
 
     // Set element 0 to 100
     var idx0 = main.addOperation(new ConstantOp(LOC, 0), 0);
@@ -232,12 +235,12 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var size = main.addOperation(new ConstantOp(LOC, 12), 0);
-    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size.getResult()), 0);
+    var allocOp = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), size.getResult()), 0);
 
     var sizeofOp = main.addOperation(new SizeofOp(LOC, allocOp.getResult()), 0);
 
     // Verify result type is INT64
-    assertEquals(IntegerT.INT64, sizeofOp.getResult().getType());
+    assertEquals(IntegerT.INT64(), sizeofOp.getResult().getType());
 
     main.addOperation(new PrintOp(LOC, sizeofOp.getResult()), 0);
     main.addOperation(new ReturnOp(LOC), 0);
@@ -251,10 +254,10 @@ public class MemTest extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var size1 = main.addOperation(new ConstantOp(LOC, 2), 0);
-    var alloc1 = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size1.getResult()), 0);
+    var alloc1 = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), size1.getResult()), 0);
 
     var size2 = main.addOperation(new ConstantOp(LOC, 3), 0);
-    var alloc2 = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32, size2.getResult()), 0);
+    var alloc2 = main.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), size2.getResult()), 0);
 
     // Set different values in each
     var idx0 = main.addOperation(new ConstantOp(LOC, 0), 0);

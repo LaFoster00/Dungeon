@@ -85,7 +85,7 @@ public sealed interface BuiltinAttrs {
 
     /** Create a default integer attribute (value {@code null}, type {@link IntegerT#INT64}). */
     public IntegerAttribute() {
-      super(IntegerT.INT64);
+      super(IntegerT.INT64());
       value = 0L;
     }
 
@@ -95,7 +95,7 @@ public sealed interface BuiltinAttrs {
      * @param value the integer value.
      */
     public IntegerAttribute(long value) {
-      super(IntegerT.INT64);
+      super(IntegerT.INT64());
       this.value = ((IntegerT) getType()).convertToValidNumber(value);
     }
 
@@ -159,12 +159,12 @@ public sealed interface BuiltinAttrs {
     private @NotNull Number value;
 
     public FloatAttribute() {
-      super(FloatT.FLOAT64);
+      super(FloatT.FLOAT64());
       value = 0.0;
     }
 
     public FloatAttribute(@NotNull Number value) {
-      super(FloatT.FLOAT64);
+      super(FloatT.FLOAT64());
       this.value = ((FloatT) getType()).convertToValidNumber(value);
     }
 
@@ -305,7 +305,7 @@ public sealed interface BuiltinAttrs {
 
     /** Create a default type attribute with a {@code null} type. */
     public TypeAttribute() {
-      type = IntegerT.INT64;
+      type = IntegerT.INT64();
     }
 
     /**

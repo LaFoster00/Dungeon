@@ -264,7 +264,7 @@ public sealed interface ArithOps {
           }
           // Logical operations.
           case AND, OR, XOR, EQ, NE, LT, LE, GT, GE -> {
-            if (!binaryOp.getResult().getType().equals(IntegerT.BOOL)) {
+            if (!binaryOp.getResult().getType().equals(IntegerT.BOOL())) {
               binaryOp.emitError("Result type must be boolean");
               return false;
             }
@@ -300,7 +300,7 @@ public sealed interface ArithOps {
             // Binary operations.
             case BOR, BAND, BXOR, LSH, RSHS, RSHU -> lhs.getType();
             // Logical operations.
-            case AND, OR, XOR, EQ, NE, LT, LE, GT, GE -> IntegerT.BOOL;
+            case AND, OR, XOR, EQ, NE, LT, LE, GT, GE -> IntegerT.BOOL();
           };
 
       setOperation(Operation.Create(loc, this, List.of(lhs, rhs), null, outputType));
@@ -459,7 +459,7 @@ public sealed interface ArithOps {
     @Contract(pure = true)
     @Override
     public @NotNull List<NamedAttribute> getDefaultAttributes() {
-      return List.of(new NamedAttribute("value", new IntegerAttribute(0, IntegerT.INT32)));
+      return List.of(new NamedAttribute("value", new IntegerAttribute(0, IntegerT.INT32())));
     }
 
     // =========================================================================
@@ -497,7 +497,7 @@ public sealed interface ArithOps {
      * @param value the integer value to embed.
      */
     public ConstantOp(@NotNull Location location, int value) {
-      this(location, new IntegerAttribute(value, IntegerT.INT32));
+      this(location, new IntegerAttribute(value, IntegerT.INT32()));
     }
 
     /**
@@ -507,7 +507,7 @@ public sealed interface ArithOps {
      * @param value the boolean value to embed.
      */
     public ConstantOp(@NotNull Location location, boolean value) {
-      this(location, new IntegerAttribute(value ? 1 : 0, IntegerT.BOOL));
+      this(location, new IntegerAttribute(value ? 1 : 0, IntegerT.BOOL()));
     }
 
     // =========================================================================

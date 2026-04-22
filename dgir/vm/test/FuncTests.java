@@ -38,7 +38,7 @@ public class FuncTests extends VmTestBase {
 
     // target: () -> int32  { return 42; }
     FuncOp target =
-        program.addOperation(new FuncOp(LOC, "target", FuncType.of(List.of(), IntegerT.INT32)));
+        program.addOperation(new FuncOp(LOC, "target", FuncType.of(List.of(), IntegerT.INT32())));
     var c42 = target.addOperation(new ConstantOp(LOC, 42), 0);
     target.addOperation(new ReturnOp(LOC, c42.getResult()), 0);
 
@@ -88,7 +88,7 @@ public class FuncTests extends VmTestBase {
     ProgramOp program = new ProgramOp(LOC);
 
     // doubleIt: (x: int32) -> int32  { return x + x; }
-    FuncType doubleType = FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32);
+    FuncType doubleType = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32());
     FuncOp doubleFunc = program.addOperation(new FuncOp(LOC, "doubleIt", doubleType));
     var x = doubleFunc.getArgument(0).orElseThrow();
     var xPlusX = doubleFunc.addOperation(new BinaryOp(LOC, x, x, BinModeAttr.BinMode.ADD), 0);
@@ -116,7 +116,7 @@ public class FuncTests extends VmTestBase {
     ProgramOp program = new ProgramOp(LOC);
 
     // add: (a: int32, b: int32) -> int32  { return a + b; }
-    FuncType addType = FuncType.of(List.of(IntegerT.INT32, IntegerT.INT32), IntegerT.INT32);
+    FuncType addType = FuncType.of(List.of(IntegerT.INT32(), IntegerT.INT32()), IntegerT.INT32());
     FuncOp addFunc = program.addOperation(new FuncOp(LOC, "add", addType));
     var a = addFunc.getArgument(0).orElseThrow();
     var b = addFunc.getArgument(1).orElseThrow();
@@ -150,7 +150,7 @@ public class FuncTests extends VmTestBase {
   void callIndirect_twoReferences_dispatchToCorrectCallee() {
     ProgramOp program = new ProgramOp(LOC);
 
-    FuncType binType = FuncType.of(List.of(IntegerT.INT32, IntegerT.INT32), IntegerT.INT32);
+    FuncType binType = FuncType.of(List.of(IntegerT.INT32(), IntegerT.INT32()), IntegerT.INT32());
 
     // add: (a, b) -> a + b
     FuncOp addFunc = program.addOperation(new FuncOp(LOC, "add", binType));
@@ -216,7 +216,7 @@ public class FuncTests extends VmTestBase {
     ProgramOp program = new ProgramOp(LOC);
 
     // negate: (x: int32) -> int32  { return 0 - x; }
-    FuncType negType = FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32);
+    FuncType negType = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32());
     FuncOp negFunc = program.addOperation(new FuncOp(LOC, "negate", negType));
     {
       var param = negFunc.getArgument(0).orElseThrow();

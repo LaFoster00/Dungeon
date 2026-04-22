@@ -25,7 +25,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
  */
 @JsonIdentityInfo(generator = ValueIdGenerator.class)
 public final class Value extends IRObjectWithUseList<Value, ValueOperand> implements Serializable {
-  public static final Value DUMMY = new Value(BuiltinTypes.IntegerT.INT32);
+  public static final Value DUMMY = new Value(BuiltinTypes.IntegerT.INT32());
 
   // =========================================================================
   // Members

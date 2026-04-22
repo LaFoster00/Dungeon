@@ -116,7 +116,7 @@ public sealed interface IoRunners {
     }
 
     private @NotNull Object normalizeOperand(@NotNull Value operandValue, @NotNull State state) {
-      if (operandValue.getType().equals(BuiltinTypes.IntegerT.BOOL)) {
+      if (operandValue.getType().equals(BuiltinTypes.IntegerT.BOOL())) {
         return ((byte) state.getValueOrThrow(operandValue)) != 0;
       }
       return state.getValueOrThrow(operandValue);

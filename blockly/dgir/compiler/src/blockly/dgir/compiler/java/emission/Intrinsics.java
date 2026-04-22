@@ -110,37 +110,37 @@ public class Intrinsics {
       }
       case "Dungeon.IO.nextFloat()" -> {
         var result =
-            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.FloatT.FLOAT32));
+            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.FloatT.FLOAT32()));
         return EmitResult.of(Optional.of(result.getResult()));
       }
       case "Dungeon.IO.nextDouble()" -> {
         var result =
-            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.FloatT.FLOAT64));
+            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.FloatT.FLOAT64()));
         return EmitResult.of(Optional.of(result.getResult()));
       }
       case "Dungeon.IO.nextBoolean()" -> {
         var result =
-            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.BOOL));
+            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.BOOL()));
         return EmitResult.of(Optional.of(result.getResult()));
       }
       case "Dungeon.IO.nextByte()" -> {
         var result =
-            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.INT8));
+            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.INT8()));
         return EmitResult.of(Optional.of(result.getResult()));
       }
       case "Dungeon.IO.nextShort()" -> {
         var result =
-            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.INT16));
+            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.INT16()));
         return EmitResult.of(Optional.of(result.getResult()));
       }
       case "Dungeon.IO.nextInt()" -> {
         var result =
-            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.INT32));
+            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.INT32()));
         return EmitResult.of(Optional.of(result.getResult()));
       }
       case "Dungeon.IO.nextLong()" -> {
         var result =
-            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.INT64));
+            context.insert(new IoOps.ConsoleInOp(context.loc(n), BuiltinTypes.IntegerT.INT64()));
         return EmitResult.of(Optional.of(result.getResult()));
       }
       case "Dungeon.IO.nextLine()" -> {

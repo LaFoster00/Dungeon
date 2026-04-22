@@ -107,7 +107,7 @@ public class BuiltinTests {
   /** Checks that signed integer attributes preserve signed values across JSON round-trip. */
   @Test
   public void signedIntegerRoundTrip() {
-    Attribute original = new BuiltinAttrs.IntegerAttribute(-1, IntegerT.INT8);
+    Attribute original = new BuiltinAttrs.IntegerAttribute(-1, IntegerT.INT8());
 
     String json = TestUtils.mapper.writeValueAsString(original);
     Attribute parsed = TestUtils.mapper.readValue(json, Attribute.class);
@@ -121,7 +121,7 @@ public class BuiltinTests {
   /** Checks that unsigned integer attributes keep the expected unsigned bit pattern. */
   @Test
   public void unsignedIntegerStorage() {
-    BuiltinAttrs.IntegerAttribute value = new BuiltinAttrs.IntegerAttribute(255, IntegerT.UINT8);
+    BuiltinAttrs.IntegerAttribute value = new BuiltinAttrs.IntegerAttribute(255, IntegerT.UINT8());
 
     assertEquals("uint8", value.getType().getParameterizedIdent());
     assertEquals(255, Byte.toUnsignedInt(value.getValue().byteValue()));
@@ -130,9 +130,10 @@ public class BuiltinTests {
   /** Checks implicit narrowing and bool normalization done by IntegerAttribute conversion. */
   @Test
   public void implicitIntegerCasting() {
-    BuiltinAttrs.IntegerAttribute narrowed = new BuiltinAttrs.IntegerAttribute(300, IntegerT.INT8);
+    BuiltinAttrs.IntegerAttribute narrowed =
+        new BuiltinAttrs.IntegerAttribute(300, IntegerT.INT8());
     BuiltinAttrs.IntegerAttribute normalizedBool =
-        new BuiltinAttrs.IntegerAttribute(42, IntegerT.BOOL);
+        new BuiltinAttrs.IntegerAttribute(42, IntegerT.BOOL());
 
     assertEquals("int8", narrowed.getType().getParameterizedIdent());
     assertEquals(44, narrowed.getValue().byteValue());

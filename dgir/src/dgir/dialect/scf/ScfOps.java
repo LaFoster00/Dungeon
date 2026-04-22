@@ -296,7 +296,7 @@ public sealed interface ScfOps {
               List.of(initValue, lowerBound, upperBound, step),
               null,
               null,
-              List.of(BuiltinTypes.IntegerT.INT32)));
+              List.of(BuiltinTypes.IntegerT.INT32())));
     }
 
     // =========================================================================
@@ -394,7 +394,7 @@ public sealed interface ScfOps {
           return false;
         }
 
-        if (!condOpt.get().getType().equals(BuiltinTypes.IntegerT.BOOL)) {
+        if (!condOpt.get().getType().equals(BuiltinTypes.IntegerT.BOOL())) {
           operation.emitError("Condition operand must be of type int1");
           return false;
         }

@@ -31,7 +31,7 @@ public class ArithTests {
 
     var int32Op = funcMain.addOperation(new ConstantOp(LOC, 40), 0);
     var int64Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(2, IntegerT.INT64)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(2, IntegerT.INT64())), 0);
 
     var addOp =
         funcMain.addOperation(
@@ -54,11 +54,11 @@ public class ArithTests {
             new BinaryOp(LOC, int64Op.getResult(), int32Op.getResult(), BinModeAttr.BinMode.MOD),
             0);
 
-    assertEquals(IntegerT.INT64, addOp.getOutputValue().orElseThrow().getType());
-    assertEquals(IntegerT.INT64, subOp.getOutputValue().orElseThrow().getType());
-    assertEquals(IntegerT.INT64, mulOp.getOutputValue().orElseThrow().getType());
-    assertEquals(IntegerT.INT64, divOp.getOutputValue().orElseThrow().getType());
-    assertEquals(IntegerT.INT64, remOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.INT64(), addOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.INT64(), subOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.INT64(), mulOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.INT64(), divOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.INT64(), remOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
@@ -71,7 +71,8 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var int32Op = funcMain.addOperation(new ConstantOp(LOC, 7), 0);
-    var float64Op = funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), FloatT.FLOAT64), 0);
+    var float64Op =
+        funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), FloatT.FLOAT64()), 0);
 
     var addOp =
         funcMain.addOperation(
@@ -82,7 +83,7 @@ public class ArithTests {
                 BinModeAttr.BinMode.ADD),
             0);
 
-    assertEquals(FloatT.FLOAT64, addOp.getOutputValue().orElseThrow().getType());
+    assertEquals(FloatT.FLOAT64(), addOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
@@ -95,7 +96,8 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var int32Op = funcMain.addOperation(new ConstantOp(LOC, 3), 0);
-    var float64Op = funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), FloatT.FLOAT64), 0);
+    var float64Op =
+        funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), FloatT.FLOAT64()), 0);
 
     var cmpOp =
         funcMain.addOperation(
@@ -106,7 +108,7 @@ public class ArithTests {
                 BinModeAttr.BinMode.LT),
             0);
 
-    assertEquals(IntegerT.BOOL, cmpOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.BOOL(), cmpOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
@@ -119,13 +121,14 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var int32Op = funcMain.addOperation(new ConstantOp(LOC, 123), 0);
-    var float64Op = funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), FloatT.FLOAT64), 0);
+    var float64Op =
+        funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), FloatT.FLOAT64()), 0);
     var int16Op =
         funcMain.addOperation(
-            new CastOp(LOC, float64Op.getOutputValue().orElseThrow(), IntegerT.INT16), 0);
+            new CastOp(LOC, float64Op.getOutputValue().orElseThrow(), IntegerT.INT16()), 0);
 
-    assertEquals(FloatT.FLOAT64, float64Op.getOutputValue().orElseThrow().getType());
-    assertEquals(IntegerT.INT16, int16Op.getOutputValue().orElseThrow().getType());
+    assertEquals(FloatT.FLOAT64(), float64Op.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.INT16(), int16Op.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
@@ -184,7 +187,7 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var stringOp = funcMain.addOperation(new ConstantOp(LOC, "nope"), 0);
-    funcMain.addOperation(new CastOp(LOC, stringOp.getResult(), IntegerT.INT32), 0);
+    funcMain.addOperation(new CastOp(LOC, stringOp.getResult(), IntegerT.INT32()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertFalse(TestUtils.testValidityAndSerialization(programOp));
@@ -197,9 +200,9 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var int16Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-7, IntegerT.INT16)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-7, IntegerT.INT16())), 0);
     var uint32Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(11, IntegerT.UINT32)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(11, IntegerT.UINT32())), 0);
 
     var addOp =
         funcMain.addOperation(
@@ -210,8 +213,8 @@ public class ArithTests {
             new BinaryOp(LOC, uint32Op.getResult(), int16Op.getResult(), BinModeAttr.BinMode.MUL),
             0);
 
-    assertEquals(IntegerT.UINT32, addOp.getOutputValue().orElseThrow().getType());
-    assertEquals(IntegerT.UINT32, mulOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.UINT32(), addOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.UINT32(), mulOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
@@ -224,11 +227,11 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var int16Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(5, IntegerT.INT16)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(5, IntegerT.INT16())), 0);
     var uint64Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(9, IntegerT.UINT64)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(9, IntegerT.UINT64())), 0);
     var float32Op =
-        funcMain.addOperation(new ConstantOp(LOC, new FloatAttribute(1.5f, FloatT.FLOAT32)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new FloatAttribute(1.5f, FloatT.FLOAT32())), 0);
 
     var add32 =
         funcMain.addOperation(
@@ -239,8 +242,8 @@ public class ArithTests {
             new BinaryOp(LOC, uint64Op.getResult(), float32Op.getResult(), BinModeAttr.BinMode.ADD),
             0);
 
-    assertEquals(FloatT.FLOAT32, add32.getOutputValue().orElseThrow().getType());
-    assertEquals(FloatT.FLOAT64, add64.getOutputValue().orElseThrow().getType());
+    assertEquals(FloatT.FLOAT32(), add32.getOutputValue().orElseThrow().getType());
+    assertEquals(FloatT.FLOAT64(), add64.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
@@ -253,11 +256,11 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var int32Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-3, IntegerT.INT32)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-3, IntegerT.INT32())), 0);
     var uint16Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(255, IntegerT.UINT8)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(255, IntegerT.UINT8())), 0);
     var float64Op =
-        funcMain.addOperation(new ConstantOp(LOC, new FloatAttribute(3.0, FloatT.FLOAT64)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new FloatAttribute(3.0, FloatT.FLOAT64())), 0);
 
     var eqOp =
         funcMain.addOperation(
@@ -268,8 +271,8 @@ public class ArithTests {
             new BinaryOp(LOC, uint16Op.getResult(), float64Op.getResult(), BinModeAttr.BinMode.LT),
             0);
 
-    assertEquals(IntegerT.BOOL, eqOp.getOutputValue().orElseThrow().getType());
-    assertEquals(IntegerT.BOOL, ltOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.BOOL(), eqOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.BOOL(), ltOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
@@ -281,9 +284,9 @@ public class ArithTests {
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
-    funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(255, IntegerT.INT8)), 0);
-    funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(255, IntegerT.UINT8)), 0);
-    funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-1, IntegerT.UINT16)), 0);
+    funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(255, IntegerT.INT8())), 0);
+    funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(255, IntegerT.UINT8())), 0);
+    funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-1, IntegerT.UINT16())), 0);
     funcMain.addOperation(new ReturnOp(LOC), 0);
 
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
@@ -296,9 +299,9 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var uint32Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(6, IntegerT.UINT32)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(6, IntegerT.UINT32())), 0);
     var float32Op =
-        funcMain.addOperation(new ConstantOp(LOC, new FloatAttribute(2.0f, FloatT.FLOAT32)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new FloatAttribute(2.0f, FloatT.FLOAT32())), 0);
 
     funcMain.addOperation(
         new BinaryOp(LOC, uint32Op.getResult(), float32Op.getResult(), BinModeAttr.BinMode.DIVUI),
@@ -318,9 +321,9 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var int32Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-8, IntegerT.INT32)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-8, IntegerT.INT32())), 0);
     var uint16Op =
-        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(4, IntegerT.UINT16)), 0);
+        funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(4, IntegerT.UINT16())), 0);
 
     var divuiOp =
         funcMain.addOperation(
@@ -331,8 +334,8 @@ public class ArithTests {
             new BinaryOp(LOC, int32Op.getResult(), uint16Op.getResult(), BinModeAttr.BinMode.MODUI),
             0);
 
-    assertEquals(IntegerT.INT32, divuiOp.getOutputValue().orElseThrow().getType());
-    assertEquals(IntegerT.INT32, moduiOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.INT32(), divuiOp.getOutputValue().orElseThrow().getType());
+    assertEquals(IntegerT.INT32(), moduiOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertTrue(TestUtils.testValidityAndSerialization(programOp));

@@ -3,7 +3,7 @@ package dgir.dialect.mem;
 import dgir.core.Dialect;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
-import dgir.core.ir.Type;
+import dgir.core.ir.TypeDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -34,8 +34,8 @@ public class MemoryDialect extends Dialect {
   }
 
   @Override
-  public @NotNull @Unmodifiable List<Type> allTypes() {
-    return allTypes(MemTypes.class);
+  public @NotNull @Unmodifiable List<TypeDescriptor> allTypes() {
+    return allTypes(MemTypes.MemTypeDescriptor.class);
   }
 
   @Override

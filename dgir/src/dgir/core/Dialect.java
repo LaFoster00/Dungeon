@@ -49,7 +49,8 @@ public abstract class Dialect {
    * Cache of already-computed type prototype lists, keyed by dialect class. Populated lazily by
    * {@link #allTypes(Class)} on the first call for each dialect.
    */
-  private static final @NotNull Map<Class<? extends dgir.core.Dialect>, @Unmodifiable List<Type>>
+  private static final @NotNull Map<
+          Class<? extends dgir.core.Dialect>, @Unmodifiable List<TypeDescriptor>>
       dialectTypes = new HashMap<>();
 
   // =========================================================================
@@ -78,7 +79,7 @@ public abstract class Dialect {
    * @return an unmodifiable list of type prototypes.
    */
   @Contract(pure = true)
-  public abstract @NotNull @Unmodifiable List<Type> allTypes();
+  public abstract @NotNull @Unmodifiable List<TypeDescriptor> allTypes();
 
   /**
    * All attribute prototypes contributed by this dialect.
@@ -108,7 +109,7 @@ public abstract class Dialect {
       OperationDetails.insert(op);
     }
     for (var type : allTypes()) {
-      TypeDetails.Registered.insert(type);
+      TypeDetails.insert(type);
     }
     for (var attr : allAttributes()) {
       AttributeDetails.Registered.insert(attr);
@@ -296,14 +297,14 @@ public abstract class Dialect {
    */
   @NotNull
   @Unmodifiable
-  public List<Type> allTypes(Class<?> diTypes) {
+  public List<TypeDescriptor> allTypes(Class<?> diTypes) {
     assert diTypes.isSealed() : "IDialectTypes interface must be sealed";
 
     if (dialectTypes.containsKey(this.getClass())) {
       return dialectTypes.get(this.getClass());
     }
 
-    List<Type> types = new ArrayList<>();
+    List<TypeDescriptor> types = new ArrayList<>();
     Class<?>[] permittedSubclasses = diTypes.getPermittedSubclasses();
     for (Class<?> subclass : permittedSubclasses) {
       try {
@@ -311,9 +312,9 @@ public abstract class Dialect {
         boolean isAccessible = defaultConstructor.canAccess(null);
         if (!isAccessible) defaultConstructor.setAccessible(true);
         try {
-          Type newType = (Type) defaultConstructor.newInstance();
-          types.addAll(newType.getDefaultTypeInstances());
-          if (newType.getDefaultTypeInstances().isEmpty()) {
+          TypeDescriptor newType = (TypeDescriptor) defaultConstructor.newInstance();
+          types.addAll(newType.getDescriptors());
+          if (newType.getDescriptors().isEmpty()) {
             types.add(newType);
           }
         } catch (InstantiationException e) {

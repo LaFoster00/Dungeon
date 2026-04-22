@@ -4,6 +4,7 @@ import dgir.core.Dialect;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
+import dgir.core.ir.TypeDescriptor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
@@ -70,8 +71,8 @@ public class BuiltinDialect extends Dialect {
 
   @Contract(pure = true)
   @Override
-  public @NotNull @Unmodifiable List<Type> allTypes() {
-    return allTypes(BuiltinTypes.class);
+  public @NotNull @Unmodifiable List<TypeDescriptor> allTypes() {
+    return allTypes(BuiltinTypes.BuiltinTypeDescriptor.class);
   }
 
   @Contract(pure = true)

@@ -26,8 +26,8 @@ public class ArithVmTests extends VmTestBase {
     ProgramOp program = new ProgramOp(LOC);
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
-    var lhs = main.addOperation(new ConstantOp(LOC, new FloatAttribute(1.9f, FloatT.FLOAT32)), 0);
-    var rhs = main.addOperation(new ConstantOp(LOC, new FloatAttribute(1.2f, FloatT.FLOAT32)), 0);
+    var lhs = main.addOperation(new ConstantOp(LOC, new FloatAttribute(1.9f, FloatT.FLOAT32())), 0);
+    var rhs = main.addOperation(new ConstantOp(LOC, new FloatAttribute(1.2f, FloatT.FLOAT32())), 0);
     var gt =
         main.addOperation(
             new BinaryOp(LOC, lhs.getResult(), rhs.getResult(), BinModeAttr.BinMode.GT), 0);
@@ -65,7 +65,7 @@ public class ArithVmTests extends VmTestBase {
     ProgramOp program = new ProgramOp(LOC);
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
-    var lhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(-1, IntegerT.INT32)), 0);
+    var lhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(-1, IntegerT.INT32())), 0);
     var rhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(1, IntegerT.UINT32)), 0);
     var lt =
         main.addOperation(

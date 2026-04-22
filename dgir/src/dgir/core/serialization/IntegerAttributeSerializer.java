@@ -48,7 +48,7 @@ public class IntegerAttributeSerializer extends StdSerializer<BuiltinAttrs.Integ
     gen.writeStringProperty("ident", value.getIdent());
     gen.writePOJOProperty("type", value.getType());
     BuiltinTypes.IntegerT integerType = (BuiltinTypes.IntegerT) value.getType();
-    if (integerType.equals(BuiltinTypes.IntegerT.BOOL)) {
+    if (integerType.equals(BuiltinTypes.IntegerT.BOOL())) {
       gen.writeBooleanProperty("value", value.getValue().byteValue() != 0);
     } else {
       if (integerType.isSigned()) {

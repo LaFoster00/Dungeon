@@ -90,7 +90,7 @@ public sealed interface StrTypes {
      * @return a singleton list containing {@link #INSTANCE}.
      */
     @Override
-    public @NotNull @Unmodifiable List<Type> getDefaultTypeInstances() {
+    public @NotNull @Unmodifiable List<Type> getDescriptors() {
       return List.of(INSTANCE);
     }
 

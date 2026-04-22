@@ -217,7 +217,7 @@ public sealed interface CfOps {
           assertOp.emitError("Condition operand is missing");
           return false;
         }
-        if (!assertOp.getOperandValue(0).get().getType().equals(BuiltinTypes.IntegerT.BOOL)) {
+        if (!assertOp.getOperandValue(0).get().getType().equals(BuiltinTypes.IntegerT.BOOL())) {
           assertOp.emitError("Condition operand must be of type int1");
         }
         if (assertOp.getOperandValue(1).isEmpty()) {

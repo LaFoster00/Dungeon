@@ -3,15 +3,11 @@ package dgir.core.ir;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
 import dgir.core.serialization.TypeDeserializer;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
-import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -44,7 +40,7 @@ public abstract class Type {
   // Members
   // =========================================================================
 
-  @JsonIgnore private @NotNull TypeDetails details;
+  @JsonIgnore private final @NotNull TypeDetails details;
 
   // =========================================================================
   // Type Info
@@ -65,7 +61,9 @@ public abstract class Type {
    * @return The ident string.
    */
   @Contract(pure = true)
-  public abstract @NotNull String getIdent();
+  public final @NotNull String getIdent() {
+    return details.ident();
+  }
 
   /**
    * Get the parameterized ident for this type. Simple types return just the ident; generic types
@@ -95,7 +93,9 @@ public abstract class Type {
    * @return the namespace string, never {@code null}.
    */
   @Contract(pure = true)
-  public abstract @NotNull String getNamespace();
+  public final @NotNull String getNamespace() {
+    return details.namespace();
+  }
 
   /**
    * Returns the class of the dialect that contributes this type.
@@ -103,53 +103,34 @@ public abstract class Type {
    * @return the dialect class, never {@code null}.
    */
   @Contract(pure = true)
-  public abstract @NotNull Class<? extends Dialect> getDialect();
+  public final @NotNull Dialect getDialect() {
+    return details.dialect();
+  }
 
   /**
    * Returns a function that checks whether a given value is a valid instance of this type.
    *
-   * <p>The validator is stored in {@link TypeDetails.Registered} at registration time and used by
-   * {@link #validate(Object)} to type-check attribute storage values.
+   * <p>The validator is stored in {@link TypeDetails} at registration time and used by {@link
+   * #validate(Object)} to type-check attribute storage values.
    *
    * @return the validator function, never {@code null}.
    */
   @Contract(pure = true)
-  public abstract Function<Object, Boolean> getValidator();
-
-  /**
-   * Returns a factory that creates a type from a parameterized identifier. This is used for types
-   * that have parameters, such as ptrs or function types. The parameterized identifier is the
-   * string representation of the type, including its parameters. For example, for a pointer type,
-   * the parameterized identifier could be {@code "ptr<i32>"} or {@code "ptr<ptr<f64>>"}.
-   *
-   * <p>The factory should parse the parameterized identifier and return the corresponding type
-   * instance. For types that do not have parameters, this can simply return a factory that ignores
-   * the parameterized identifier and returns the default instance of the type.
-   *
-   * @return A factory that creates a type from a parameterized identifier.
-   */
-  @Contract(pure = true)
-  public Function<Pair<String, TypeDetails>, Type> getParameterizedStringFactory() {
-    return args -> args.getRight().defaultInstance();
+  public final Function<Object, Boolean> getValidator() {
+    return details.validator();
   }
-
-  /**
-   * Returns a list of default type instances for this type. This is used for types that have no
-   * parameters. For example, for a simple integer type, this could return a list of all the
-   * predefined integer types (e.g. int1, int8, int16, int32, int64). For parameterized types, this
-   * should can be an empty list of containing 'this'.
-   *
-   * @return A list of default type instances.
-   */
-  @Contract(pure = true)
-  public abstract @NotNull @Unmodifiable List<Type> getDefaultTypeInstances();
 
   // =========================================================================
   // Constructors
   // =========================================================================
 
-  protected Type() {
-    details = TypeDetails.get(getClass());
+  protected Type(String ident) {
+    details =
+        TypeDetails.get(ident)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Type class " + ident + " is not registered in DGIRContext"));
   }
 
   // =========================================================================
@@ -162,23 +143,8 @@ public abstract class Type {
    * @return the type details.
    */
   @Contract(pure = true)
-  public @NotNull TypeDetails getDetails() {
+  public final @NotNull TypeDetails getDetails() {
     return details;
-  }
-
-  /**
-   * Replace the details for this type. May only be called from {@link TypeDetails.Registered}
-   * during dialect registration.
-   *
-   * @param details the new details instance.
-   * @throws AssertionError if called from outside {@link TypeDetails.Registered}.
-   */
-  void setDetails(@NotNull TypeDetails details) {
-    // Only allow TypeDetails.Registered to set details, since they are the registration of the
-    // types.
-    assert DgirCoreUtils.getCallingClass().isAssignableFrom(TypeDetails.Registered.class)
-        : "Only TypeDetails.Registered can set details for a type.";
-    this.details = details;
   }
 
   /**
@@ -188,7 +154,7 @@ public abstract class Type {
    * @return {@code true} when {@code value} is valid for this type.
    */
   public final boolean validate(Object value) {
-    return getDetails().validator().apply(value);
+    return details.validator().apply(value);
   }
 
   // =========================================================================
@@ -196,7 +162,7 @@ public abstract class Type {
   // =========================================================================
 
   @Override
-  public String toString() {
+  public final String toString() {
     return getParameterizedIdent();
   }
 

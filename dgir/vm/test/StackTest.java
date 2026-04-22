@@ -17,7 +17,7 @@ public class StackTest {
   }
 
   private static Operation outputOpener() {
-    Value input = new Value(INT64);
+    Value input = new Value(INT64());
     return new dgir.dialect.builtin.BuiltinOps.IdOp(LOC, input).getOperation();
   }
 
@@ -26,8 +26,8 @@ public class StackTest {
     Stack stack = new Stack();
     Operation outerOp = scopeOpener();
     Operation innerOp = scopeOpener();
-    Value outerValue = new Value(INT64);
-    Value innerValue = new Value(INT64);
+    Value outerValue = new Value(INT64());
+    Value innerValue = new Value(INT64());
 
     stack.pushCallFrame();
     stack.pushScope(outerOp, false);
@@ -51,8 +51,8 @@ public class StackTest {
     Stack stack = new Stack();
     Operation outerOp = scopeOpener();
     Operation innerOp = scopeOpener();
-    Value outerValue = new Value(INT64);
-    Value innerValue = new Value(INT64);
+    Value outerValue = new Value(INT64());
+    Value innerValue = new Value(INT64());
 
     stack.pushCallFrame();
     stack.pushScope(outerOp, false);
@@ -74,8 +74,8 @@ public class StackTest {
     Stack stack = new Stack();
     Operation outerOp = scopeOpener();
     Operation isolatedOp = scopeOpener();
-    Value outerValue = new Value(INT64);
-    Value isolatedValue = new Value(INT64);
+    Value outerValue = new Value(INT64());
+    Value isolatedValue = new Value(INT64());
 
     stack.pushCallFrame();
     stack.pushScope(outerOp, false);

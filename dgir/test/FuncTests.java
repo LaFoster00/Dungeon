@@ -51,7 +51,7 @@ public class FuncTests {
   /** Test case for a function with multiple parameters and a return value. */
   @Test
   public void funcWithParamsAndReturn() {
-    FuncType type = FuncType.of(List.of(IntegerT.INT32, IntegerT.INT32), IntegerT.INT32);
+    FuncType type = FuncType.of(List.of(IntegerT.INT32(), IntegerT.INT32()), IntegerT.INT32());
     FuncOp funcOp = new FuncOp(LOC, "add", type);
 
     // In a real scenario, we might have an add operation here. For this test, we just return one of
@@ -66,7 +66,7 @@ public class FuncTests {
    */
   @Test
   public void funcWithMismatchedReturn() {
-    FuncType type = FuncType.of(List.of(IntegerT.INT32), StrTypes.StringT.INSTANCE);
+    FuncType type = FuncType.of(List.of(IntegerT.INT32()), StrTypes.StringT.INSTANCE);
     FuncOp funcOp = new FuncOp(LOC, "mismatch", type);
 
     // Returning an INT32 when the function expects StringT
@@ -83,7 +83,7 @@ public class FuncTests {
     FuncOp mainFunc = entry.getRight();
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    FuncType type = FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32);
+    FuncType type = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32());
     FuncOp factorial = programOp.addOperation(new FuncOp(LOC, "factorial", type));
 
     // Simple recursive call without base case for IR structure testing
@@ -102,7 +102,7 @@ public class FuncTests {
     FuncOp mainFunc = entry.getRight();
 
     FuncOp otherFunc =
-        programOp.addOperation(new FuncOp(LOC, "other", FuncType.of(List.of(), IntegerT.INT32)));
+        programOp.addOperation(new FuncOp(LOC, "other", FuncType.of(List.of(), IntegerT.INT32())));
     var constOp = otherFunc.addOperation(new ArithOps.ConstantOp(LOC, 42), 0);
     otherFunc.addOperation(new ReturnOp(LOC, constOp.getResult()), 0);
 
@@ -119,7 +119,7 @@ public class FuncTests {
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
-    mainFunc.addOperation(new CallOp(LOC, "ghost", FuncType.of(List.of(), IntegerT.INT32)), 0);
+    mainFunc.addOperation(new CallOp(LOC, "ghost", FuncType.of(List.of(), IntegerT.INT32())), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
     assertFalse(TestUtils.testValidityAndSerialization(programOp));
@@ -133,7 +133,7 @@ public class FuncTests {
 
     FuncOp target =
         programOp.addOperation(
-            new FuncOp(LOC, "target", FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32)));
+            new FuncOp(LOC, "target", FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32())));
     target.addOperation(new ReturnOp(LOC, target.getArgument(0).orElseThrow()), 0);
 
     // Call with 0 args, expects 1
@@ -151,7 +151,7 @@ public class FuncTests {
 
     FuncOp target =
         programOp.addOperation(
-            new FuncOp(LOC, "target", FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32)));
+            new FuncOp(LOC, "target", FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32())));
     target.addOperation(new ReturnOp(LOC, target.getArgument(0).orElseThrow()), 0);
 
     // Call with String arg, expects Int
@@ -176,7 +176,7 @@ public class FuncTests {
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
-    FuncType targetType = FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32);
+    FuncType targetType = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32);
     FuncOp targetFunc = programOp.addOperation(new FuncOp(LOC, "target", targetType));
     targetFunc.addOperation(new ReturnOp(LOC, targetFunc.getArgument(0).orElseThrow()), 0);
 
