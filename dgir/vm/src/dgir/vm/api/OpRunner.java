@@ -10,7 +10,7 @@ public abstract class OpRunner {
 
   public OpRunner(@NotNull Class<? extends Op> targetOpType) {
     this(
-        OperationDetails.Registered.lookup(targetOpType)
+        OperationDetails.lookup(targetOpType)
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(

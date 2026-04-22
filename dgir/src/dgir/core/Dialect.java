@@ -105,7 +105,7 @@ public abstract class Dialect {
 
     logger.info("Registering dialect: " + getNamespace());
     for (var op : allOps()) {
-      OperationDetails.Registered.insert(op);
+      OperationDetails.insert(op);
     }
     for (var type : allTypes()) {
       TypeDetails.Registered.insert(type);

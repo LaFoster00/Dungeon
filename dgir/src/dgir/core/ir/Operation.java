@@ -97,7 +97,7 @@ public final class Operation implements Serializable {
       int numRegions) {
     return new Operation(
         location,
-        OperationDetails.Registered.lookup(op.getIdent())
+        OperationDetails.lookup(op.getIdent())
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(

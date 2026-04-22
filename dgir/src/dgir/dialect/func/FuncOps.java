@@ -497,11 +497,7 @@ public sealed interface FuncOps {
     // =========================================================================
 
     /** Default constructor used during dialect registration. */
-    private ReturnOp() {
-      executeIfRegistered(
-          ReturnOp.class,
-          () -> setOperation(false, Operation.Create(Location.UNKNOWN, this, null, null, null)));
-    }
+    private ReturnOp() {}
 
     /**
      * Create a void return op.

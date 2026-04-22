@@ -406,23 +406,4 @@ public abstract class Op {
     if (operation == null) return 0;
     return operation.hashCode();
   }
-
-  // =========================================================================
-  // Static Helpers
-  // =========================================================================
-
-  /**
-   * Execute {@code callback} only if the given op class is already registered.
-   *
-   * <p>Intended for use in default constructors: during dialect registration the default
-   * constructor is called without registration being complete, so no initialisation should happen
-   * then. On all subsequent calls the op is registered and the callback is executed normally.
-   */
-  public static void executeIfRegistered(
-      @NotNull Class<? extends Op> opClass, @NotNull Runnable callback) {
-    var details = OperationDetails.Registered.lookup(opClass);
-    if (details.isPresent()) {
-      callback.run();
-    }
-  }
 }

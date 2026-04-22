@@ -21,20 +21,13 @@ public class DGIRContext {
   // Operations
   // =========================================================================
 
-  /** Unregistered cache: class → impl (ident and class are unreliable until registered). */
-  public static final @NotNull Map<Class<? extends Op>, OperationDetails> operations =
+  /** Registered operations by class. */
+  public static final @NotNull Map<Class<? extends Op>, OperationDetails> registeredOperations =
       new HashMap<>();
 
-  /** Unregistered cache: ident → impl. */
-  public static final @NotNull Map<String, OperationDetails> operationsByIdent = new HashMap<>();
-
-  /** Registered operations by class. */
-  public static final @NotNull Map<Class<? extends Op>, OperationDetails.Registered>
-      registeredOperations = new HashMap<>();
-
   /** Registered operations by ident. */
-  public static final @NotNull Map<String, OperationDetails.Registered>
-      registeredOperationsByIdent = new HashMap<>();
+  public static final @NotNull Map<String, OperationDetails> registeredOperationsByIdent =
+      new HashMap<>();
 
   // =========================================================================
   // Attributes

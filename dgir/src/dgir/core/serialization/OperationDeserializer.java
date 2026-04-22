@@ -57,7 +57,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
     }
 
     String ident = identNode.asString();
-    var operationDetails = OperationDetails.Registered.lookup(ident);
+    var operationDetails = OperationDetails.lookup(ident);
     if (operationDetails.isEmpty()) {
       return ctxt.reportInputMismatch(
           Operation.class,

@@ -123,11 +123,7 @@ public sealed interface BuiltinOps {
     // =========================================================================
 
     /** Default constructor used during dialect registration. */
-    private ProgramOp() {
-      executeIfRegistered(
-          ProgramOp.class,
-          () -> setOperation(true, Operation.Create(Location.UNKNOWN, this, null, null, null, 1)));
-    }
+    private ProgramOp() {}
 
     /**
      * Create a new program op with the given source location.
