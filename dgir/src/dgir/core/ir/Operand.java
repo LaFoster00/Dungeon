@@ -19,10 +19,10 @@ import java.util.Optional;
  */
 @SuppressWarnings("unchecked")
 public abstract class Operand<
-    // The value type accepted by this operand
-    ValueT extends IRObjectWithUseList<ValueT, DerivedT>,
     // The type extending from this class
-    DerivedT extends Operand<ValueT, DerivedT>> {
+    DerivedT extends Operand<DerivedT, ValueT>,
+    // The value type accepted by this operand
+    ValueT extends IRObjectWithUseList<ValueT, DerivedT>> {
 
   // =========================================================================
   // Members
@@ -137,8 +137,7 @@ public abstract class Operand<
 
   /** Remove this operand from the use-list of the currently referenced value. */
   private void removeFromCurrentUseList() {
-    if (value != null)
-      value.getUses().remove((DerivedT) this);
+    if (value != null) value.getUses().remove((DerivedT) this);
   }
 
   /**
