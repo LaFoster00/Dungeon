@@ -27,7 +27,7 @@ public class NamedAttributeSerializer extends StdSerializer<NamedAttribute> {
       throws JacksonException {
     gen.writeStartObject();
     gen.writeStringProperty("name", value.getName());
-    gen.writePOJOProperty("attribute", value.getAttribute());
+    gen.writePOJOProperty("attribute", value.getAttributeOrThrow());
     gen.writeEndObject();
   }
 }

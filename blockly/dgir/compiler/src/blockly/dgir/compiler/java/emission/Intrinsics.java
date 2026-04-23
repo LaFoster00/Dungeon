@@ -145,7 +145,7 @@ public class Intrinsics {
       }
       case "Dungeon.IO.nextLine()" -> {
         var result =
-            context.insert(new IoOps.ConsoleInOp(context.loc(n), StrTypes.StringT.INSTANCE));
+            context.insert(new IoOps.ConsoleInOp(context.loc(n), StrTypes.StringT.INSTANCE()));
         return EmitResult.of(Optional.of(result.getResult()));
       }
 

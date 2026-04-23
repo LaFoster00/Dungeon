@@ -119,7 +119,7 @@ public sealed interface CfOps {
         @NotNull Block elseTarget) {
       setOperation(
           Operation.Create(location, this, List.of(condition), List.of(target, elseTarget), null));
-      assert condition.getType().equals(BuiltinTypes.IntegerT.BOOL)
+      assert condition.getType().equals(BuiltinTypes.IntegerT.BOOL())
           : "Condition must be of type bool/int1.";
     }
   }
@@ -133,7 +133,7 @@ public sealed interface CfOps {
    * <p>MLIR reference: {@code cf.br}
    *
    * <pre>{@code
-   * cf.br ^target
+   * cf.br ^ target
    * }</pre>
    */
   final class BranchOp extends CfOp implements CfOps, ITerminator, IControlFlow {
@@ -224,7 +224,7 @@ public sealed interface CfOps {
           return true;
         }
         Value messageOperand = assertOp.getOperandValue(1).orElseThrow();
-        if (!messageOperand.getType().equals(StrTypes.StringT.INSTANCE)) {
+        if (!messageOperand.getType().equals(StrTypes.StringT.INSTANCE())) {
           assertOp.emitError("Message operand must be of type string");
           return false;
         }

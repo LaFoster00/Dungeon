@@ -16,6 +16,10 @@ import java.util.function.Supplier;
  * A descriptor for a type, containing metadata such as its unique identifier, namespace, and
  * validation logic. This is used to register types with the {@link TypeDetails} and to provide
  * information about types at runtime.
+ *
+ * <h3><strong>Important:</strong> Every type descriptor which uses the allTypes reflection util
+ * must implement a public static method returning a default instance of the object. The signature
+ * for the function should be {@code public static TypeDescriptor defaultInstance()}</h3>
  */
 public interface TypeDescriptor {
   /**
@@ -117,4 +121,16 @@ public interface TypeDescriptor {
   @NotNull
   @Unmodifiable
   List<TypeDescriptor> getDescriptors();
+
+  /**
+   * Initialize all default type instances for the type described by this descriptor. This should be
+   * called during dialect registration to ensure that all default instances are created and
+   * available for use. For non-parameterized types, this should create the singleton instances
+   * (e.g. instance behind BuiltinTypes.IntegerT.INT8()). For parameterized types, this may be a
+   * no-op or it may create some commonly used default instances (e.g. a null pointer type). This is
+   * necessary to ensure that the default instances are created and available for use before any
+   * code tries to access them, but after type registration so that type instances can access their
+   * type details without throwing.
+   */
+  void initDefaultTypeInstances();
 }

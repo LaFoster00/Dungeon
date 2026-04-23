@@ -2,11 +2,15 @@ package dgir.dialect.str;
 
 import dgir.core.Dialect;
 import dgir.core.ir.Type;
+import dgir.core.ir.TypeDescriptor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Sealed marker interface for all types contributed by the {@link StrDialect}.
@@ -15,34 +19,62 @@ import java.util.function.Function;
  * Dialect#allTypes(Class)} can discover it automatically via reflection.
  */
 public sealed interface StrTypes {
-  /**
-   * Abstract base class for all types contributed by the {@code str} dialect.
-   *
-   * <p>Concrete subclasses must implement {@link #getIdent()} and {@link #getValidator()}, and must
-   * implement {@link StrTypes} to be enumerated by {@link StrDialect}.
-   */
-  abstract class StrType extends Type {
-
-    /**
-     * Returns the namespace prefix used when printing this type.
-     *
-     * @return the fixed {@code "str"} namespace.
-     */
+  /** Abstract base class for all type-descriptors contributed by the {@link StrDialect}. */
+  sealed interface StrTypeDescriptor extends TypeDescriptor {
     @Override
-    public @NotNull String getNamespace() {
+    default @NotNull String getNamespace() {
       return "str";
     }
 
-    /**
-     * Returns the dialect that owns this type.
-     *
-     * @return the {@link StrDialect} class.
-     */
     @Override
-    public @NotNull Class<? extends Dialect> getDialect() {
+    default @NotNull Class<? extends Dialect> getDialect() {
       return StrDialect.class;
     }
+
+    final class StringDescriptor implements StrTypeDescriptor {
+      public static TypeDescriptor defaultInstance() {
+        return new StringDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Type> getTypeClass() {
+        return StringT.class;
+      }
+
+      @Override
+      public @NotNull Supplier<Type> getNonParametricInstance() {
+        return StringT::INSTANCE;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "string";
+      }
+
+      @Override
+      public Function<Object, Boolean> getValidator() {
+        return value -> value instanceof String;
+      }
+
+      @Override
+      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of();
+      }
+
+      @Override
+      public void initDefaultTypeInstances() {
+        StringT.INSTANCE = new StringT();
+      }
+    }
   }
+
+  /**
+   * Abstract base class for all types contributed by the {@code str} dialect.
+   *
+   * <p>Concrete subclasses keep only runtime instance behavior while type metadata and validation
+   * are provided by descriptors.
+   */
+  abstract class StrType extends Type {}
 
   /**
    * UTF-16 string type in the {@code str} dialect.
@@ -58,40 +90,12 @@ public sealed interface StrTypes {
     // =========================================================================
 
     /** Singleton instance of the string type. */
-    public static final StringT INSTANCE = new StringT();
+    static @Nullable StringT INSTANCE;
 
-    // =========================================================================
-    // Type Info
-    // =========================================================================
-
-    /**
-     * Returns the MLIR-style identifier for this type.
-     *
-     * @return the fixed identifier {@code "string"}.
-     */
-    @Override
-    public @NotNull String getIdent() {
-      return "string";
-    }
-
-    /**
-     * Validates that a value is a Java string.
-     *
-     * @return {@code true} if the value is a string.
-     */
-    @Override
-    public Function<Object, Boolean> getValidator() {
-      return value -> value instanceof String;
-    }
-
-    /**
-     * Returns the default string type instances for this bundle.
-     *
-     * @return a singleton list containing {@link #INSTANCE}.
-     */
-    @Override
-    public @NotNull @Unmodifiable List<Type> getDescriptors() {
-      return List.of(INSTANCE);
+    public static @NotNull StringT INSTANCE() {
+      return Objects.requireNonNull(
+          INSTANCE,
+          "StringT instance not initialized. Ensure that StrDialect.initDefaultTypeInstances() is called during DGIRContext initialization.");
     }
 
     // =========================================================================

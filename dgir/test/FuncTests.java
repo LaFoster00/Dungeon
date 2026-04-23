@@ -66,7 +66,7 @@ public class FuncTests {
    */
   @Test
   public void funcWithMismatchedReturn() {
-    FuncType type = FuncType.of(List.of(IntegerT.INT32()), StrTypes.StringT.INSTANCE);
+    FuncType type = FuncType.of(List.of(IntegerT.INT32()), StrTypes.StringT.INSTANCE());
     FuncOp funcOp = new FuncOp(LOC, "mismatch", type);
 
     // Returning an INT32 when the function expects StringT
@@ -176,7 +176,7 @@ public class FuncTests {
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
-    FuncType targetType = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32);
+    FuncType targetType = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32());
     FuncOp targetFunc = programOp.addOperation(new FuncOp(LOC, "target", targetType));
     targetFunc.addOperation(new ReturnOp(LOC, targetFunc.getArgument(0).orElseThrow()), 0);
 
@@ -198,7 +198,7 @@ public class FuncTests {
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
-    FuncType targetType = FuncType.of(List.of(), IntegerT.INT32);
+    FuncType targetType = FuncType.of(List.of(), IntegerT.INT32());
     FuncOp targetFunc = programOp.addOperation(new FuncOp(LOC, "noArgFunc", targetType));
     var constOp = targetFunc.addOperation(new ArithOps.ConstantOp(LOC, 0), 0);
     targetFunc.addOperation(new ReturnOp(LOC, constOp.getResult()), 0);
@@ -225,7 +225,7 @@ public class FuncTests {
     FuncOp mainFunc = entry.getRight();
 
     // target: () -> int32
-    FuncType targetType = FuncType.of(List.of(), IntegerT.INT32);
+    FuncType targetType = FuncType.of(List.of(), IntegerT.INT32());
     FuncOp targetFunc = programOp.addOperation(new FuncOp(LOC, "target", targetType));
     var fortyTwo = targetFunc.addOperation(new ArithOps.ConstantOp(LOC, 42), 0);
     targetFunc.addOperation(new ReturnOp(LOC, fortyTwo.getResult()), 0);
@@ -250,7 +250,7 @@ public class FuncTests {
     FuncOp mainFunc = entry.getRight();
 
     // identity: (int32) -> int32
-    FuncType targetType = FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32);
+    FuncType targetType = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32());
     FuncOp identityFunc = programOp.addOperation(new FuncOp(LOC, "identity", targetType));
     identityFunc.addOperation(new ReturnOp(LOC, identityFunc.getArgument(0).orElseThrow()), 0);
 
@@ -276,7 +276,7 @@ public class FuncTests {
     FuncOp mainFunc = entry.getRight();
 
     // target expects one INT32 argument
-    FuncType targetType = FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32);
+    FuncType targetType = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32());
     FuncOp targetFunc = programOp.addOperation(new FuncOp(LOC, "target", targetType));
     targetFunc.addOperation(new ReturnOp(LOC, targetFunc.getArgument(0).orElseThrow()), 0);
 
@@ -299,7 +299,7 @@ public class FuncTests {
     FuncOp mainFunc = entry.getRight();
 
     // target expects INT32, but we pass a String
-    FuncType targetType = FuncType.of(List.of(IntegerT.INT32), IntegerT.INT32);
+    FuncType targetType = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32());
     FuncOp targetFunc = programOp.addOperation(new FuncOp(LOC, "target", targetType));
     targetFunc.addOperation(new ReturnOp(LOC, targetFunc.getArgument(0).orElseThrow()), 0);
 

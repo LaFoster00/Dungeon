@@ -187,7 +187,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
 
     if (attributes != null) {
       for (NamedAttribute attribute : attributes) {
-        operation.setAttribute(attribute.getName(), attribute.getAttribute());
+        operation.setAttribute(attribute.getName(), attribute.getAttributeOrThrow());
       }
     }
 

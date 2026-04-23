@@ -47,7 +47,8 @@ public class VmConsoleTest extends VmTestBase {
     ProgramOp programOp = new ProgramOp(LOC);
 
     FuncOp stringOp =
-        programOp.addOperation(new FuncOp(LOC, "string", FuncType.of(List.of(), StringT.INSTANCE)));
+        programOp.addOperation(
+            new FuncOp(LOC, "string", FuncType.of(List.of(), StringT.INSTANCE())));
     {
       var text = stringOp.addOperation(new ConstantOp(LOC, "Hello World!\n"), 0);
       stringOp.addOperation(new ReturnOp(LOC, text.getResult()), 0);
@@ -328,7 +329,7 @@ public class VmConsoleTest extends VmTestBase {
     FuncOp mainOp = programOp.addOperation(new FuncOp(LOC, "main"));
 
     // Read a String from the console
-    var input = mainOp.addOperation(new ConsoleInOp(LOC, StringT.INSTANCE), 0);
+    var input = mainOp.addOperation(new ConsoleInOp(LOC, StringT.INSTANCE()), 0);
     // Print it back
     mainOp.addOperation(new PrintOp(LOC, input.getResult()), 0);
     mainOp.addOperation(new ReturnOp(LOC), 0);
@@ -349,7 +350,7 @@ public class VmConsoleTest extends VmTestBase {
     // Format string constant
     var fmt = mainOp.addOperation(new ConstantOp(LOC, "Hello, %s!\n"), 0);
     // Read the name from the console
-    var name = mainOp.addOperation(new ConsoleInOp(LOC, StringT.INSTANCE), 0);
+    var name = mainOp.addOperation(new ConsoleInOp(LOC, StringT.INSTANCE()), 0);
     // Print formatted: "Hello, <name>!\n"
     mainOp.addOperation(new PrintOp(LOC, fmt.getResult(), name.getResult()), 0);
     mainOp.addOperation(new ReturnOp(LOC), 0);
@@ -472,7 +473,7 @@ public class VmConsoleTest extends VmTestBase {
     // Format string constant
     var fmt = mainOp.addOperation(new ConstantOp(LOC, "%s scored %d points.\n"), 0);
     // Read a name (string) then a score (int)
-    var nameIn = mainOp.addOperation(new ConsoleInOp(LOC, StringT.INSTANCE), 0);
+    var nameIn = mainOp.addOperation(new ConsoleInOp(LOC, StringT.INSTANCE()), 0);
     var scoreIn = mainOp.addOperation(new ConsoleInOp(LOC, IntegerT.INT32()), 0);
     // Print formatted
     mainOp.addOperation(

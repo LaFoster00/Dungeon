@@ -5,8 +5,6 @@ import dgir.core.SymbolTable;
 import dgir.core.debug.Location;
 import dgir.core.ir.*;
 import dgir.core.traits.*;
-import dgir.dialect.builtin.BuiltinAttrs;
-import dgir.dialect.str.StrAttrs;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +17,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static dgir.dialect.builtin.BuiltinAttrs.SymbolRefAttribute;
+import static dgir.dialect.builtin.BuiltinAttrs.TypeAttribute;
 import static dgir.dialect.func.FuncTypes.FuncType;
+import static dgir.dialect.str.StrAttrs.StringAttribute;
 
 /**
  * Sealed marker interface for all operations in the {@link FuncDialect}.
@@ -65,10 +66,9 @@ public sealed interface FuncOps {
   /**
    * Calls a named function in the {@code func} dialect.
    *
-   * <p>The callee is referenced by name via the {@code "callee"} {@link
-   * BuiltinAttrs.SymbolRefAttribute}. At verification time the symbol is resolved in the nearest
-   * enclosing {@link SymbolTable} and the operand/result types are checked against the callee's
-   * {@link FuncType}.
+   * <p>The callee is referenced by name via the {@code "callee"} {@link SymbolRefAttribute}. At
+   * verification time the symbol is resolved in the nearest enclosing {@link SymbolTable} and the
+   * operand/result types are checked against the callee's {@link FuncType}.
    *
    * <p>MLIR reference: {@code func.call}
    *
@@ -123,8 +123,7 @@ public sealed interface FuncOps {
     @Contract(pure = true)
     @Override
     public @NotNull List<NamedAttribute> getDefaultAttributes() {
-      return List.of(
-          new NamedAttribute(getCalleeAttributeName(), new BuiltinAttrs.SymbolRefAttribute("foo")));
+      return List.of(new NamedAttribute(getCalleeAttributeName(), new SymbolRefAttribute("foo")));
     }
 
     /**
@@ -229,7 +228,7 @@ public sealed interface FuncOps {
     @Contract(pure = true)
     public @NotNull String getCallee() {
       return Objects.requireNonNull(
-          getAttributeAs(getCalleeAttributeName(), BuiltinAttrs.SymbolRefAttribute.class)
+          getAttributeAs(getCalleeAttributeName(), SymbolRefAttribute.class)
               .orElseThrow(() -> new AssertionError("No callee attribute found"))
               .getStorage(),
           "Callee symbol name must not be null");
@@ -254,8 +253,8 @@ public sealed interface FuncOps {
 
     @Contract(pure = true)
     @Override
-    public @NotNull BuiltinAttrs.SymbolRefAttribute getSymbolRefAttribute() {
-      return getAttributeAs(getCalleeAttributeName(), BuiltinAttrs.SymbolRefAttribute.class)
+    public @NotNull SymbolRefAttribute getSymbolRefAttribute() {
+      return getAttributeAs(getCalleeAttributeName(), SymbolRefAttribute.class)
           .orElseThrow(() -> new RuntimeException("No symbol attribute found"));
     }
   }
@@ -268,8 +267,7 @@ public sealed interface FuncOps {
    * <ul>
    *   <li>{@link SymbolTable#getSymbolAttributeName()} — the function's symbol name (e.g. {@code
    *       "main"}).
-   *   <li>{@code "type"} — a {@link BuiltinAttrs.TypeAttribute} wrapping the function's {@link
-   *       FuncType}.
+   *   <li>{@code "type"} — a {@link TypeAttribute} wrapping the function's {@link FuncType}.
    * </ul>
    *
    * <p>The op contributes exactly one region that holds the function body. It implements {@link
@@ -312,9 +310,8 @@ public sealed interface FuncOps {
     @Override
     public @NotNull List<NamedAttribute> getDefaultAttributes() {
       return List.of(
-          new NamedAttribute(
-              SymbolTable.getSymbolAttributeName(), new StrAttrs.StringAttribute("foo")),
-          new NamedAttribute("type", new BuiltinAttrs.TypeAttribute(FuncType.empty())));
+          new NamedAttribute(SymbolTable.getSymbolAttributeName(), new StringAttribute("foo")),
+          new NamedAttribute("type", new TypeAttribute(FuncType.empty())));
     }
 
     @Override
@@ -361,14 +358,14 @@ public sealed interface FuncOps {
     // =========================================================================
 
     /**
-     * Returns the {@link StrAttrs.StringAttribute} that holds the function's symbol name.
+     * Returns the {@link StringAttribute} that holds the function's symbol name.
      *
      * @return the symbol name attribute.
      * @throws RuntimeException if the attribute is absent.
      */
     @Contract(pure = true)
-    public @NotNull StrAttrs.StringAttribute getFuncNameAttribute() {
-      return getAttributeAs(SymbolTable.getSymbolAttributeName(), StrAttrs.StringAttribute.class)
+    public @NotNull StringAttribute getFuncNameAttribute() {
+      return getAttributeAs(SymbolTable.getSymbolAttributeName(), StringAttribute.class)
           .orElseThrow(() -> new RuntimeException("Symbol attribute not found"));
     }
 
@@ -383,15 +380,15 @@ public sealed interface FuncOps {
     }
 
     /**
-     * Returns the {@link BuiltinAttrs.TypeAttribute} that carries the function's {@link FuncType}.
+     * Returns the {@link TypeAttribute} that carries the function's {@link FuncType}.
      *
      * @return the type attribute.
      * @throws RuntimeException if the attribute is absent.
      */
     @Contract(pure = true)
-    public @NotNull BuiltinAttrs.TypeAttribute getTypeAttribute() {
+    public @NotNull TypeAttribute getTypeAttribute() {
       return getOperation()
-          .getAttributeAs("type", BuiltinAttrs.TypeAttribute.class)
+          .getAttributeAs("type", TypeAttribute.class)
           .orElseThrow(() -> new RuntimeException("Type attribute not found"));
     }
 
@@ -554,7 +551,7 @@ public sealed interface FuncOps {
 
     @Override
     public @NotNull @Unmodifiable List<@NotNull NamedAttribute> getDefaultAttributes() {
-      return List.of(new NamedAttribute("callee", new BuiltinAttrs.SymbolRefAttribute("foo")));
+      return List.of(new NamedAttribute("callee", new SymbolRefAttribute("foo")));
     }
 
     private ConstantOp() {}
@@ -562,7 +559,7 @@ public sealed interface FuncOps {
     public ConstantOp(
         @NotNull Location location, @NotNull String name, @NotNull FuncType funcType) {
       setOperation(Operation.Create(location, this, null, null, funcType));
-      getAttributeAs("callee", BuiltinAttrs.SymbolRefAttribute.class).orElseThrow().setValue(name);
+      getAttributeAs("callee", SymbolRefAttribute.class).orElseThrow().setValue(name);
     }
 
     public ConstantOp(@NotNull Location location, @NotNull FuncOp funcOp) {

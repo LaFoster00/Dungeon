@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -105,14 +106,18 @@ public abstract class Dialect {
     DGIRContext.registeredDialectsByName.put(this.getNamespace(), this);
 
     logger.info("Registering dialect: " + getNamespace());
-    for (var op : allOps()) {
-      OperationDetails.insert(op);
-    }
+
     for (var type : allTypes()) {
       TypeDetails.insert(type);
     }
+    for (var type : allTypes()) {
+      type.initDefaultTypeInstances();
+    }
     for (var attr : allAttributes()) {
       AttributeDetails.Registered.insert(attr);
+    }
+    for (var op : allOps()) {
+      OperationDetails.insert(op);
     }
     logger.info("Registered dialect successfully: " + getNamespace());
   }
@@ -308,25 +313,27 @@ public abstract class Dialect {
     Class<?>[] permittedSubclasses = diTypes.getPermittedSubclasses();
     for (Class<?> subclass : permittedSubclasses) {
       try {
-        Constructor<?> defaultConstructor = subclass.getDeclaredConstructor();
-        boolean isAccessible = defaultConstructor.canAccess(null);
-        if (!isAccessible) defaultConstructor.setAccessible(true);
+        Method defaultInstanceFactory = subclass.getDeclaredMethod("defaultInstance");
+        boolean isAccessible = defaultInstanceFactory.canAccess(null);
+        if (!isAccessible) defaultInstanceFactory.setAccessible(true);
         try {
-          TypeDescriptor newType = (TypeDescriptor) defaultConstructor.newInstance();
+          TypeDescriptor newType = (TypeDescriptor) defaultInstanceFactory.invoke(null);
           types.addAll(newType.getDescriptors());
           if (newType.getDescriptors().isEmpty()) {
             types.add(newType);
           }
-        } catch (InstantiationException e) {
+        } catch (InvocationTargetException e) {
           throw new RuntimeException(
-              "Executing default constructor failed for type: " + subclass.getName(), e);
-        } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException e) {
+              "Executing defaultInstance method failed for type: " + subclass.getName(), e);
+        } catch (IllegalAccessException e) {
           throw new RuntimeException(e);
         }
-        if (!isAccessible) defaultConstructor.setAccessible(false);
+        if (!isAccessible) defaultInstanceFactory.setAccessible(false);
       } catch (NoSuchMethodException e) {
         throw new RuntimeException(
-            "Type class must have a default constructor: " + subclass.getName(), e);
+            "TypeDescriptor class must have a static defaultInstance factory method: "
+                + subclass.getName(),
+            e);
       }
     }
     dialectTypes.put(this.getClass(), types);

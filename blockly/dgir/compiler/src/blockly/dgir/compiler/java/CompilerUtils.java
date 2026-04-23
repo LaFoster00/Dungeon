@@ -146,7 +146,7 @@ public class CompilerUtils {
     switch (type) {
       case ResolvedPrimitiveType primitiveType -> {
         result =
-            Optional.ofNullable(
+            Optional.of(
                 switch (primitiveType) {
                   case BOOLEAN -> BuiltinTypes.IntegerT.BOOL();
                   case BYTE -> BuiltinTypes.IntegerT.INT8();
@@ -162,7 +162,7 @@ public class CompilerUtils {
         result =
             Optional.ofNullable(
                 switch (referenceType.describe()) {
-                  case "java.lang.String" -> StrTypes.StringT.INSTANCE;
+                  case "java.lang.String" -> StrTypes.StringT.INSTANCE();
                   default -> {
                     context.emitError(
                         site, "Unsupported reference type: " + referenceType.describe());

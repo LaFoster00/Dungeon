@@ -11,14 +11,12 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * Sealed marker interface for all types contributed by the {@link BuiltinDialect}.
- *
- * <p>Every concrete type must implement this interface so that {@link Dialect#allTypes(Class)} can
- * discover it automatically via reflection.
  */
 public sealed interface BuiltinTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link BuiltinDialect}. */
@@ -42,8 +40,8 @@ public sealed interface BuiltinTypes {
       private final @NotNull Supplier<Type> nonParametricInstance;
       private final Function<Object, Boolean> validator;
 
-      IntegerDescriptor() {
-        this(1, true);
+      public static @NotNull TypeDescriptor defaultInstance() {
+        return new IntegerDescriptor(1, true);
       }
 
       public IntegerDescriptor(int width, boolean signed) {
@@ -106,12 +104,34 @@ public sealed interface BuiltinTypes {
             new IntegerDescriptor(32, false),
             new IntegerDescriptor(64, false));
       }
+
+      @Override
+      public void initDefaultTypeInstances() {
+        if (IntegerT.integerTypeCache[0] != null) return; // already populated
+        if (TypeDetails.get("int1").isEmpty()) {
+          throw new IllegalStateException(
+              "IntegerT cache must be populated after type registration. Ensure that BuiltinDialect is registered before any types are accessed.");
+        }
+        IntegerT.integerTypeCache[0] = new IntegerT(1, true);
+        IntegerT.integerTypeCache[1] = new IntegerT(8, true);
+        IntegerT.integerTypeCache[2] = new IntegerT(16, true);
+        IntegerT.integerTypeCache[3] = new IntegerT(32, true);
+        IntegerT.integerTypeCache[4] = new IntegerT(64, true);
+        IntegerT.integerTypeCache[5] = new IntegerT(8, false);
+        IntegerT.integerTypeCache[6] = new IntegerT(16, false);
+        IntegerT.integerTypeCache[7] = new IntegerT(32, false);
+        IntegerT.integerTypeCache[8] = new IntegerT(64, false);
+      }
     }
 
     final class FloatDescriptor implements BuiltinTypeDescriptor {
       private final String ident;
       private final @NotNull Supplier<Type> nonParametricInstance;
       private final Function<Object, Boolean> validator;
+
+      public static @NotNull TypeDescriptor defaultInstance() {
+        return new FloatDescriptor(32);
+      }
 
       public FloatDescriptor(int width) {
         assert width == 32 || width == 64 : "Invalid float width: " + width;
@@ -158,83 +178,18 @@ public sealed interface BuiltinTypes {
       public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
         return List.of(new FloatDescriptor(32), new FloatDescriptor(64));
       }
-    }
-  }
 
-  // =========================================================================
-  // Utility Helpers
-  // =========================================================================
-
-  /**
-   * Returns whether a type is numeric.
-   *
-   * @param type the type to inspect.
-   * @return {@code true} for integer and floating-point types.
-   */
-  static boolean isNumeric(@NotNull Type type) {
-    return type instanceof IntegerT || type instanceof FloatT;
-  }
-
-  /**
-   * Returns the dominant numeric type for two numeric operands.
-   *
-   * @param lhsType the left-hand operand type.
-   * @param rhsType the right-hand operand type.
-   * @return the wider and/or more precise numeric type.
-   * @throws IllegalArgumentException if either type is not numeric.
-   */
-  static @NotNull Type getDominantType(@NotNull Type lhsType, @NotNull Type rhsType) {
-    if (!isNumeric(lhsType) || !isNumeric(rhsType)) {
-      throw new IllegalArgumentException(
-          "Dominant type requires numeric operands. Got " + lhsType + " and " + rhsType);
-    }
-
-    if (lhsType instanceof FloatT || rhsType instanceof FloatT) {
-      int lhsFloatWidth = lhsType instanceof FloatT floatT ? floatT.getWidth() : 0;
-      int rhsFloatWidth = rhsType instanceof FloatT floatT ? floatT.getWidth() : 0;
-      int lhsIntWidth = lhsType instanceof IntegerT intT ? intT.getWidth() : 0;
-      int rhsIntWidth = rhsType instanceof IntegerT intT ? intT.getWidth() : 0;
-      int desiredWidth =
-          Math.max(Math.max(lhsFloatWidth, rhsFloatWidth), Math.max(lhsIntWidth, rhsIntWidth));
-      return desiredWidth > 32 ? FloatT.FLOAT64() : FloatT.FLOAT32();
-    }
-
-    int lhsWidth = ((IntegerT) lhsType).getWidth();
-    boolean lhsIsSigned = ((IntegerT) lhsType).isSigned();
-    int rhsWidth = ((IntegerT) rhsType).getWidth();
-    boolean rhsIsSigned = ((IntegerT) rhsType).isSigned();
-    // By default, the result is signed if both operands are signed. However, if one operand is
-    // wider than the other, we take the signedness of the wider operand. This allows operations
-    // like int8 + uint32 to yield a uint32 result, which is more intuitive and prevents accidental
-    // overflow.
-    boolean shouldBeSigned = lhsIsSigned && rhsIsSigned;
-    if (lhsIsSigned != rhsIsSigned) {
-      if (lhsWidth > rhsWidth) {
-        shouldBeSigned = lhsIsSigned;
-      } else {
-        shouldBeSigned = rhsIsSigned;
+      @Override
+      public void initDefaultTypeInstances() {
+        if (FloatT.floatTypeCache[0] != null) return; // already populated
+        if (TypeDetails.get("int1").isEmpty()) {
+          throw new IllegalStateException(
+              "FloatT cache must be populated after type registration. Ensure that BuiltinDialect is registered before any types are accessed.");
+        }
+        FloatT.floatTypeCache[0] = new FloatT(32);
+        FloatT.floatTypeCache[1] = new FloatT(64);
       }
     }
-    return integerTypeByWidth(Math.max(lhsWidth, rhsWidth), shouldBeSigned);
-  }
-
-  /**
-   * Returns the canonical integer type for a given width and signedness.
-   *
-   * @param width the bit width.
-   * @param isSigned whether the integer is signed.
-   * @return the matching {@link IntegerT} singleton.
-   * @throws IllegalArgumentException if the width is unsupported.
-   */
-  static @NotNull IntegerT integerTypeByWidth(int width, boolean isSigned) {
-    return switch (width) {
-      case 1 -> IntegerT.INT1();
-      case 8 -> isSigned ? IntegerT.INT8() : IntegerT.UINT8();
-      case 16 -> isSigned ? IntegerT.INT16() : IntegerT.UINT16();
-      case 32 -> isSigned ? IntegerT.INT32() : IntegerT.UINT32();
-      case 64 -> isSigned ? IntegerT.INT64() : IntegerT.UINT64();
-      default -> throw new IllegalArgumentException("Invalid integer width: " + width);
-    };
   }
 
   /**
@@ -265,73 +220,64 @@ public sealed interface BuiltinTypes {
     // Static Fields
     // =========================================================================
 
-    private static final IntegerT[] integerTypeCache = new IntegerT[9];
+    static final @Nullable IntegerT[] integerTypeCache = new IntegerT[9];
 
-    public static void populateCache() {
-      if (integerTypeCache[0] != null) return; // already populated
-      if (TypeDetails.get("int1").isEmpty()) {
-        throw new IllegalStateException(
-            "IntegerT cache must be populated after type registration. Ensure that BuiltinDialect is registered before any types are accessed.");
-      }
-      integerTypeCache[0] = new IntegerT(1, true);
-      integerTypeCache[1] = new IntegerT(8, true);
-      integerTypeCache[2] = new IntegerT(16, true);
-      integerTypeCache[3] = new IntegerT(32, true);
-      integerTypeCache[4] = new IntegerT(64, true);
-      integerTypeCache[5] = new IntegerT(8, false);
-      integerTypeCache[6] = new IntegerT(16, false);
-      integerTypeCache[7] = new IntegerT(32, false);
-      integerTypeCache[8] = new IntegerT(64, false);
+    private static @NotNull IntegerT cacheGuard(int index) {
+      assert index >= 0 && index < integerTypeCache.length
+          : "Invalid integer type cache index: " + index;
+      return Objects.requireNonNull(
+          integerTypeCache[index],
+          "IntegerT cache must be populated after type registration. Ensure that BuiltinDialect is registered before any types are accessed.");
     }
 
     /** 1-bit integer used as a boolean ({@code false} = 0, {@code true} = 1). */
-    public static IntegerT INT1() {
-      return integerTypeCache[0];
+    public static @NotNull IntegerT INT1() {
+      return cacheGuard(0);
     }
 
     /** Alias for {@link #INT1}. */
-    public static IntegerT BOOL() {
+    public static @NotNull IntegerT BOOL() {
       return INT1();
     }
 
     /** 8-bit signed integer. */
-    public static IntegerT INT8() {
-      return integerTypeCache[1];
+    public static @NotNull IntegerT INT8() {
+      return cacheGuard(1);
     }
 
     /** 16-bit signed integer. */
-    public static IntegerT INT16() {
-      return integerTypeCache[2];
+    public static @NotNull IntegerT INT16() {
+      return cacheGuard(2);
     }
 
     /** 32-bit signed integer. */
-    public static IntegerT INT32() {
-      return integerTypeCache[3];
+    public static @NotNull IntegerT INT32() {
+      return cacheGuard(3);
     }
 
     /** 64-bit signed integer. */
-    public static IntegerT INT64() {
-      return integerTypeCache[4];
+    public static @NotNull IntegerT INT64() {
+      return cacheGuard(4);
     }
 
     /** 8-bit unsigned integer. */
-    public static IntegerT UINT8() {
-      return integerTypeCache[5];
+    public static @NotNull IntegerT UINT8() {
+      return cacheGuard(5);
     }
 
     /** 16-bit unsigned integer. */
-    public static IntegerT UINT16() {
-      return integerTypeCache[6];
+    public static @NotNull IntegerT UINT16() {
+      return cacheGuard(6);
     }
 
     /** 32-bit unsigned integer. */
-    public static IntegerT UINT32() {
-      return integerTypeCache[7];
+    public static @NotNull IntegerT UINT32() {
+      return cacheGuard(7);
     }
 
     /** 64-bit unsigned integer. */
-    public static IntegerT UINT64() {
-      return integerTypeCache[8];
+    public static @NotNull IntegerT UINT64() {
+      return cacheGuard(8);
     }
 
     public static final byte FALSE = 0;
@@ -347,21 +293,6 @@ public sealed interface BuiltinTypes {
 
     public static String identFromWidthAndSign(int width, boolean isSigned) {
       return (isSigned ? "" : "u") + "int" + width;
-    }
-
-    /**
-     * Equality is based on the parameterized ident, ignoring the "u" prefix for unsigned types.
-     * This allows signed and unsigned types of the same width to be considered equal for type
-     * checking purposes, since the signedness is mostly a semantic detail that is important for the
-     * arithmetic operations.
-     */
-    public boolean equal(@Nullable Object obj) {
-      if (obj instanceof Type other) {
-        String normalizedOther = other.getParameterizedIdent().replace("u", "");
-        String normalizedThis = getParameterizedIdent().replace("u", "");
-        return normalizedThis.equals(normalizedOther);
-      }
-      return false;
     }
 
     // =========================================================================
@@ -485,26 +416,24 @@ public sealed interface BuiltinTypes {
     // =========================================================================
     // Static Fields
     // =========================================================================
-    private static final FloatT[] floatTypeCache = new FloatT[2];
+    static final FloatT[] floatTypeCache = new FloatT[2];
 
-    public static void populateCache() {
-      if (floatTypeCache[0] != null) return; // already populated
-      if (TypeDetails.get("int1").isEmpty()) {
-        throw new IllegalStateException(
-            "FloatT cache must be populated after type registration. Ensure that BuiltinDialect is registered before any types are accessed.");
-      }
-      floatTypeCache[0] = new FloatT(32);
-      floatTypeCache[1] = new FloatT(64);
+    private static @NotNull FloatT cacheGuard(int index) {
+      assert index >= 0 && index < floatTypeCache.length
+          : "Invalid float type cache index: " + index;
+      return Objects.requireNonNull(
+          floatTypeCache[index],
+          "FloatT cache must be populated after type registration. Ensure that BuiltinDialect is registered before any types are accessed.");
     }
 
     /** 32-bit single-precision floating-point type. */
-    public static FloatT FLOAT32() {
-      return floatTypeCache[0];
+    public static @NotNull FloatT FLOAT32() {
+      return cacheGuard(0);
     }
 
     /** 64-bit double-precision floating-point type. */
-    public static FloatT FLOAT64() {
-      return floatTypeCache[1];
+    public static @NotNull FloatT FLOAT64() {
+      return cacheGuard(1);
     }
 
     public static String identFromWidth(float width) {
@@ -564,5 +493,81 @@ public sealed interface BuiltinTypes {
         default -> throw new RuntimeException("Invalid float width: " + width);
       };
     }
+  }
+
+  // =========================================================================
+  // Utility Helpers
+  // =========================================================================
+
+  /**
+   * Returns whether a type is numeric.
+   *
+   * @param type the type to inspect.
+   * @return {@code true} for integer and floating-point types.
+   */
+  static boolean isNumeric(@NotNull Type type) {
+    return type instanceof IntegerT || type instanceof FloatT;
+  }
+
+  /**
+   * Returns the dominant numeric type for two numeric operands.
+   *
+   * @param lhsType the left-hand operand type.
+   * @param rhsType the right-hand operand type.
+   * @return the wider and/or more precise numeric type.
+   * @throws IllegalArgumentException if either type is not numeric.
+   */
+  static @NotNull Type getDominantType(@NotNull Type lhsType, @NotNull Type rhsType) {
+    if (!isNumeric(lhsType) || !isNumeric(rhsType)) {
+      throw new IllegalArgumentException(
+          "Dominant type requires numeric operands. Got " + lhsType + " and " + rhsType);
+    }
+
+    if (lhsType instanceof FloatT || rhsType instanceof FloatT) {
+      int lhsFloatWidth = lhsType instanceof FloatT floatT ? floatT.getWidth() : 0;
+      int rhsFloatWidth = rhsType instanceof FloatT floatT ? floatT.getWidth() : 0;
+      int lhsIntWidth = lhsType instanceof IntegerT intT ? intT.getWidth() : 0;
+      int rhsIntWidth = rhsType instanceof IntegerT intT ? intT.getWidth() : 0;
+      int desiredWidth =
+          Math.max(Math.max(lhsFloatWidth, rhsFloatWidth), Math.max(lhsIntWidth, rhsIntWidth));
+      return desiredWidth > 32 ? FloatT.FLOAT64() : FloatT.FLOAT32();
+    }
+
+    int lhsWidth = ((IntegerT) lhsType).getWidth();
+    boolean lhsIsSigned = ((IntegerT) lhsType).isSigned();
+    int rhsWidth = ((IntegerT) rhsType).getWidth();
+    boolean rhsIsSigned = ((IntegerT) rhsType).isSigned();
+    // By default, the result is signed if both operands are signed. However, if one operand is
+    // wider than the other, we take the signedness of the wider operand. This allows operations
+    // like int8 + uint32 to yield a uint32 result, which is more intuitive and prevents accidental
+    // overflow.
+    boolean shouldBeSigned = lhsIsSigned && rhsIsSigned;
+    if (lhsIsSigned != rhsIsSigned) {
+      if (lhsWidth > rhsWidth) {
+        shouldBeSigned = lhsIsSigned;
+      } else {
+        shouldBeSigned = rhsIsSigned;
+      }
+    }
+    return integerTypeByWidth(Math.max(lhsWidth, rhsWidth), shouldBeSigned);
+  }
+
+  /**
+   * Returns the canonical integer type for a given width and signedness.
+   *
+   * @param width the bit width.
+   * @param isSigned whether the integer is signed.
+   * @return the matching {@link IntegerT} singleton.
+   * @throws IllegalArgumentException if the width is unsupported.
+   */
+  static @NotNull IntegerT integerTypeByWidth(int width, boolean isSigned) {
+    return switch (width) {
+      case 1 -> IntegerT.INT1();
+      case 8 -> isSigned ? IntegerT.INT8() : IntegerT.UINT8();
+      case 16 -> isSigned ? IntegerT.INT16() : IntegerT.UINT16();
+      case 32 -> isSigned ? IntegerT.INT32() : IntegerT.UINT32();
+      case 64 -> isSigned ? IntegerT.INT64() : IntegerT.UINT64();
+      default -> throw new IllegalArgumentException("Invalid integer width: " + width);
+    };
   }
 }

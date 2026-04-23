@@ -3,6 +3,7 @@ package dgir.dialect.func;
 import dgir.core.Dialect;
 import dgir.core.DgirCoreUtils;
 import dgir.core.ir.Type;
+import dgir.core.ir.TypeDescriptor;
 import dgir.core.ir.TypeDetails;
 import dgir.core.ir.TypeUniquer;
 import org.apache.commons.lang3.tuple.Pair;
@@ -14,41 +15,89 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Sealed marker interface for all types contributed by the {@link FuncDialect}.
- *
- * <p>Every concrete type must extend {@link FuncBaseType} and implement this interface so that
- * {@link Dialect#allTypes(Class)} can discover it automatically via reflection.
  */
 public sealed interface FuncTypes {
-  /**
-   * Abstract base class for all types contributed by the {@link FuncDialect}.
-   *
-   * <p>Subclasses must implement {@link #getIdent()}, {@link #getValidator()}, and, for
-   * parameterized types, {@link #getParameterizedIdent()} and {@link
-   * #getParameterizedStringFactory()}.
-   */
-  abstract class FuncBaseType extends Type {
-
-    /**
-     * Returns the namespace prefix used when printing this type.
-     *
-     * @return the fixed {@code "func"} namespace.
-     */
+  /** Abstract base class for all type-descriptors contributed by the {@link FuncDialect}. */
+  sealed interface FuncTypeDescriptor extends TypeDescriptor {
     @Override
-    public @NotNull String getNamespace() {
+    default @NotNull String getNamespace() {
       return "func";
     }
 
-    /**
-     * Returns the dialect that owns this type.
-     *
-     * @return the {@link FuncDialect} class.
-     */
     @Override
-    public @NotNull Class<? extends Dialect> getDialect() {
+    default @NotNull Class<? extends Dialect> getDialect() {
       return FuncDialect.class;
+    }
+
+    final class FunctionDescriptor implements FuncTypeDescriptor {
+      public static TypeDescriptor defaultInstance() {
+        return new FunctionDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Type> getTypeClass() {
+        return FuncType.class;
+      }
+
+      @Override
+      public @NotNull Supplier<Type> getNonParametricInstance() {
+        return FuncType::empty;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "func.func";
+      }
+
+      @Override
+      public @NotNull Function<Object, Boolean> getValidator() {
+        // Function types validate their internal signature shape, not storage values.
+        return value -> true;
+      }
+
+      @Override
+      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of();
+      }
+
+      @Override
+      public void initDefaultTypeInstances() {}
+
+      @Override
+      public Function<Pair<String, TypeDetails>, Type> getParameterizedStringFactory() {
+        return args -> {
+          if (!args.getLeft().contains("<")) {
+            return FuncType.empty();
+          }
+          // Extract the single parameter (the full "(inputs) -> (output)" string), then
+          // split on
+          // "->" at depth 0 so nested func types containing "->" are never split
+          // prematurely.
+          String param = DgirCoreUtils.getParameterStrings(args.getLeft()).getFirst();
+          List<String> arrowParts = DgirCoreUtils.splitAtDepthZero(param, "->");
+          String inputsPart = arrowParts.get(0).trim();
+          String outputPart = arrowParts.get(1).trim();
+          List<Type> inputs;
+          {
+            inputsPart = inputsPart.substring(1, inputsPart.length() - 1).trim();
+            inputs = TypeDetails.fromParameterString(inputsPart);
+          }
+          Type output;
+          {
+            outputPart = outputPart.substring(1, outputPart.length() - 1).trim();
+            if (outputPart.isEmpty()) {
+              output = null;
+            } else {
+              output = TypeDetails.fromParameterizedIdent(outputPart);
+            }
+          }
+          return FuncType.of(inputs, output);
+        };
+      }
     }
   }
 
@@ -64,7 +113,7 @@ public sealed interface FuncTypes {
    * <p>The {@link #getParameterizedIdent()} method renders the full signature; simple (void/no-arg)
    * function types can be compared by this string.
    */
-  final class FuncType extends FuncBaseType implements FuncTypes {
+  final class FuncType extends Type implements FuncTypes {
 
     // =========================================================================
     // Type Info
@@ -72,62 +121,13 @@ public sealed interface FuncTypes {
 
     @Contract(pure = true)
     @Override
-    public @NotNull String getIdent() {
-      return "func.func";
-    }
-
-    @Contract(pure = true)
-    @Override
     public @NotNull String getParameterizedIdent() {
-      return getIdent()
+      return "func.func"
           + "<("
           + String.join(", ", getInputs().stream().map(Type::getParameterizedIdent).toList())
           + ") -> ("
           + (getOutput() == null ? "" : getOutput().getParameterizedIdent())
           + ")>";
-    }
-
-    @Override
-    public Function<Pair<String, TypeDetails>, Type> getParameterizedStringFactory() {
-      return args -> {
-        // Extract the single parameter (the full "(inputs) -> (output)" string), then split on "->"
-        // at depth 0 so nested func types containing "->" are never split prematurely.
-        String param = DgirCoreUtils.getParameterStrings(args.getLeft()).getFirst();
-        List<String> arrowParts = DgirCoreUtils.splitAtDepthZero(param, "->");
-        String inputsPart = arrowParts.get(0).trim();
-        String outputPart = arrowParts.get(1).trim();
-        List<Type> inputs;
-        {
-          inputsPart = inputsPart.substring(1, inputsPart.length() - 1).trim();
-          inputs = TypeDetails.fromParameterString(inputsPart);
-        }
-        Type output;
-        {
-          outputPart = outputPart.substring(1, outputPart.length() - 1).trim();
-          if (outputPart.isEmpty()) {
-            output = null;
-          } else {
-            output = TypeDetails.fromParameterizedIdent(outputPart);
-          }
-        }
-        return FuncType.of(inputs, output);
-      };
-    }
-
-    @Override
-    public @NotNull @Unmodifiable List<Type> getDescriptors() {
-      return List.of();
-    }
-
-    // =========================================================================
-    // Validation
-    // =========================================================================
-
-    @Override
-    public Function<Object, Boolean> getValidator() {
-      // I currently do not know what about a value passed to type should do wrong since its just
-      // other types.
-      return value -> true;
     }
 
     // =========================================================================

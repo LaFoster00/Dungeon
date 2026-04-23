@@ -454,7 +454,7 @@ public final class Operation implements Serializable {
 
   @Contract(pure = true)
   public @NotNull @Unmodifiable List<Attribute> getAttributes() {
-    return attributes.values().stream().map(NamedAttribute::getAttribute).toList();
+    return attributes.values().stream().map(NamedAttribute::getAttributeOrThrow).toList();
   }
 
   /**
@@ -466,7 +466,7 @@ public final class Operation implements Serializable {
   @Contract(pure = true)
   public @NotNull Optional<Attribute> getAttribute(@NotNull String name) {
     if (!getAttributeMap().containsKey(name)) return Optional.empty();
-    return Optional.of(getAttributeMap().get(name).getAttribute());
+    return Optional.of(getAttributeMap().get(name).getAttributeOrThrow());
   }
 
   /**
@@ -503,7 +503,7 @@ public final class Operation implements Serializable {
     if (attribute == null)
       throw new NoSuchElementException(
           "Attribute '" + name + "' of type " + clazz.getSimpleName() + " not found on: " + this);
-    return clazz.cast(attribute.getAttribute());
+    return clazz.cast(attribute.getAttributeOrThrow());
   }
 
   /**
@@ -825,7 +825,7 @@ public final class Operation implements Serializable {
               .map(
                   attr ->
                       MessageFormat.format(
-                          "{0} = {1}", attr.getName(), attr.getAttribute().getStorage()))
+                          "{0} = {1}", attr.getName(), attr.getAttributeOrThrow().getStorage()))
               .collect(Collectors.joining(", "));
       if (!attrs.isEmpty()) {
         sb.append(" [ ");

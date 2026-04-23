@@ -155,8 +155,8 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
     Value lhs = lhsResult.get();
     Value rhs = rhsResult.get();
 
-    if (lhs.getType().equals(StrTypes.StringT.INSTANCE)
-        || rhs.getType().equals(StrTypes.StringT.INSTANCE)) {
+    if (lhs.getType().equals(StrTypes.StringT.INSTANCE())
+        || rhs.getType().equals(StrTypes.StringT.INSTANCE())) {
       if (n.getOperator() != BinaryExpr.Operator.PLUS) {
         context.emitError(n, "Only string concatenation is supported for strings.");
         return EmitResult.failure();
@@ -236,7 +236,7 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
             .insert(
                 new ArithOps.ConstantOp(
                     context.loc(n),
-                    new BuiltinAttrs.IntegerAttribute(n.asChar(), BuiltinTypes.IntegerT.UINT16)))
+                    new BuiltinAttrs.IntegerAttribute(n.asChar(), BuiltinTypes.IntegerT.UINT16())))
             .getResult());
   }
 
@@ -326,7 +326,7 @@ public class RValueVisitor extends GenericVisitorAdapter<EmitResult<Value>, Emit
                       context.loc(n),
                       new BuiltinAttrs.IntegerAttribute(
                           enumValues.indexOf(enumConstant.getName()),
-                          BuiltinTypes.IntegerT.UINT32)))
+                          BuiltinTypes.IntegerT.UINT32())))
               .getResult());
     }
     // Check if we are accessing the length of an array

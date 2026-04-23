@@ -43,8 +43,9 @@ public class ArithVmTests extends VmTestBase {
     ProgramOp program = new ProgramOp(LOC);
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
-    var lhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(-1, IntegerT.UINT32)), 0);
-    var rhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(2, IntegerT.UINT32)), 0);
+    var lhs =
+        main.addOperation(new ConstantOp(LOC, new IntegerAttribute(-1, IntegerT.UINT32())), 0);
+    var rhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(2, IntegerT.UINT32())), 0);
     var div =
         main.addOperation(
             new BinaryOp(LOC, lhs.getResult(), rhs.getResult(), BinModeAttr.BinMode.DIVUI), 0);
@@ -66,7 +67,7 @@ public class ArithVmTests extends VmTestBase {
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
     var lhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(-1, IntegerT.INT32())), 0);
-    var rhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(1, IntegerT.UINT32)), 0);
+    var rhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(1, IntegerT.UINT32())), 0);
     var lt =
         main.addOperation(
             new BinaryOp(LOC, lhs.getResult(), rhs.getResult(), BinModeAttr.BinMode.LT), 0);
@@ -82,7 +83,8 @@ public class ArithVmTests extends VmTestBase {
     ProgramOp program = new ProgramOp(LOC);
     FuncOp main = program.addOperation(new FuncOp(LOC, "main"));
 
-    var lhs = main.addOperation(new ConstantOp(LOC, new IntegerAttribute(255, IntegerT.UINT8)), 0);
+    var lhs =
+        main.addOperation(new ConstantOp(LOC, new IntegerAttribute(255, IntegerT.UINT8())), 0);
     var rhs = main.addOperation(new ConstantOp(LOC, 1), 0);
     var shifted =
         main.addOperation(

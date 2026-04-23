@@ -59,7 +59,10 @@ public class IrToText {
     if (!operation.getNamedAttributes().isEmpty()) {
       String attrs =
           operation.getNamedAttributes().stream()
-              .map(attr -> "%s = {%s}".formatted(attr.getName(), attr.getAttribute().getStorage()))
+              .map(
+                  attr ->
+                      "%s = {%s}"
+                          .formatted(attr.getName(), attr.getAttributeOrThrow().getStorage()))
               .collect(Collectors.joining(" , "));
       if (!attrs.isEmpty()) {
         sb.append(" [ ");

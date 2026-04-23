@@ -178,7 +178,7 @@ public class OperationVerifier {
 
     // All attributes must be set and type-valid
     for (NamedAttribute attr : operation.getAttributeMap().values()) {
-      if (attr.getAttribute() instanceof TypedAttribute typedAttribute
+      if (attr.getAttributeOrThrow() instanceof TypedAttribute typedAttribute
           && !typedAttribute.getType().validate(typedAttribute.getStorage())) {
         operation.emitError(
             "Operation attribute '"

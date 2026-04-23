@@ -66,7 +66,8 @@ public sealed interface StrOps {
           return false;
         }
         if (!(toStringOp.getOperand().getType() instanceof StrTypes.StrType)
-            && !(toStringOp.getOperand().getType() instanceof BuiltinTypes.BuiltinType)) {
+            && !(toStringOp.getOperand().getType() instanceof BuiltinTypes.IntegerT)
+            && !(toStringOp.getOperand().getType() instanceof BuiltinTypes.FloatT)) {
           operation.emitError(
               "Operand must be a string or builtin type. Got "
                   + toStringOp.getOperand().getType()
@@ -117,7 +118,8 @@ public sealed interface StrOps {
           return false;
         }
         if (!(concatOp.getLhs().getType() instanceof StrTypes.StrType)
-            && !(concatOp.getLhs().getType() instanceof BuiltinTypes.BuiltinType)) {
+            && !(concatOp.getLhs().getType() instanceof BuiltinTypes.IntegerT)
+            && !(concatOp.getLhs().getType() instanceof BuiltinTypes.FloatT)) {
           operation.emitError(
               "LHS operand must be a string or builtin type. Got "
                   + concatOp.getLhs().getType()
@@ -125,7 +127,8 @@ public sealed interface StrOps {
           return false;
         }
         if (!(concatOp.getRhs().getType() instanceof StrTypes.StrType)
-            && !(concatOp.getRhs().getType() instanceof BuiltinTypes.BuiltinType)) {
+            && !(concatOp.getRhs().getType() instanceof BuiltinTypes.IntegerT)
+            && !(concatOp.getRhs().getType() instanceof BuiltinTypes.FloatT)) {
           operation.emitError(
               "RHS operand must be a string or builtin type. Got "
                   + concatOp.getRhs().getType()
@@ -238,7 +241,7 @@ public sealed interface StrOps {
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return operation -> {
         CharAtOp charAtOp = operation.as(CharAtOp.class).orElseThrow();
-        if (!charAtOp.getResultType().equals(BuiltinTypes.IntegerT.UINT16)) {
+        if (!charAtOp.getResultType().equals(BuiltinTypes.IntegerT.UINT16())) {
           operation.emitError("Result type must be uint16");
           return false;
         }
@@ -272,7 +275,7 @@ public sealed interface StrOps {
       setOperation(
           true,
           Operation.Create(
-              location, this, List.of(string, index), null, BuiltinTypes.IntegerT.UINT16));
+              location, this, List.of(string, index), null, BuiltinTypes.IntegerT.UINT16()));
     }
   }
 

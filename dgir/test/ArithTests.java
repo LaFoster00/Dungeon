@@ -141,7 +141,7 @@ public class ArithTests {
     FuncOp funcMain = entry.getRight();
 
     var int32Op = funcMain.addOperation(new ConstantOp(LOC, 1), 0);
-    funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), StrTypes.StringT.INSTANCE), 0);
+    funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), StrTypes.StringT.INSTANCE()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
     assertFalse(TestUtils.testValidityAndSerialization(programOp));

@@ -124,6 +124,17 @@ public abstract class Type {
   // Constructors
   // =========================================================================
 
+  protected Type() {
+    details =
+        TypeDetails.get(getClass())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Type class "
+                            + getClass().getName()
+                            + " is not registered in DGIRContext"));
+  }
+
   protected Type(String ident) {
     details =
         TypeDetails.get(ident)

@@ -210,7 +210,6 @@ public class MemTests {
   @Test
   public void getElementRejectsNonArrayFirstOperand() {
     Pair<ProgramOp, FuncOp> entry = newMain();
-    ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
     var value = funcMain.addOperation(new ConstantOp(LOC, 10), 0);

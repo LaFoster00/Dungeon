@@ -19,8 +19,6 @@ import java.util.stream.Collectors;
  *     "arith.constant"}).
  * @param type The Java class that represents this operation kind.
  * @param dialect The dialect that contributes this operation kind.
- * @param attributeNames Names of the attributes defined by this operation kind, in the order they
- *     are declared by the op class.
  * @param verifier Returns the verifier function for this operation kind. The verifier is invoked
  *     during the verification phase to check that an operation instance is well-formed.
  * @param traits The set of {@link IOpTrait} interfaces implemented by this operation kind.
@@ -33,7 +31,6 @@ public record OperationDetails(
     @NotNull String ident,
     @NotNull Class<? extends Op> type,
     @NotNull Dialect dialect,
-    @NotNull List<String> attributeNames,
     @NotNull Function<Operation, Boolean> verifier,
     @NotNull Set<Class<? extends IOpTrait>> traits,
     @NotNull Map<Class<? extends IOpTrait>, Method> traitVerifiers,
@@ -55,8 +52,6 @@ public record OperationDetails(
     final var ident = op.getIdent();
     final var type = op.getClass();
     final var dialect = Dialect.getOrThrow(op.getDialect());
-    final var attributeNames =
-        op.getDefaultAttributes().stream().map(NamedAttribute::getName).toList();
     final var verifier = op.getVerifier();
     final Set<Class<? extends IOpTrait>> traits =
         Set.copyOf(
@@ -91,7 +86,7 @@ public record OperationDetails(
     emptyConstructor.setAccessible(true);
 
     return new OperationDetails(
-        ident, type, dialect, attributeNames, verifier, traits, traitVerifiers, emptyConstructor);
+        ident, type, dialect, verifier, traits, traitVerifiers, emptyConstructor);
   }
 
   // =========================================================================

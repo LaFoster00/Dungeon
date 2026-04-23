@@ -55,7 +55,7 @@ public class BuiltinTests {
 
     var fooFuncOp =
         programOp.addOperation(
-            new FuncOp(LOC, "foo", FuncType.of(List.of(StringT.INSTANCE), StringT.INSTANCE)));
+            new FuncOp(LOC, "foo", FuncType.of(List.of(StringT.INSTANCE()), StringT.INSTANCE())));
     {
       fooFuncOp.addOperation(new ReturnOp(LOC, fooFuncOp.getArgument(0).orElseThrow()), 0);
     }
