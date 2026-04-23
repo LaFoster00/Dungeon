@@ -39,7 +39,7 @@ public class AttributeTypeIdResolver extends TypeIdResolverBase {
 
   @Override
   public JavaType typeFromId(DatabindContext context, String id) throws JacksonException {
-    var optionalCls = AttributeDetails.Registered.lookup(id);
+    var optionalCls = AttributeDetails.get(id);
     if (optionalCls.isEmpty()) {
       throw new JacksonException("Unknown attribute type id: " + id) {};
     }

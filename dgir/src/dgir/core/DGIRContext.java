@@ -11,9 +11,8 @@ import java.util.Optional;
 /**
  * Global registry for all dialects, operations, types, and attributes known to the DGIR.
  *
- * <p>Each category has two parallel maps: an <em>unregistered</em> cache (populated on first
- * reference, even before a dialect is initialised) and a <em>registered</em> map (populated by the
- * dialect's {@code init()} call). Look-ups always prefer the registered entry.
+ * <p>Each category is populated during dialect registration. Accessing unregistered operations,
+ * types, or attributes is treated as an error.
  */
 public class DGIRContext {
 
@@ -33,20 +32,12 @@ public class DGIRContext {
   // Attributes
   // =========================================================================
 
-  /** Unregistered cache: class → details (ident and class are unreliable until registered). */
+  /** Registered attributes by class. */
   public static final @NotNull Map<Class<? extends Attribute>, AttributeDetails> attributes =
       new HashMap<>();
 
-  /** Unregistered cache: ident → details. */
-  public static final @NotNull Map<String, AttributeDetails> attributesByIdent = new HashMap<>();
-
-  /** Registered attributes by class. */
-  public static final @NotNull Map<Class<? extends Attribute>, AttributeDetails.Registered>
-      registeredAttributes = new HashMap<>();
-
   /** Registered attributes by ident. */
-  public static final @NotNull Map<String, AttributeDetails.Registered>
-      registeredAttributesByIdent = new HashMap<>();
+  public static final @NotNull Map<String, AttributeDetails> attributesByIdent = new HashMap<>();
 
   // =========================================================================
   // Types

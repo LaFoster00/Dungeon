@@ -1,7 +1,7 @@
 package dgir.dialect.func;
 
 import dgir.core.Dialect;
-import dgir.core.ir.Attribute;
+import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.TypeDescriptor;
 import org.jetbrains.annotations.Contract;
@@ -66,7 +66,7 @@ public class FuncDialect extends Dialect {
 
   @Contract(pure = true)
   @Override
-  public @Unmodifiable @NotNull List<Attribute> allAttributes() {
+  public @Unmodifiable @NotNull List<AttributeDescriptor> allAttributes() {
     return List.of();
   }
 }

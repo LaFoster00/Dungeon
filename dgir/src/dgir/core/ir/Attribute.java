@@ -34,7 +34,9 @@ public abstract class Attribute implements Serializable {
    * @return the ident string, never {@code null}.
    */
   @Contract(pure = true)
-  public abstract @NotNull String getIdent();
+  public final @NotNull String getIdent() {
+    return details.ident();
+  }
 
   /**
    * Returns the namespace prefix for this attribute kind (e.g. {@code ""} for builtin attributes).
@@ -43,7 +45,9 @@ public abstract class Attribute implements Serializable {
    */
   @Contract(pure = true)
   @JsonIgnore
-  public abstract @NotNull String getNamespace();
+  public final @NotNull String getNamespace() {
+    return details.namespace();
+  }
 
   /**
    * Returns the class of the dialect that contributes this attribute kind.
@@ -52,14 +56,30 @@ public abstract class Attribute implements Serializable {
    */
   @Contract(pure = true)
   @JsonIgnore
-  public abstract @NotNull Class<? extends Dialect> getDialect();
+  public final @NotNull Dialect getDialect() {
+    return details.dialect();
+  }
 
   // =========================================================================
   // Constructors
   // =========================================================================
 
-  public Attribute() {
-    this.details = AttributeDetails.get(getClass());
+  protected Attribute() {
+    this.details =
+        AttributeDetails.get(getClass())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Attribute class " + getClass() + " is not registered in DGIRContext"));
+  }
+
+  private Attribute(@NotNull String ident) {
+    this.details =
+        AttributeDetails.get(ident)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Attribute class " + ident + " is not registered in DGIRContext"));
   }
 
   // =========================================================================

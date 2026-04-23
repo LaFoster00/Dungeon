@@ -1,25 +1,45 @@
 package dgir.dialect.str;
 
 import dgir.core.Dialect;
+import dgir.core.ir.Attribute;
+import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypedAttribute;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 public sealed interface StrAttrs {
-  abstract class StrAttribute extends TypedAttribute {
-    protected StrAttribute(@NotNull Type type) {
-      super(type);
-    }
-
+  sealed interface StrAttrDescriptor extends AttributeDescriptor {
     @Override
-    public @NotNull String getNamespace() {
+    default @NotNull String getNamespace() {
       return "str";
     }
 
     @Override
-    public @NotNull Class<? extends Dialect> getDialect() {
+    default @NotNull Class<? extends Dialect> getDialect() {
       return StrDialect.class;
+    }
+
+    final class StringAttributeDescriptor implements StrAttrDescriptor {
+      public static AttributeDescriptor defaultInstance() {
+        return new StringAttributeDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Attribute> getAttributeClass() {
+        return StringAttribute.class;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "stringAttr";
+      }
+    }
+  }
+
+  abstract class StrAttribute extends TypedAttribute {
+    protected StrAttribute(@NotNull Type type) {
+      super(type);
     }
   }
 
@@ -29,16 +49,6 @@ public sealed interface StrAttrs {
    * <p>Ident: {@code stringAttr}. The stored value is a plain Java {@code String}.
    */
   final class StringAttribute extends StrAttribute implements StrAttrs {
-    // =========================================================================
-    // Type Info
-    // =========================================================================
-
-    @Override
-    @Contract(pure = true)
-    public @NotNull String getIdent() {
-      return "stringAttr";
-    }
-
     // =========================================================================
     // Members
     // =========================================================================
@@ -52,7 +62,7 @@ public sealed interface StrAttrs {
 
     /** Create a default string attribute with a {@code null} value. */
     public StringAttribute() {
-      super(StrTypes.StringT.INSTANCE);
+      super(StrTypes.StringT.INSTANCE());
       value = "";
     }
 
@@ -62,7 +72,7 @@ public sealed interface StrAttrs {
      * @param value the string value to store.
      */
     public StringAttribute(@NotNull String value) {
-      super(StrTypes.StringT.INSTANCE);
+      super(StrTypes.StringT.INSTANCE());
       this.value = value;
     }
 

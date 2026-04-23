@@ -1,7 +1,7 @@
 package dgir.dialect.builtin;
 
 import dgir.core.Dialect;
-import dgir.core.ir.Attribute;
+import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypeDescriptor;
@@ -77,7 +77,7 @@ public class BuiltinDialect extends Dialect {
 
   @Contract(pure = true)
   @Override
-  public @Unmodifiable @NotNull List<Attribute> allAttributes() {
-    return allAttributes(BuiltinAttrs.class);
+  public @Unmodifiable @NotNull List<AttributeDescriptor> allAttributes() {
+    return allAttributes(BuiltinAttrs.BuiltinAttrDescriptor.class);
   }
 }

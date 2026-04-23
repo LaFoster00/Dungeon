@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import dgir.core.Dialect;
 import dgir.core.ir.Attribute;
+import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypedAttribute;
 import dgir.core.serialization.IntegerAttributeDeserializer;
@@ -15,22 +16,89 @@ import tools.jackson.databind.annotation.JsonSerialize;
 
 import java.util.Optional;
 
-import static dgir.dialect.builtin.BuiltinTypes.*;
+import static dgir.dialect.builtin.BuiltinTypes.FloatT;
+import static dgir.dialect.builtin.BuiltinTypes.IntegerT;
 import static dgir.dialect.func.FuncOps.CallOp;
 import static dgir.dialect.func.FuncOps.FuncOp;
 
 public sealed interface BuiltinAttrs {
-  abstract class BuiltinBaseAttr extends Attribute {
+  sealed interface BuiltinAttrDescriptor extends AttributeDescriptor {
     @Override
-    public @NotNull String getNamespace() {
+    default @NotNull String getNamespace() {
       return "";
     }
 
     @Override
-    public @NotNull Class<? extends Dialect> getDialect() {
+    default @NotNull Class<? extends Dialect> getDialect() {
       return BuiltinDialect.class;
     }
+
+    final class IntegerAttributeDescriptor implements BuiltinAttrDescriptor {
+      public static AttributeDescriptor defaultInstance() {
+        return new IntegerAttributeDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Attribute> getAttributeClass() {
+        return IntegerAttribute.class;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "integerAttr";
+      }
+    }
+
+    final class FloatAttributeDescriptor implements BuiltinAttrDescriptor {
+      public static AttributeDescriptor defaultInstance() {
+        return new FloatAttributeDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Attribute> getAttributeClass() {
+        return FloatAttribute.class;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "floatAttr";
+      }
+    }
+
+    final class SymbolRefAttributeDescriptor implements BuiltinAttrDescriptor {
+      public static AttributeDescriptor defaultInstance() {
+        return new SymbolRefAttributeDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Attribute> getAttributeClass() {
+        return SymbolRefAttribute.class;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "symbolRefAttr";
+      }
+    }
+
+    final class TypeAttributeDescriptor implements BuiltinAttrDescriptor {
+      public static AttributeDescriptor defaultInstance() {
+        return new TypeAttributeDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Attribute> getAttributeClass() {
+        return TypeAttribute.class;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "typeAttr";
+      }
+    }
   }
+
+  abstract class BuiltinBaseAttr extends Attribute {}
 
   abstract class BuiltinBaseTypedAttr extends TypedAttribute {
     /**
@@ -40,16 +108,6 @@ public sealed interface BuiltinAttrs {
      */
     protected BuiltinBaseTypedAttr(@NotNull Type type) {
       super(type);
-    }
-
-    @Override
-    public @NotNull String getNamespace() {
-      return "";
-    }
-
-    @Override
-    public @NotNull Class<? extends Dialect> getDialect() {
-      return BuiltinDialect.class;
     }
   }
 
@@ -62,16 +120,6 @@ public sealed interface BuiltinAttrs {
   @JsonSerialize(using = IntegerAttributeSerializer.class)
   @JsonDeserialize(using = IntegerAttributeDeserializer.class)
   final class IntegerAttribute extends BuiltinBaseTypedAttr implements BuiltinAttrs {
-    // =========================================================================
-    // Type Info
-    // =========================================================================
-
-    @Override
-    @Contract(pure = true)
-    public @NotNull String getIdent() {
-      return "integerAttr";
-    }
-
     // =========================================================================
     // Members
     // =========================================================================
@@ -150,12 +198,6 @@ public sealed interface BuiltinAttrs {
   }
 
   final class FloatAttribute extends BuiltinBaseTypedAttr implements BuiltinAttrs {
-    @Override
-    @Contract(pure = true)
-    public @NotNull String getIdent() {
-      return "floatAttr";
-    }
-
     private @NotNull Number value;
 
     public FloatAttribute() {
@@ -198,16 +240,6 @@ public sealed interface BuiltinAttrs {
    * of a callee function without hard-linking the IR nodes together.
    */
   final class SymbolRefAttribute extends BuiltinBaseAttr implements BuiltinAttrs {
-    // =========================================================================
-    // Type Info
-    // =========================================================================
-
-    @Override
-    @Contract(pure = true)
-    public @NotNull String getIdent() {
-      return "symbolRefAttr";
-    }
-
     // =========================================================================
     // Members
     // =========================================================================
@@ -270,28 +302,6 @@ public sealed interface BuiltinAttrs {
    * function type into the operation's attribute dictionary.
    */
   final class TypeAttribute extends BuiltinBaseAttr implements BuiltinAttrs {
-    // =========================================================================
-    // Type Info
-    // =========================================================================
-
-    @Override
-    @Contract(pure = true)
-    public @NotNull String getIdent() {
-      return "typeAttr";
-    }
-
-    @Override
-    @Contract(pure = true)
-    public @NotNull String getNamespace() {
-      return "";
-    }
-
-    @Override
-    @Contract(pure = true)
-    public @NotNull Class<? extends Dialect> getDialect() {
-      return BuiltinDialect.class;
-    }
-
     // =========================================================================
     // Members
     // =========================================================================

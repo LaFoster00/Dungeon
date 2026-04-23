@@ -1,7 +1,7 @@
 package dgir.dialect.mem;
 
 import dgir.core.Dialect;
-import dgir.core.ir.Attribute;
+import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.TypeDescriptor;
 import org.jetbrains.annotations.NotNull;
@@ -39,7 +39,7 @@ public class MemoryDialect extends Dialect {
   }
 
   @Override
-  public @NotNull @Unmodifiable List<Attribute> allAttributes() {
+  public @NotNull @Unmodifiable List<AttributeDescriptor> allAttributes() {
     return List.of();
   }
 }

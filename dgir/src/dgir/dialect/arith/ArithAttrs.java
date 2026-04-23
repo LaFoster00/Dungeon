@@ -2,38 +2,64 @@ package dgir.dialect.arith;
 
 import dgir.core.Dialect;
 import dgir.core.ir.Attribute;
+import dgir.core.ir.AttributeDescriptor;
 import dgir.dialect.builtin.BuiltinTypes;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
-import static dgir.dialect.arith.ArithOps.*;
 import static dgir.dialect.arith.ArithOps.BinaryOp;
+import static dgir.dialect.arith.ArithOps.UnaryOp;
 import static dgir.dialect.builtin.BuiltinTypes.isNumeric;
 
 public sealed interface ArithAttrs {
-  abstract class ArithAttribute extends Attribute {
+  sealed interface ArithAttrDescriptor extends AttributeDescriptor {
     @Override
-    public @NotNull String getNamespace() {
+    default @NotNull String getNamespace() {
       return "arith";
     }
 
     @Override
-    public @NotNull Class<? extends Dialect> getDialect() {
+    default @NotNull Class<? extends Dialect> getDialect() {
       return ArithDialect.class;
     }
 
-    protected ArithAttribute() {
-      super();
+    final class UnaryModeDescriptor implements ArithAttrDescriptor {
+      public static AttributeDescriptor defaultInstance() {
+        return new UnaryModeDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Attribute> getAttributeClass() {
+        return UnaryModeAttr.class;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "arith.unaryMode";
+      }
+    }
+
+    final class BinModeDescriptor implements ArithAttrDescriptor {
+      public static AttributeDescriptor defaultInstance() {
+        return new BinModeDescriptor();
+      }
+
+      @Override
+      public @NotNull Class<? extends Attribute> getAttributeClass() {
+        return BinModeAttr.class;
+      }
+
+      @Override
+      public @NotNull String getIdent() {
+        return "arith.binMode";
+      }
     }
   }
 
-  final class UnaryModeAttr extends ArithAttribute implements ArithAttrs {
-    @Override
-    public @NotNull String getIdent() {
-      return "arith.unaryMode";
-    }
+  abstract class ArithAttribute extends Attribute {}
 
+  final class UnaryModeAttr extends ArithAttribute implements ArithAttrs {
     @Override
     public @NotNull Object getStorage() {
       return unaryMode;
@@ -117,7 +143,6 @@ public sealed interface ArithAttrs {
     }
 
     public UnaryModeAttr(@NotNull UnaryMode unaryMode) {
-      super();
       this.unaryMode = unaryMode;
     }
 
@@ -131,11 +156,6 @@ public sealed interface ArithAttrs {
   }
 
   final class BinModeAttr extends ArithAttribute implements ArithAttrs {
-    @Override
-    public @NotNull String getIdent() {
-      return "arith.binMode";
-    }
-
     @Override
     public @NotNull Object getStorage() {
       return binMode;
@@ -377,7 +397,6 @@ public sealed interface ArithAttrs {
     }
 
     public BinModeAttr(@NotNull BinMode binMode) {
-      super();
       this.binMode = binMode;
     }
 

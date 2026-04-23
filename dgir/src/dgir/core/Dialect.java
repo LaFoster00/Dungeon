@@ -43,7 +43,7 @@ public abstract class Dialect {
    * by {@link #allAttributes(Class)} on the first call for each dialect.
    */
   private static final @NotNull Map<
-          Class<? extends dgir.core.Dialect>, @Unmodifiable List<Attribute>>
+          Class<? extends dgir.core.Dialect>, @Unmodifiable List<AttributeDescriptor>>
       dialectAttributes = new HashMap<>();
 
   /**
@@ -88,7 +88,7 @@ public abstract class Dialect {
    * @return an unmodifiable list of attribute prototypes.
    */
   @Contract(pure = true)
-  public abstract @NotNull @Unmodifiable List<Attribute> allAttributes();
+  public abstract @NotNull @Unmodifiable List<AttributeDescriptor> allAttributes();
 
   // =========================================================================
   // Registration
@@ -114,7 +114,7 @@ public abstract class Dialect {
       type.initDefaultTypeInstances();
     }
     for (var attr : allAttributes()) {
-      AttributeDetails.Registered.insert(attr);
+      AttributeDetails.insert(attr);
     }
     for (var op : allOps()) {
       OperationDetails.insert(op);
@@ -236,49 +236,51 @@ public abstract class Dialect {
   }
 
   /**
-   * Collect all attribute prototypes contributed by a dialect by reflectively instantiating every
-   * permitted subclass of {@code diAttrs} via its no-arg constructor.
+   * Collect all attribute descriptors contributed by a dialect by reflectively invoking a public
+   * static {@code defaultInstance()} factory on every permitted subclass of {@code diAttrs}.
    *
    * <p>Results are cached so that repeated calls for the same dialect are cheap. The {@code
    * diAttrs} argument must be a {@code sealed} interface whose every {@code permits} entry is a
-   * concrete attribute class with a declared no-arg constructor.
+   * concrete descriptor class with a declared static default factory.
    *
    * @param diAttrs the sealed marker interface whose permitted subclasses enumerate the dialect's
-   *     attributes.
-   * @return an unmodifiable list of attribute prototypes, one per permitted subclass.
+   *     attribute descriptors.
+   * @return an unmodifiable list of attribute descriptors, one per permitted subclass.
    * @throws AssertionError if {@code diAttrs} is not a sealed interface.
-   * @throws RuntimeException if any permitted subclass lacks a no-arg constructor or its
-   *     constructor throws.
+   * @throws RuntimeException if any permitted subclass lacks the static factory method or the
+   *     factory throws.
    */
   @NotNull
   @Unmodifiable
-  public List<Attribute> allAttributes(Class<?> diAttrs) {
+  public List<AttributeDescriptor> allAttributes(Class<?> diAttrs) {
     assert diAttrs.isSealed() : "IDialectAttributes interface must be sealed";
 
     if (dialectAttributes.containsKey(this.getClass())) {
       return dialectAttributes.get(this.getClass());
     }
 
-    List<Attribute> attrs = new ArrayList<>();
+    List<AttributeDescriptor> attrs = new ArrayList<>();
     Class<?>[] permittedSubclasses = diAttrs.getPermittedSubclasses();
     for (Class<?> subclass : permittedSubclasses) {
       try {
-        Constructor<?> defaultConstructor = subclass.getDeclaredConstructor();
-        boolean isAccessible = defaultConstructor.canAccess(null);
-        if (!isAccessible) defaultConstructor.setAccessible(true);
+        Method defaultInstanceFactory = subclass.getDeclaredMethod("defaultInstance");
+        boolean isAccessible = defaultInstanceFactory.canAccess(null);
+        if (!isAccessible) defaultInstanceFactory.setAccessible(true);
         try {
-          Attribute newAttr = (Attribute) defaultConstructor.newInstance();
+          AttributeDescriptor newAttr = (AttributeDescriptor) defaultInstanceFactory.invoke(null);
           attrs.add(newAttr);
-        } catch (InstantiationException e) {
+        } catch (InvocationTargetException e) {
           throw new RuntimeException(
-              "Executing default constructor failed for attribute: " + subclass.getName(), e);
-        } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException e) {
+              "Executing defaultInstance method failed for attribute: " + subclass.getName(), e);
+        } catch (IllegalAccessException e) {
           throw new RuntimeException(e);
         }
-        if (!isAccessible) defaultConstructor.setAccessible(false);
+        if (!isAccessible) defaultInstanceFactory.setAccessible(false);
       } catch (NoSuchMethodException e) {
         throw new RuntimeException(
-            "Attribute class must have a default constructor: " + subclass.getName(), e);
+            "AttributeDescriptor class must have a static defaultInstance factory method: "
+                + subclass.getName(),
+            e);
       }
     }
     dialectAttributes.put(this.getClass(), attrs);
