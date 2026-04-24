@@ -15,7 +15,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /** Sealed marker interface for all types contributed by the {@link FuncDialect}. */
 public sealed interface FuncTypes {
@@ -43,11 +42,6 @@ public sealed interface FuncTypes {
       }
 
       @Override
-      public @NotNull Supplier<Type> getNonParametricInstance() {
-        return FuncType::empty;
-      }
-
-      @Override
       public @NotNull String getIdent() {
         return "func.func";
       }
@@ -62,7 +56,8 @@ public sealed interface FuncTypes {
       public void initDefaultTypeInstances() {}
 
       @Override
-      public Function<Pair<String, TypeDetails>, Type> getParameterizedStringFactory() {
+      public @NotNull Function<@NotNull Pair<@NotNull String, @NotNull TypeDetails>, @NotNull Type>
+          getParameterizedIdentFactory() {
         return args -> {
           if (!args.getLeft().contains("<")) {
             return FuncType.empty();

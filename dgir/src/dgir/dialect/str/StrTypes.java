@@ -3,6 +3,8 @@ package dgir.dialect.str;
 import dgir.core.Dialect;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypeDescriptor;
+import dgir.core.ir.TypeDetails;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,7 +13,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /** Sealed marker interface for all types contributed by the {@link StrDialect}. */
 public sealed interface StrTypes {
@@ -39,11 +40,6 @@ public sealed interface StrTypes {
       }
 
       @Override
-      public @NotNull Supplier<Type> getNonParametricInstance() {
-        return StringT::INSTANCE;
-      }
-
-      @Override
       public @NotNull String getIdent() {
         return "string";
       }
@@ -51,6 +47,12 @@ public sealed interface StrTypes {
       @Override
       public Function<Object, Boolean> getValidator() {
         return value -> value instanceof String;
+      }
+
+      @Override
+      public @NotNull Function<@NotNull Pair<@NotNull String, @NotNull TypeDetails>, @NotNull Type>
+          getParameterizedIdentFactory() {
+        return args -> StrTypes.StringT.INSTANCE();
       }
 
       @Override

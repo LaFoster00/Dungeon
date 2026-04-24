@@ -6,11 +6,8 @@ import dgir.dialect.builtin.BuiltinTypes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * A descriptor for a type, containing metadata such as its unique identifier, namespace, and
@@ -43,20 +40,6 @@ public interface TypeDescriptor {
   @Contract(pure = true)
   @NotNull
   Class<? extends Type> getTypeClass();
-
-  /**
-   * A supplier that provides a default instance of this type for non-parameterized types. This is
-   * optional because parameterized types may not have a natural default instance (e.g. a pointer
-   * type without a pointee type). For non-parameterized types, this should be a supplier that
-   * always returns the same instance (e.g. a singleton), so that reference equality can be used to
-   * compare type instances. For parameterized types, this should be {@code null}.
-   *
-   * @return A supplier that provides a default instance of this type, or {@code null} if this type
-   *     is parameterized.
-   */
-  @Contract(pure = true)
-  @Nullable
-  Supplier<Type> getNonParametricInstance();
 
   /**
    * Get the identifier for this type. This is a unique string that identifies the basic type
@@ -116,14 +99,9 @@ public interface TypeDescriptor {
    * @return A factory that creates a type from a parameterized identifier.
    */
   @Contract(pure = true)
-  default Function<Pair<String, TypeDetails>, Type> getParameterizedStringFactory() {
-    return args ->
-        Objects.requireNonNull(
-                args.getRight().nonParametricInstance(),
-                "No parametric string factory supplied for parametric type "
-                    + getTypeClass().getName())
-            .get();
-  }
+  @NotNull
+  Function<@NotNull Pair<@NotNull String, @NotNull TypeDetails>, @NotNull Type>
+      getParameterizedIdentFactory();
 
   /**
    * Initialize all default type instances for the type described by this descriptor. This should be

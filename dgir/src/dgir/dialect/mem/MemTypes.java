@@ -10,13 +10,11 @@ import dgir.dialect.builtin.BuiltinTypes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /** Sealed marker interface for all types contributed by the {@link MemoryDialect}. */
 public sealed interface MemTypes {
@@ -44,11 +42,6 @@ public sealed interface MemTypes {
       }
 
       @Override
-      public @Nullable Supplier<Type> getNonParametricInstance() {
-        return null;
-      }
-
-      @Override
       public @NotNull String getIdent() {
         return "mem.array";
       }
@@ -63,7 +56,8 @@ public sealed interface MemTypes {
       public void initDefaultTypeInstances() {}
 
       @Override
-      public Function<Pair<String, TypeDetails>, Type> getParameterizedStringFactory() {
+      public @NotNull Function<@NotNull Pair<@NotNull String, @NotNull TypeDetails>, @NotNull Type>
+          getParameterizedIdentFactory() {
         return args -> {
           List<String> params = DgirCoreUtils.getParameterStrings(args.getLeft());
           if (params.isEmpty() || params.size() > 2) {

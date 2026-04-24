@@ -5,6 +5,7 @@ import dgir.core.Dialect;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypeDescriptor;
 import dgir.core.ir.TypeDetails;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -85,11 +86,6 @@ public sealed interface BuiltinTypes {
       }
 
       @Override
-      public @NotNull Supplier<Type> getNonParametricInstance() {
-        return nonParametricInstance;
-      }
-
-      @Override
       public @NotNull String getIdent() {
         return ident;
       }
@@ -97,6 +93,12 @@ public sealed interface BuiltinTypes {
       @Override
       public Function<Object, Boolean> getValidator() {
         return validator;
+      }
+
+      @Override
+      public @NotNull Function<@NotNull Pair<@NotNull String, @NotNull TypeDetails>, @NotNull Type>
+          getParameterizedIdentFactory() {
+        return params -> nonParametricInstance.get();
       }
 
       @Override
@@ -155,11 +157,6 @@ public sealed interface BuiltinTypes {
       }
 
       @Override
-      public @NotNull Supplier<Type> getNonParametricInstance() {
-        return nonParametricInstance;
-      }
-
-      @Override
       public @NotNull String getIdent() {
         return ident;
       }
@@ -167,6 +164,12 @@ public sealed interface BuiltinTypes {
       @Override
       public Function<Object, Boolean> getValidator() {
         return validator;
+      }
+
+      @Override
+      public @NotNull Function<@NotNull Pair<@NotNull String, @NotNull TypeDetails>, @NotNull Type>
+          getParameterizedIdentFactory() {
+        return params -> nonParametricInstance.get();
       }
 
       @Override

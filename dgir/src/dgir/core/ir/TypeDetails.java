@@ -6,12 +6,10 @@ import dgir.core.Dialect;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Holds all basic information about a type kind and exposes it through a stable interface.
@@ -20,12 +18,6 @@ import java.util.function.Supplier;
  * constructing instances directly, so that the global {@link DGIRContext} caches are kept
  * consistent.
  *
- * @param nonParametricInstance A supplier that provides a default instance of this type for
- *     non-parameterized types. This is optional because parameterized types may not have a natural
- *     default instance (e.g. a pointer type without a pointee type). For non-parameterized types,
- *     this should be a supplier that always returns the same instance (e.g. a singleton), so that
- *     reference equality can be used to compare type instances. For parameterized types, this
- *     should be {@code null}.
  * @param ident The unique identifier string for this type (e.g. {@code "int"} or {@code
  *     "func.func"}).
  * @param type The Java class that represents this type.
@@ -38,7 +30,6 @@ import java.util.function.Supplier;
  *     types, this can be a simple function that ignores the input and returns the default instance.
  */
 public record TypeDetails(
-    @Nullable Supplier<Type> nonParametricInstance,
     @NotNull String ident,
     @NotNull String namespace,
     @NotNull Class<? extends Type> type,
@@ -48,13 +39,12 @@ public record TypeDetails(
 
   private TypeDetails(@NotNull TypeDescriptor descriptor) {
     this(
-        descriptor.getNonParametricInstance(),
         descriptor.getIdent(),
         descriptor.getNamespace(),
         descriptor.getTypeClass(),
         Dialect.getOrThrow(descriptor.getDialect()),
         descriptor.getValidator(),
-        descriptor.getParameterizedStringFactory());
+        descriptor.getParameterizedIdentFactory());
   }
 
   // =========================================================================

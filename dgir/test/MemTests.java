@@ -90,7 +90,6 @@ public class MemTests {
   @Test
   public void reallocGcRejectsNonArrayInput() {
     Pair<ProgramOp, FuncOp> entry = newMain();
-    ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
     var notArray = funcMain.addOperation(new ConstantOp(LOC, 99), 0);
