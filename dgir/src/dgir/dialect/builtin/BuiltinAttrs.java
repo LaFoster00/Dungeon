@@ -21,6 +21,7 @@ import static dgir.dialect.builtin.BuiltinTypes.IntegerT;
 import static dgir.dialect.func.FuncOps.CallOp;
 import static dgir.dialect.func.FuncOps.FuncOp;
 
+/** Marker interface for builtin attributes shared across dialects. */
 public sealed interface BuiltinAttrs {
   sealed interface BuiltinAttrDescriptor extends AttributeDescriptor {
     @Override
@@ -97,9 +98,6 @@ public sealed interface BuiltinAttrs {
       }
     }
   }
-
-  abstract class BuiltinBaseAttr extends Attribute {}
-
   abstract class BuiltinBaseTypedAttr extends TypedAttribute {
     /**
      * Create a typed attribute associated with the given type.
@@ -197,6 +195,7 @@ public sealed interface BuiltinAttrs {
     }
   }
 
+  /** Attribute that carries a floating-point value together with its {@link FloatT} type. */
   final class FloatAttribute extends BuiltinBaseTypedAttr implements BuiltinAttrs {
     private @NotNull Number value;
 
@@ -239,7 +238,7 @@ public sealed interface BuiltinAttrs {
    * <p>Ident: {@code symbolRefAttr}. Used by operations such as {@link CallOp} to record the name
    * of a callee function without hard-linking the IR nodes together.
    */
-  final class SymbolRefAttribute extends BuiltinBaseAttr implements BuiltinAttrs {
+  final class SymbolRefAttribute extends Attribute implements BuiltinAttrs {
     // =========================================================================
     // Members
     // =========================================================================
@@ -251,7 +250,7 @@ public sealed interface BuiltinAttrs {
     // Constructors
     // =========================================================================
 
-    /** Create a default symbol reference attribute with a {@code null} name. */
+    /** Create a default symbol reference attribute with an empty symbol name. */
     public SymbolRefAttribute() {
       value = "";
     }
@@ -272,7 +271,7 @@ public sealed interface BuiltinAttrs {
     /**
      * Returns the referenced symbol name.
      *
-     * @return the symbol name, or {@code null} if not set.
+     * @return the symbol name.
      */
     @Contract(pure = true)
     @Override
@@ -301,19 +300,19 @@ public sealed interface BuiltinAttrs {
    * <p>Ident: {@code typeAttr}. Used by operations such as {@link FuncOp} to embed the full
    * function type into the operation's attribute dictionary.
    */
-  final class TypeAttribute extends BuiltinBaseAttr implements BuiltinAttrs {
+  final class TypeAttribute extends Attribute implements BuiltinAttrs {
     // =========================================================================
     // Members
     // =========================================================================
 
-    /** The wrapped type, or {@code null} if unset. */
+    /** The wrapped type. */
     private @NotNull Type type;
 
     // =========================================================================
     // Constructors
     // =========================================================================
 
-    /** Create a default type attribute with a {@code null} type. */
+    /** Create a default type attribute initialized to {@link IntegerT#INT64()}. */
     public TypeAttribute() {
       type = IntegerT.INT64();
     }
@@ -321,7 +320,7 @@ public sealed interface BuiltinAttrs {
     /**
      * Create a type attribute wrapping the given type.
      *
-     * @param type the type to wrap; may be {@code null}.
+     * @param type the type to wrap.
      */
     public TypeAttribute(@NotNull Type type) {
       this.type = type;
@@ -332,7 +331,7 @@ public sealed interface BuiltinAttrs {
     // =========================================================================
 
     /**
-     * Returns the wrapped type, or {@code null} if not set.
+     * Returns the wrapped type.
      *
      * @return the wrapped type.
      */

@@ -9,9 +9,15 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
+/** Dialect registration for string operations, types, and attributes in namespace {@code str}. */
 public class StrDialect extends Dialect {
   public static StrDialect instance;
 
+  /**
+   * Returns the singleton string dialect instance.
+   *
+   * @return the shared {@link StrDialect} instance.
+   */
   public static @NotNull StrDialect get() {
     synchronized (StrDialect.class) {
       if (instance == null) {

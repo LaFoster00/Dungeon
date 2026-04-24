@@ -12,6 +12,7 @@ import static dgir.dialect.arith.ArithOps.BinaryOp;
 import static dgir.dialect.arith.ArithOps.UnaryOp;
 import static dgir.dialect.builtin.BuiltinTypes.isNumeric;
 
+/** Marker interface for attributes contributed by the {@link ArithDialect}. */
 public sealed interface ArithAttrs {
   sealed interface ArithAttrDescriptor extends AttributeDescriptor {
     @Override
@@ -57,14 +58,14 @@ public sealed interface ArithAttrs {
     }
   }
 
-  abstract class ArithAttribute extends Attribute {}
-
-  final class UnaryModeAttr extends ArithAttribute implements ArithAttrs {
+  /** Attribute that stores the selected unary arithmetic mode for {@link UnaryOp}. */
+  final class UnaryModeAttr extends Attribute implements ArithAttrs {
     @Override
     public @NotNull Object getStorage() {
       return unaryMode;
     }
 
+    /** Supported unary arithmetic modes and their operand constraints. */
     public enum UnaryMode {
       NEGATE {
         @Override
@@ -155,12 +156,14 @@ public sealed interface ArithAttrs {
     }
   }
 
-  final class BinModeAttr extends ArithAttribute implements ArithAttrs {
+  /** Attribute that stores the selected binary arithmetic mode for {@link BinaryOp}. */
+  final class BinModeAttr extends Attribute implements ArithAttrs {
     @Override
     public @NotNull Object getStorage() {
       return binMode;
     }
 
+    /** Supported binary arithmetic/logical modes and their operand constraints. */
     public enum BinMode {
       // Arithmetic
       /** Addition */

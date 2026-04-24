@@ -11,24 +11,15 @@ import tools.jackson.databind.annotation.JsonDeserialize;
 import java.util.function.Function;
 
 /**
- * Abstract base class for all types in the IR. Types are contributed by dialects and can be either
- * simple (e.g. {@code int32}) or parameterized (e.g. {@code ptr<int32>} or {@code func<(int32) ->
- * (int32)>}). Each type must have a unique identifier (e.g. "int32" or "func.func") and a validator
- * function that checks whether a given value is a valid instance of that type. Parameterized types
- * must also provide a factory that creates instances of themselves from a parameterized identifier.
+ * Base class for all IR types.
  *
- * <p>Types are immutable and should be compared by reference. To make sure a type is truly unique,
- * it should every created instance should be routet through the {@link TypeUniquer}, or be created
- * once and accessed via static fields (e.g. {@code public static final IntegerT INT32 = new
- * IntegerT(32, true);}).
+ * <p>Types are contributed by dialects and are either non-parameterized (for example, {@code
+ * int32}) or parameterized (for example, {@code ptr<int32>} or {@code func.func<(int32) ->
+ * (int32)>}). Each type has a stable ident and a validator used to check storage values.
  *
- * <p>In case you do have a parametric type, consider using factories that return unique instances
- * of the type, so that you can still compare by reference. For example, for a pointer type, you
- * could have a factory method like {@code public static Type ptr(Type pointee) { return
- * TypeUniquer.uniqueInstance(new PtrType(pointee)); }}. This way, you can ensure that all instances
- * of the same pointer type are the same object, and you can compare them by reference.
- *
- * <p>Either way make sure that every unique type only has one instance, shared by all uses.
+ * <p>Type instances are treated as canonical values. Implementations should return shared instances
+ * (singletons for non-parameterized types and {@link TypeUniquer}-canonicalized instances for
+ * parameterized ones) so identity/reference comparisons are reliable across the IR.
  */
 // We have to use the deserializer because we cant use @JsonCreator on static methods and therefore
 // can put the logic

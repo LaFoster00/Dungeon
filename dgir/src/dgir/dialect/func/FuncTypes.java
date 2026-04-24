@@ -17,9 +17,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/**
- * Sealed marker interface for all types contributed by the {@link FuncDialect}.
- */
+/** Sealed marker interface for all types contributed by the {@link FuncDialect}. */
 public sealed interface FuncTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link FuncDialect}. */
   sealed interface FuncTypeDescriptor extends TypeDescriptor {

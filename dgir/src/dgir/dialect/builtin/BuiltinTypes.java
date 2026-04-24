@@ -15,9 +15,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/**
- * Sealed marker interface for all types contributed by the {@link BuiltinDialect}.
- */
+/** Sealed marker interface for all types contributed by the {@link BuiltinDialect}. */
 public sealed interface BuiltinTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link BuiltinDialect}. */
   sealed interface BuiltinTypeDescriptor extends TypeDescriptor {

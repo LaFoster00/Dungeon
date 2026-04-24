@@ -3,11 +3,11 @@ package dgir.dialect.str;
 import dgir.core.Dialect;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.AttributeDescriptor;
-import dgir.core.ir.Type;
 import dgir.core.ir.TypedAttribute;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+/** Marker interface for attributes contributed by the {@link StrDialect}. */
 public sealed interface StrAttrs {
   sealed interface StrAttrDescriptor extends AttributeDescriptor {
     @Override
@@ -37,18 +37,12 @@ public sealed interface StrAttrs {
     }
   }
 
-  abstract class StrAttribute extends TypedAttribute {
-    protected StrAttribute(@NotNull Type type) {
-      super(type);
-    }
-  }
-
   /**
    * Attribute that carries a Java {@link String} value.
    *
    * <p>Ident: {@code stringAttr}. The stored value is a plain Java {@code String}.
    */
-  final class StringAttribute extends StrAttribute implements StrAttrs {
+  final class StringAttribute extends TypedAttribute implements StrAttrs {
     // =========================================================================
     // Members
     // =========================================================================
@@ -60,7 +54,7 @@ public sealed interface StrAttrs {
     // Constructors
     // =========================================================================
 
-    /** Create a default string attribute with a {@code null} value. */
+    /** Create a default string attribute with an empty value. */
     public StringAttribute() {
       super(StrTypes.StringT.INSTANCE());
       value = "";

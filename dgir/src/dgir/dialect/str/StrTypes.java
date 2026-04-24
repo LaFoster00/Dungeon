@@ -14,9 +14,6 @@ import java.util.function.Supplier;
 
 /**
  * Sealed marker interface for all types contributed by the {@link StrDialect}.
- *
- * <p>Every concrete type must extend {@link StrType} and implement this interface so that {@link
- * Dialect#allTypes(Class)} can discover it automatically via reflection.
  */
 public sealed interface StrTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link StrDialect}. */
@@ -69,21 +66,13 @@ public sealed interface StrTypes {
   }
 
   /**
-   * Abstract base class for all types contributed by the {@code str} dialect.
-   *
-   * <p>Concrete subclasses keep only runtime instance behavior while type metadata and validation
-   * are provided by descriptors.
-   */
-  abstract class StrType extends Type {}
-
-  /**
    * UTF-16 string type in the {@code str} dialect.
    *
    * <p>Ident: {@code string}. Validated values must be Java {@link String} instances.
    *
    * <p>The single pre-built instance is available as {@link #INSTANCE}.
    */
-  final class StringT extends StrType implements StrTypes {
+  final class StringT extends Type implements StrTypes {
 
     // =========================================================================
     // Static Fields

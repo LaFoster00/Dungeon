@@ -65,7 +65,7 @@ public sealed interface StrOps {
           operation.emitError("Result type must be string");
           return false;
         }
-        if (!(toStringOp.getOperand().getType() instanceof StrTypes.StrType)
+        if (!(toStringOp.getOperand().getType() instanceof StrTypes.StringT)
             && !(toStringOp.getOperand().getType() instanceof BuiltinTypes.IntegerT)
             && !(toStringOp.getOperand().getType() instanceof BuiltinTypes.FloatT)) {
           operation.emitError(
@@ -117,7 +117,7 @@ public sealed interface StrOps {
           operation.emitError("Result type must be string");
           return false;
         }
-        if (!(concatOp.getLhs().getType() instanceof StrTypes.StrType)
+        if (!(concatOp.getLhs().getType() instanceof StrTypes.StringT)
             && !(concatOp.getLhs().getType() instanceof BuiltinTypes.IntegerT)
             && !(concatOp.getLhs().getType() instanceof BuiltinTypes.FloatT)) {
           operation.emitError(
@@ -126,7 +126,7 @@ public sealed interface StrOps {
                   + " instead");
           return false;
         }
-        if (!(concatOp.getRhs().getType() instanceof StrTypes.StrType)
+        if (!(concatOp.getRhs().getType() instanceof StrTypes.StringT)
             && !(concatOp.getRhs().getType() instanceof BuiltinTypes.IntegerT)
             && !(concatOp.getRhs().getType() instanceof BuiltinTypes.FloatT)) {
           operation.emitError(

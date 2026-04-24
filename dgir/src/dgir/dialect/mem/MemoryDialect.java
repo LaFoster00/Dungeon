@@ -9,9 +9,15 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
+/** Dialect registration for memory-related operations and types in namespace {@code mem}. */
 public class MemoryDialect extends Dialect {
   private static MemoryDialect instance;
 
+  /**
+   * Returns the singleton memory dialect instance.
+   *
+   * @return the shared {@link MemoryDialect} instance.
+   */
   public static @NotNull MemoryDialect get() {
     synchronized (MemoryDialect.class) {
       if (instance == null) {

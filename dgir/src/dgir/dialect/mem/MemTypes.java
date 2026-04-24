@@ -17,12 +17,7 @@ import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/**
- * Sealed marker interface for all types contributed by the {@link MemoryDialect}.
- *
- * <p>Every concrete type must extend {@link Type} and implement this interface so that {@link
- * Dialect#allTypes(Class)} can discover it automatically via reflection.
- */
+/** Sealed marker interface for all types contributed by the {@link MemoryDialect}. */
 public sealed interface MemTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link MemoryDialect}. */
   sealed interface MemTypeDescriptor extends TypeDescriptor {

@@ -11,6 +11,13 @@ import tools.jackson.databind.annotation.JsonTypeIdResolver;
 
 import java.io.Serializable;
 
+/**
+ * Base class for all IR attributes.
+ *
+ * <p>An {@code Attribute} carries typed metadata attached to operations. Implementations are
+ * registered in the DGIR context and resolved through {@link AttributeDetails}. The concrete
+ * payload is exposed via {@link #getStorage()} for serialization and diagnostics.
+ */
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.CUSTOM,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
