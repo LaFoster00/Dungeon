@@ -164,6 +164,7 @@ public sealed interface FuncTypes {
 
     /** Create a no-argument void function type. */
     private FuncType() {
+      super("func.func");
       inputs = List.of();
       output = null;
     }
@@ -175,6 +176,7 @@ public sealed interface FuncTypes {
      * @param output the return type, or {@code null} for a void function.
      */
     private FuncType(@NotNull List<Type> inputs, @Nullable Type output) {
+      super("func.func");
       this.inputs = Collections.unmodifiableList(inputs);
       this.output = output;
     }

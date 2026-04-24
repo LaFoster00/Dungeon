@@ -87,6 +87,8 @@ public sealed interface StrTypes {
     // =========================================================================
 
     /** Creates a new {@code StringT} instance. Prefer {@link #INSTANCE} over this constructor. */
-    StringT() {}
+    StringT() {
+      super("string");
+    }
   }
 }

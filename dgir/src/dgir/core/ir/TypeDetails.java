@@ -16,9 +16,9 @@ import java.util.function.Supplier;
 /**
  * Holds all basic information about a type kind and exposes it through a stable interface.
  *
- * <p>Callers should always use the static factory methods {@link #get(String)} and {@link
- * #get(Class)} rather than constructing instances directly, so that the global {@link DGIRContext}
- * caches are kept consistent.
+ * <p>Callers should always use the static factory method {@link #get(String)} rather than
+ * constructing instances directly, so that the global {@link DGIRContext} caches are kept
+ * consistent.
  *
  * @param nonParametricInstance A supplier that provides a default instance of this type for
  *     non-parameterized types. This is optional because parameterized types may not have a natural
@@ -70,17 +70,6 @@ public record TypeDetails(
    */
   public static @NotNull Optional<TypeDetails> get(@NotNull String ident) {
     return Optional.ofNullable(DGIRContext.registeredTypesByIdent.get(ident));
-  }
-
-  /**
-   * Look up the {@link TypeDetails} for the given type class.
-   *
-   * @param clazz the type class to look up.
-   * @return an optional containing the details if a registered type with the given class exists, or
-   *     empty otherwise.
-   */
-  public static @NotNull Optional<TypeDetails> get(@NotNull Class<? extends Type> clazz) {
-    return Optional.ofNullable(DGIRContext.registeredTypes.get(clazz));
   }
 
   // =========================================================================
@@ -166,7 +155,6 @@ public record TypeDetails(
   public static void insert(@NotNull TypeDescriptor descriptor) {
     TypeDetails details = new TypeDetails(descriptor);
     // Populate the registered caches
-    DGIRContext.registeredTypes.put(details.type(), details);
     DGIRContext.registeredTypesByIdent.put(details.ident(), details);
   }
 }

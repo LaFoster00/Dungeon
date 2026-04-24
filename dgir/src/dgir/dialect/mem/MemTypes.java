@@ -113,6 +113,7 @@ public sealed interface MemTypes {
 
     /** Creates the canonical default array type. */
     private ArrayT() {
+      super("mem.array");
       elementType = BuiltinTypes.IntegerT.INT32();
       width = -1;
     }
@@ -124,6 +125,7 @@ public sealed interface MemTypes {
      * @param width the fixed width, or {@code -1} for dynamic sizing.
      */
     private ArrayT(@NotNull Type elementType, int width) {
+      super("mem.array");
       this.elementType = elementType;
       this.width = width;
     }

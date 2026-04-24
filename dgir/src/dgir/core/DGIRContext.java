@@ -43,9 +43,6 @@ public class DGIRContext {
   // Types
   // =========================================================================
 
-  /** Registered types by class. */
-  public static final Map<Class<? extends Type>, TypeDetails> registeredTypes = new HashMap<>();
-
   /** Registered types by ident. */
   public static final Map<String, TypeDetails> registeredTypesByIdent = new HashMap<>();
 
