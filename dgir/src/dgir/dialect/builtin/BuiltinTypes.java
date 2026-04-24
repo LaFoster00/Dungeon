@@ -38,8 +38,18 @@ public sealed interface BuiltinTypes {
       private final @NotNull Supplier<Type> nonParametricInstance;
       private final Function<Object, Boolean> validator;
 
-      public static @NotNull TypeDescriptor defaultInstance() {
-        return new IntegerDescriptor(1, true);
+      @Contract(pure = true)
+      static @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of(
+            new IntegerDescriptor(1, true),
+            new IntegerDescriptor(8, true),
+            new IntegerDescriptor(16, true),
+            new IntegerDescriptor(32, true),
+            new IntegerDescriptor(64, true),
+            new IntegerDescriptor(8, false),
+            new IntegerDescriptor(16, false),
+            new IntegerDescriptor(32, false),
+            new IntegerDescriptor(64, false));
       }
 
       public IntegerDescriptor(int width, boolean signed) {
@@ -90,20 +100,6 @@ public sealed interface BuiltinTypes {
       }
 
       @Override
-      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
-        return List.of(
-            new IntegerDescriptor(1, true),
-            new IntegerDescriptor(8, true),
-            new IntegerDescriptor(16, true),
-            new IntegerDescriptor(32, true),
-            new IntegerDescriptor(64, true),
-            new IntegerDescriptor(8, false),
-            new IntegerDescriptor(16, false),
-            new IntegerDescriptor(32, false),
-            new IntegerDescriptor(64, false));
-      }
-
-      @Override
       public void initDefaultTypeInstances() {
         if (IntegerT.integerTypeCache[0] != null) return; // already populated
         if (TypeDetails.get("int1").isEmpty()) {
@@ -127,8 +123,9 @@ public sealed interface BuiltinTypes {
       private final @NotNull Supplier<Type> nonParametricInstance;
       private final Function<Object, Boolean> validator;
 
-      public static @NotNull TypeDescriptor defaultInstance() {
-        return new FloatDescriptor(32);
+      @Contract(pure = true)
+      public static @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of(new FloatDescriptor(32), new FloatDescriptor(64));
       }
 
       public FloatDescriptor(int width) {
@@ -170,11 +167,6 @@ public sealed interface BuiltinTypes {
       @Override
       public Function<Object, Boolean> getValidator() {
         return validator;
-      }
-
-      @Override
-      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
-        return List.of(new FloatDescriptor(32), new FloatDescriptor(64));
       }
 
       @Override

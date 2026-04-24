@@ -3,6 +3,7 @@ package dgir.dialect.str;
 import dgir.core.Dialect;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypeDescriptor;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -12,9 +13,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/**
- * Sealed marker interface for all types contributed by the {@link StrDialect}.
- */
+/** Sealed marker interface for all types contributed by the {@link StrDialect}. */
 public sealed interface StrTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link StrDialect}. */
   sealed interface StrTypeDescriptor extends TypeDescriptor {
@@ -29,8 +28,9 @@ public sealed interface StrTypes {
     }
 
     final class StringDescriptor implements StrTypeDescriptor {
-      public static TypeDescriptor defaultInstance() {
-        return new StringDescriptor();
+      @Contract(pure = true)
+      public static @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of(new StringDescriptor());
       }
 
       @Override
@@ -51,11 +51,6 @@ public sealed interface StrTypes {
       @Override
       public Function<Object, Boolean> getValidator() {
         return value -> value instanceof String;
-      }
-
-      @Override
-      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
-        return List.of();
       }
 
       @Override

@@ -305,7 +305,7 @@ public abstract class Dialect {
   @NotNull
   @Unmodifiable
   public List<TypeDescriptor> allTypes(Class<?> diTypes) {
-    assert diTypes.isSealed() : "IDialectTypes interface must be sealed";
+    assert diTypes.isSealed() : "Interface " + diTypes.getName() + " must be sealed";
 
     if (dialectTypes.containsKey(this.getClass())) {
       return dialectTypes.get(this.getClass());
@@ -315,25 +315,23 @@ public abstract class Dialect {
     Class<?>[] permittedSubclasses = diTypes.getPermittedSubclasses();
     for (Class<?> subclass : permittedSubclasses) {
       try {
-        Method defaultInstanceFactory = subclass.getDeclaredMethod("defaultInstance");
-        boolean isAccessible = defaultInstanceFactory.canAccess(null);
-        if (!isAccessible) defaultInstanceFactory.setAccessible(true);
+        Method getDescriptors = subclass.getDeclaredMethod("getDescriptors");
+        boolean isAccessible = getDescriptors.canAccess(null);
+        if (!isAccessible) getDescriptors.setAccessible(true);
         try {
-          TypeDescriptor newType = (TypeDescriptor) defaultInstanceFactory.invoke(null);
-          types.addAll(newType.getDescriptors());
-          if (newType.getDescriptors().isEmpty()) {
-            types.add(newType);
-          }
+          @SuppressWarnings("unchecked")
+          List<TypeDescriptor> newType = (List<TypeDescriptor>) getDescriptors.invoke(null);
+          types.addAll(newType);
         } catch (InvocationTargetException e) {
           throw new RuntimeException(
-              "Executing defaultInstance method failed for type: " + subclass.getName(), e);
+              "Executing getDescriptors method failed for type: " + subclass.getName(), e);
         } catch (IllegalAccessException e) {
           throw new RuntimeException(e);
         }
-        if (!isAccessible) defaultInstanceFactory.setAccessible(false);
+        if (!isAccessible) getDescriptors.setAccessible(false);
       } catch (NoSuchMethodException e) {
         throw new RuntimeException(
-            "TypeDescriptor class must have a static defaultInstance factory method: "
+            "TypeDescriptor class must have a static getDescriptors factory method: "
                 + subclass.getName(),
             e);
       }

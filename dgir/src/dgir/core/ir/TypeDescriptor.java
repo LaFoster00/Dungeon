@@ -1,13 +1,13 @@
 package dgir.core.ir;
 
+import dgir.core.DGIRContext;
 import dgir.core.Dialect;
+import dgir.dialect.builtin.BuiltinTypes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -18,8 +18,21 @@ import java.util.function.Supplier;
  * information about types at runtime.
  *
  * <h3><strong>Important:</strong> Every type descriptor which uses the allTypes reflection util
- * must implement a public static method returning a default instance of the object. The signature
- * for the function should be {@code public static TypeDescriptor defaultInstance()}</h3>
+ * must implement a public static method returning all descriptors for the default available types
+ * (see {@link BuiltinTypes.BuiltinTypeDescriptor.IntegerDescriptor} for an example). This is
+ * necessary to ensure that all type descriptors are loaded and registered with the global {@link
+ * DGIRContext}. Bellow is the exact syntax for the function.
+ *
+ * <p>Returns the list of type descriptors that were used to describe all instances of this type.
+ * For non parameterized types such as int1, int8, etc. multiple entries will be returned while
+ * parameterized types such as ptr<TYPE> will only have one entry describing the base type.
+ *
+ * <pre>{@code
+ * @Contract(pure = true)
+ * static @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors();
+ * }</pre>
+ *
+ * </h3>
  */
 public interface TypeDescriptor {
   /**
@@ -111,16 +124,6 @@ public interface TypeDescriptor {
                     + getTypeClass().getName())
             .get();
   }
-
-  /**
-   * Returns the list of type descriptors that were used to describe all instances of this type. For
-   * non parameterized types such as int1, int8, etc. multiple entries will be returned while
-   * parameterized types such as ptr<TYPE> will only have one entry describing the base type.
-   */
-  @Contract(pure = true)
-  @NotNull
-  @Unmodifiable
-  List<TypeDescriptor> getDescriptors();
 
   /**
    * Initialize all default type instances for the type described by this descriptor. This should be

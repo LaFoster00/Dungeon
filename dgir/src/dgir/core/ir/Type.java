@@ -156,7 +156,7 @@ public abstract class Type {
    * @return {@code true} when {@code value} is valid for this type.
    */
   public final boolean validate(Object value) {
-    return details.validator().apply(value);
+    return getValidator().apply(value);
   }
 
   // =========================================================================

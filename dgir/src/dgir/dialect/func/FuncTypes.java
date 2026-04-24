@@ -1,7 +1,7 @@
 package dgir.dialect.func;
 
-import dgir.core.Dialect;
 import dgir.core.DgirCoreUtils;
+import dgir.core.Dialect;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypeDescriptor;
 import dgir.core.ir.TypeDetails;
@@ -32,8 +32,9 @@ public sealed interface FuncTypes {
     }
 
     final class FunctionDescriptor implements FuncTypeDescriptor {
-      public static TypeDescriptor defaultInstance() {
-        return new FunctionDescriptor();
+      @Contract(pure = true)
+      public static @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of(new FunctionDescriptor());
       }
 
       @Override
@@ -55,11 +56,6 @@ public sealed interface FuncTypes {
       public @NotNull Function<Object, Boolean> getValidator() {
         // Function types validate their internal signature shape, not storage values.
         return value -> true;
-      }
-
-      @Override
-      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
-        return List.of();
       }
 
       @Override

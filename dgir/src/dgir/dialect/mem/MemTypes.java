@@ -8,8 +8,9 @@ import dgir.core.ir.TypeDetails;
 import dgir.core.ir.TypeUniquer;
 import dgir.dialect.builtin.BuiltinTypes;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
@@ -32,8 +33,9 @@ public sealed interface MemTypes {
     }
 
     final class ArrayDescriptor implements MemTypeDescriptor {
-      public static TypeDescriptor defaultInstance() {
-        return new ArrayDescriptor();
+      @Contract(pure = true)
+      public static @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
+        return List.of(new ArrayDescriptor());
       }
 
       @Override
@@ -55,11 +57,6 @@ public sealed interface MemTypes {
       public @NotNull Function<Object, Boolean> getValidator() {
         // Concrete validation depends on the element type and optional width.
         return value -> true;
-      }
-
-      @Override
-      public @NotNull @Unmodifiable List<TypeDescriptor> getDescriptors() {
-        return List.of();
       }
 
       @Override
