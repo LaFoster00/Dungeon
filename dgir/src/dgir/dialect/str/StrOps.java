@@ -78,6 +78,11 @@ public sealed interface StrOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ToStringOp().setOperation(operation);
+    }
+
     @SuppressWarnings("unused")
     private ToStringOp() {}
 
@@ -139,6 +144,11 @@ public sealed interface StrOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ConcatOp().setOperation(operation);
+    }
+
     // =========================================================================
     // =========================================================================
     // Constructors
@@ -195,6 +205,11 @@ public sealed interface StrOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new LengthOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -255,6 +270,11 @@ public sealed interface StrOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new CharAtOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -319,6 +339,11 @@ public sealed interface StrOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new EqualsOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -376,6 +401,11 @@ public sealed interface StrOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new IsEmptyOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -429,6 +459,11 @@ public sealed interface StrOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ToLowerCaseOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -487,6 +522,11 @@ public sealed interface StrOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ToUpperCaseOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -541,6 +581,11 @@ public sealed interface StrOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new TrimOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -613,6 +658,11 @@ public sealed interface StrOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new SubstringOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -746,6 +796,11 @@ public sealed interface StrOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new StartsWithOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -795,6 +850,11 @@ public sealed interface StrOps {
         EndsWithOp op = operation.as(EndsWithOp.class).orElseThrow();
         return checkStrictBinaryStringOp(op);
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new EndsWithOp().setOperation(operation);
     }
 
     // Constructors
@@ -851,6 +911,11 @@ public sealed interface StrOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new IndexOfOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -904,6 +969,11 @@ public sealed interface StrOps {
         }
         return checkStrictBinaryStringOp(op);
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new LastIndexOfOp().setOperation(operation);
     }
 
     // =========================================================================

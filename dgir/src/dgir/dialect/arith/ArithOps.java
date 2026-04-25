@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static dgir.dialect.arith.ArithAttrs.BinModeAttr;
 import static dgir.dialect.arith.ArithAttrs.BinModeAttr.BinMode;
@@ -102,8 +103,9 @@ public sealed interface ArithOps {
      * @return a single {@link UnaryModeAttr} attribute named {@code unaryMode}.
      */
     @Override
-    public @NotNull @Unmodifiable List<@NotNull NamedAttribute> getDefaultAttributes() {
-      return List.of(new NamedAttribute("unaryMode", new UnaryModeAttr()));
+    public @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>>
+        defaultAttributes() {
+      return () -> List.of(new NamedAttribute("unaryMode", new UnaryModeAttr()));
     }
 
     /**
@@ -137,6 +139,11 @@ public sealed interface ArithOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new UnaryOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -211,8 +218,9 @@ public sealed interface ArithOps {
      * @return a single {@link BinModeAttr} attribute named {@code binMode}.
      */
     @Override
-    public @NotNull @Unmodifiable List<NamedAttribute> getDefaultAttributes() {
-      return List.of(new NamedAttribute("binMode", new BinModeAttr()));
+    public @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>>
+        defaultAttributes() {
+      return () -> List.of(new NamedAttribute("binMode", new BinModeAttr()));
     }
 
     /**
@@ -272,6 +280,11 @@ public sealed interface ArithOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new BinaryOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -352,8 +365,9 @@ public sealed interface ArithOps {
      * @return a single {@link TypeAttribute} attribute named {@code to}.
      */
     @Override
-    public @NotNull @Unmodifiable List<NamedAttribute> getDefaultAttributes() {
-      return List.of(new NamedAttribute("to", new TypeAttribute()));
+    public @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>>
+        defaultAttributes() {
+      return () -> List.of(new NamedAttribute("to", new TypeAttribute()));
     }
 
     /**
@@ -380,6 +394,11 @@ public sealed interface ArithOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new CastOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -451,6 +470,11 @@ public sealed interface ArithOps {
       return ignored -> true;
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ConstantOp().setOperation(operation);
+    }
+
     /**
      * Returns the default {@code value} attribute for this operation.
      *
@@ -458,8 +482,9 @@ public sealed interface ArithOps {
      */
     @Contract(pure = true)
     @Override
-    public @NotNull List<NamedAttribute> getDefaultAttributes() {
-      return List.of(new NamedAttribute("value", new IntegerAttribute(0, IntegerT.INT32())));
+    public @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>>
+        defaultAttributes() {
+      return () -> List.of(new NamedAttribute("value"));
     }
 
     // =========================================================================

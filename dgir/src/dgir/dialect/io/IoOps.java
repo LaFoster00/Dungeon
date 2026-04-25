@@ -55,7 +55,7 @@ public sealed interface IoOps {
    * exception.
    *
    * <p>The result type must be one of {@link BuiltinTypes.IntegerT}, {@link BuiltinTypes.FloatT},
-   * or {@link BuiltinTypes.StringT}.
+   * or {@link StrTypes.StringT}.
    *
    * <p>Ident: {@code io.consoleIn}
    *
@@ -103,6 +103,11 @@ public sealed interface IoOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ConsoleInOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -114,7 +119,7 @@ public sealed interface IoOps {
      *
      * @param location the source location of this operation.
      * @param type the result type; must be {@link BuiltinTypes.IntegerT}, {@link
-     *     BuiltinTypes.FloatT}, or {@link BuiltinTypes.StringT}.
+     *     BuiltinTypes.FloatT}, or {@link StrTypes.StringT}.
      */
     public ConsoleInOp(@NotNull Location location, @NotNull Type type) {
       setOperation(Operation.Create(location, this, null, null, type));
@@ -181,6 +186,11 @@ public sealed interface IoOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new PrintOp().setOperation(operation);
     }
 
     // =========================================================================

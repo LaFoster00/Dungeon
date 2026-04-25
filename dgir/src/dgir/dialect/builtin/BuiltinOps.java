@@ -118,6 +118,11 @@ public sealed interface BuiltinOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ProgramOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -197,6 +202,11 @@ public sealed interface BuiltinOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new IdOp().setOperation(operation);
     }
 
     // =========================================================================

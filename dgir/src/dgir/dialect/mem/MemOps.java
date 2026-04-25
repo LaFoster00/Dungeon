@@ -100,6 +100,11 @@ public sealed interface MemOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new AllocGcOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -230,6 +235,11 @@ public sealed interface MemOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new AllocGcFromElementsOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -319,6 +329,11 @@ public sealed interface MemOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ReallocGcOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -467,6 +482,11 @@ public sealed interface MemOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new CastOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -529,6 +549,11 @@ public sealed interface MemOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new SizeofOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -586,6 +611,11 @@ public sealed interface MemOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new GetElementOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -681,6 +711,11 @@ public sealed interface MemOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new SetElementOp().setOperation(operation);
     }
 
     // =========================================================================

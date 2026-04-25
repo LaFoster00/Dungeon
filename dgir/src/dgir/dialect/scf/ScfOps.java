@@ -79,6 +79,11 @@ public sealed interface ScfOps {
       return ignored -> true;
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new EndOp().setOperation(operation);
+    }
+
     /**
      * Restricts {@code scf.end} to direct parents that represent explicit region boundaries in this
      * dialect.
@@ -149,6 +154,11 @@ public sealed interface ScfOps {
       return ignored -> true;
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ContinueOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -204,6 +214,11 @@ public sealed interface ScfOps {
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return ignored -> true;
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new YieldOp().setOperation(operation);
     }
 
     private YieldOp() {}
@@ -265,6 +280,11 @@ public sealed interface ScfOps {
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return ignored -> true;
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ForOp().setOperation(operation);
     }
 
     // =========================================================================
@@ -425,6 +445,11 @@ public sealed interface ScfOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new IfOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -522,6 +547,11 @@ public sealed interface ScfOps {
       return ignored -> true;
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ScopeOp().setOperation(operation);
+    }
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -579,6 +609,11 @@ public sealed interface ScfOps {
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return ignored -> true;
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new WhileOp().setOperation(operation);
     }
 
     /** Default constructor used during dialect registration. */
@@ -652,6 +687,11 @@ public sealed interface ScfOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new SelectOp().setOperation(operation);
     }
 
     private SelectOp() {}

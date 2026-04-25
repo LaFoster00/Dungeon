@@ -167,23 +167,16 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
     }
 
-    Op op = operationDetails.get().createDefaultInstance();
     Operation operation;
-    if (outputValue != null) {
-      operation =
-          Operation.Create(
-              location,
-              op,
-              operands,
-              successors,
-              outputValue.getType(),
-              regions != null ? regions.size() : 0);
-      operation.setOutputValue(outputValue);
-    } else {
-      operation =
-          Operation.Create(
-              location, op, operands, successors, null, regions != null ? regions.size() : 0);
-    }
+    operation =
+        Operation.Create(
+            location,
+            operationDetails.get(),
+            operands,
+            successors,
+            outputValue != null ? outputValue.getType() : null,
+            regions != null ? regions.size() : 0);
+    if (outputValue != null) operation.setOutputValue(outputValue);
 
     if (attributes != null) {
       for (NamedAttribute attribute : attributes) {

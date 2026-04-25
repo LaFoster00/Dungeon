@@ -54,7 +54,6 @@ public final class Operation implements Serializable {
    * @param regionBodyValueTypes per-region lists of body value types; the number of elements
    * @return the newly constructed operation.
    */
-  @Contract(pure = true)
   @NotNull
   @SafeVarargs
   public static Operation Create(
@@ -87,8 +86,7 @@ public final class Operation implements Serializable {
    * @return the newly constructed operation.
    * @throws IllegalArgumentException if {@code op}'s ident is not yet registered.
    */
-  @Contract(pure = true)
-  public static Operation Create(
+  public static @NotNull Operation Create(
       @NotNull Location location,
       @NotNull Op op,
       @Nullable List<Value> operands,
@@ -105,7 +103,30 @@ public final class Operation implements Serializable {
         operands != null ? operands : List.of(),
         successors != null ? successors : List.of(),
         outputType,
-        op.getDefaultAttributes().stream()
+        op.defaultAttributes().get().stream()
+            .collect(Collectors.toMap(NamedAttribute::getName, attr -> attr)),
+        numRegions);
+  }
+
+  public static @NotNull Operation Create(
+      @NotNull Location location,
+      @NotNull OperationDetails operationDetails,
+      @Nullable List<Value> operands,
+      @Nullable List<Block> successors,
+      @Nullable Type outputType,
+      int numRegions) {
+    return new Operation(
+        location,
+        OperationDetails.lookup(operationDetails.ident())
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        MessageFormat.format(
+                            "Operation {0} is not registered.", operationDetails.ident()))),
+        operands != null ? operands : List.of(),
+        successors != null ? successors : List.of(),
+        outputType,
+        operationDetails.defaultAttributes().get().stream()
             .collect(Collectors.toMap(NamedAttribute::getName, attr -> attr)),
         numRegions);
   }
@@ -115,28 +136,28 @@ public final class Operation implements Serializable {
   // =========================================================================
 
   /** The unique identifier of this operation. */
-  @NotNull private final OperationDetails details;
+  private final @NotNull OperationDetails details;
 
   /** The input values of this operation. */
-  @NotNull @Unmodifiable private final List<ValueOperand> operands;
+  private final @Unmodifiable @NotNull List<@NotNull ValueOperand> operands;
 
   /** The input blocks of this operation (branch successors). */
-  @NotNull @Unmodifiable private final List<BlockOperand> blockOperands;
+  private final @Unmodifiable @NotNull List<@NotNull BlockOperand> blockOperands;
 
   /** The output of this operation. */
-  @Nullable private final OperationResult output;
+  private final @Nullable OperationResult output;
 
   /** The attributes of this operation. */
-  @NotNull @Unmodifiable private final Map<String, NamedAttribute> attributes;
+  private final @Unmodifiable @NotNull Map<@NotNull String, @NotNull NamedAttribute> attributes;
 
   /** The regions of this operation. */
-  @NotNull @Unmodifiable private final List<Region> regions;
+  private final @NotNull @Unmodifiable List<@NotNull Region> regions;
 
   /** The block containing this operation. */
-  @Nullable private Block parent = null;
+  private @Nullable Block parent = null;
 
   /** The source location of this operation. */
-  @NotNull private final Location location;
+  private final @NotNull Location location;
 
   // =========================================================================
   // Constructors

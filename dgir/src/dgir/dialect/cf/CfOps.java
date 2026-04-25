@@ -93,6 +93,11 @@ public sealed interface CfOps {
     }
 
     @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new BranchCondOp().setOperation(operation);
+    }
+
+    @Override
     public @NotNull Optional<Constructor<? extends ITerminator>> getLocationConstructor() {
       return Optional.empty();
     }
@@ -151,6 +156,11 @@ public sealed interface CfOps {
     @Override
     public @NotNull Function<Operation, Boolean> getVerifier() {
       return ignored -> true;
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new BranchOp().setOperation(operation);
     }
 
     @Override
@@ -230,6 +240,11 @@ public sealed interface CfOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new AssertOp().setOperation(operation);
     }
 
     private AssertOp() {}

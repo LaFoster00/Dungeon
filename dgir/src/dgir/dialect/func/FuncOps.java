@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static dgir.dialect.builtin.BuiltinAttrs.SymbolRefAttribute;
 import static dgir.dialect.builtin.BuiltinAttrs.TypeAttribute;
@@ -120,10 +121,17 @@ public sealed interface FuncOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new CallOp().setOperation(operation);
+    }
+
     @Contract(pure = true)
     @Override
-    public @NotNull List<NamedAttribute> getDefaultAttributes() {
-      return List.of(new NamedAttribute(getCalleeAttributeName(), new SymbolRefAttribute("foo")));
+    public @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>>
+        defaultAttributes() {
+      return () ->
+          List.of(new NamedAttribute(getCalleeAttributeName(), new SymbolRefAttribute("foo")));
     }
 
     /**
@@ -306,12 +314,19 @@ public sealed interface FuncOps {
       return ignored -> true;
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new FuncOp().setOperation(operation);
+    }
+
     @Contract(pure = true)
     @Override
-    public @NotNull List<NamedAttribute> getDefaultAttributes() {
-      return List.of(
-          new NamedAttribute(SymbolTable.getSymbolAttributeName(), new StringAttribute("foo")),
-          new NamedAttribute("type", new TypeAttribute(FuncType.empty())));
+    public @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>>
+        defaultAttributes() {
+      return () ->
+          List.of(
+              new NamedAttribute(SymbolTable.getSymbolAttributeName(), new StringAttribute("foo")),
+              new NamedAttribute("type", new TypeAttribute(FuncType.empty())));
     }
 
     @Override
@@ -477,6 +492,11 @@ public sealed interface FuncOps {
     }
 
     @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ReturnOp().setOperation(operation);
+    }
+
+    @Override
     public @NotNull Optional<Constructor<? extends ITerminator>> getLocationConstructor() {
       try {
         return Optional.of(ReturnOp.class.getConstructor(Location.class));
@@ -550,8 +570,14 @@ public sealed interface FuncOps {
     }
 
     @Override
-    public @NotNull @Unmodifiable List<@NotNull NamedAttribute> getDefaultAttributes() {
-      return List.of(new NamedAttribute("callee", new SymbolRefAttribute("foo")));
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new ConstantOp().setOperation(operation);
+    }
+
+    @Override
+    public @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>>
+        defaultAttributes() {
+      return () -> List.of(new NamedAttribute("callee", new SymbolRefAttribute("foo")));
     }
 
     private ConstantOp() {}
@@ -600,6 +626,11 @@ public sealed interface FuncOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new CallIndirectOp().setOperation(operation);
     }
 
     private CallIndirectOp() {}

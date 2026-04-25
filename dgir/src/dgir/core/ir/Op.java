@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Abstract base class for all operations in the DGIR.
@@ -78,10 +79,9 @@ public abstract class Op {
    * @return a list of all default attributes for this operation.
    */
   @Contract(pure = true)
-  @NotNull
-  @Unmodifiable
-  public List<@NotNull NamedAttribute> getDefaultAttributes() {
-    return List.of();
+  public @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>>
+      defaultAttributes() {
+    return List::of;
   }
 
   /**
@@ -92,6 +92,15 @@ public abstract class Op {
    * @return a verifier function for this operation.
    */
   public abstract @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier();
+
+  /**
+   * Get a factory function that creates an instance of this operation from a backing {@link
+   * Operation}. This is used during deserialization to reconstruct the Op instance from the
+   * serialized Operation state.
+   *
+   * @return a factory function that creates an instance of this operation from a backing Operation.
+   */
+  public abstract @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory();
 
   // =========================================================================
   // Constructors
@@ -131,8 +140,9 @@ public abstract class Op {
    *
    * @param operation the operation to set.
    */
-  public void setOperation(@NotNull Operation operation) {
+  public Op setOperation(@NotNull Operation operation) {
     this.operation = operation;
+    return this;
   }
 
   /**
@@ -141,9 +151,10 @@ public abstract class Op {
    * @param ensureEntryBlocks whether to create missing entry blocks.
    * @param operation the operation to set.
    */
-  public void setOperation(boolean ensureEntryBlocks, @NotNull Operation operation) {
+  public Op setOperation(boolean ensureEntryBlocks, @NotNull Operation operation) {
     this.operation = operation;
     if (ensureEntryBlocks) ensureEntryBlocks();
+    return this;
   }
 
   // =========================================================================

@@ -99,6 +99,11 @@ public sealed interface DgOps {
       return ignored -> true;
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new MoveOp().setOperation(operation);
+    }
+
     /** Creates a default move-op instance for dialect registration. */
     private MoveOp() {}
 
@@ -143,6 +148,11 @@ public sealed interface DgOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new RotateOp().setOperation(operation);
     }
 
     /** Creates a default rotate-op instance for dialect registration. */
@@ -192,6 +202,11 @@ public sealed interface DgOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new InteractOp().setOperation(operation);
+    }
+
     /** Creates a default interact-op instance for dialect registration. */
     private InteractOp() {}
 
@@ -232,6 +247,11 @@ public sealed interface DgOps {
       return ignored -> true;
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new PushOp().setOperation(operation);
+    }
+
     /** Creates a default push-op instance for dialect registration. */
     private PushOp() {}
 
@@ -269,6 +289,11 @@ public sealed interface DgOps {
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return ignored -> true;
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new PullOp().setOperation(operation);
     }
 
     /** Creates a default pull-op instance for dialect registration. */
@@ -317,6 +342,11 @@ public sealed interface DgOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new DropOp().setOperation(operation);
+    }
+
     /** Creates a default drop-op instance for dialect registration. */
     private DropOp() {}
 
@@ -354,6 +384,11 @@ public sealed interface DgOps {
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return ignored -> true;
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new PickupOp().setOperation(operation);
     }
 
     /**
@@ -405,6 +440,11 @@ public sealed interface DgOps {
       return ignored -> true;
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new FireballOp().setOperation(operation);
+    }
+
     /** Creates a default fireball-op instance for dialect registration. */
     private FireballOp() {}
 
@@ -442,6 +482,11 @@ public sealed interface DgOps {
     @Override
     public @NotNull Function<@NotNull Operation, @NotNull Boolean> getVerifier() {
       return ignored -> true;
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new RestOp().setOperation(operation);
     }
 
     /** Creates a default rest-op instance for dialect registration. */
@@ -503,6 +548,11 @@ public sealed interface DgOps {
       };
     }
 
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new IsNearTileOp().setOperation(operation);
+    }
+
     /** Creates a default is-near-tile-op instance for dialect registration. */
     private IsNearTileOp() {}
 
@@ -552,6 +602,11 @@ public sealed interface DgOps {
         }
         return true;
       };
+    }
+
+    @Override
+    public @NotNull Function<@NotNull Operation, @NotNull Op> getOpFactory() {
+      return operation -> new IsActiveOp().setOperation(operation);
     }
 
     /** Creates a default is-active-op instance for dialect registration. */

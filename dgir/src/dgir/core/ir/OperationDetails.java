@@ -5,11 +5,12 @@ import dgir.core.Dialect;
 import dgir.core.traits.IOpTrait;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -24,17 +25,20 @@ import java.util.stream.Collectors;
  * @param traits The set of {@link IOpTrait} interfaces implemented by this operation kind.
  * @param traitVerifiers A map from each registered trait class to its {@code verify} method, used
  *     during trait verification.
- * @param emptyConstructor The no-arg constructor — used to create a default op instance (e.g.
- *     during dialect * registration).
+ * @param opFactory The factory taking in an operation and producing a typed op wrapper of this
+ *     kind. Used by {@link #as} to create typed op instances from raw operations.
+ * @param defaultAttributes A supplier of the default attribute list for this operation kind, used
+ *     during default instance construction.
  */
 public record OperationDetails(
     @NotNull String ident,
     @NotNull Class<? extends Op> type,
     @NotNull Dialect dialect,
-    @NotNull Function<Operation, Boolean> verifier,
+    @NotNull Function<@NotNull Operation, @NotNull Boolean> verifier,
     @NotNull Set<Class<? extends IOpTrait>> traits,
-    @NotNull Map<Class<? extends IOpTrait>, Method> traitVerifiers,
-    @NotNull Constructor<? extends Op> emptyConstructor) {
+    @NotNull Map<Class<? extends IOpTrait>, @NotNull Method> traitVerifiers,
+    @NotNull Function<@NotNull Operation, @NotNull Op> opFactory,
+    @NotNull Supplier<@NotNull @Unmodifiable List<@NotNull NamedAttribute>> defaultAttributes) {
   /**
    * Build a {@link OperationDetails} instance from a default (no-arg) {@link Op} prototype. All
    * fields are derived by introspecting the op's class and the values returned by its abstract
@@ -53,6 +57,8 @@ public record OperationDetails(
     final var type = op.getClass();
     final var dialect = Dialect.getOrThrow(op.getDialect());
     final var verifier = op.getVerifier();
+    final var opFactory = op.getOpFactory();
+    final var defaultAttributes = op.defaultAttributes();
     final Set<Class<? extends IOpTrait>> traits =
         Set.copyOf(
             OperationDetails.getAllInterfaces(type).stream()
@@ -77,16 +83,8 @@ public record OperationDetails(
                       }
                     }));
 
-    final var emptyConstructor =
-        getSpecificConstructor(type)
-            .orElseThrow(
-                () ->
-                    new RuntimeException(
-                        "Op class " + type.getName() + " must have an empty constructor."));
-    emptyConstructor.setAccessible(true);
-
     return new OperationDetails(
-        ident, type, dialect, verifier, traits, traitVerifiers, emptyConstructor);
+        ident, type, dialect, verifier, traits, traitVerifiers, opFactory, defaultAttributes);
   }
 
   // =========================================================================
@@ -116,22 +114,6 @@ public record OperationDetails(
   // =========================================================================
   // Static Factories
   // =========================================================================
-  /**
-   * Retrieve a declared constructor of {@code opClass} that matches the given parameter types.
-   *
-   * @param opClass the op class to inspect.
-   * @param parameterTypes the exact parameter types the constructor must have.
-   * @return an {@link Optional} containing the constructor, or empty if no such constructor exists.
-   */
-  @Contract(pure = true)
-  static @NotNull Optional<Constructor<? extends Op>> getSpecificConstructor(
-      @NotNull Class<? extends Op> opClass, @NotNull Class<?>... parameterTypes) {
-    try {
-      return Optional.of(opClass.getDeclaredConstructor(parameterTypes));
-    } catch (NoSuchMethodException e) {
-      return Optional.empty();
-    }
-  }
 
   // Collect interfaces from class hierarchy, including interface inheritance.
   static @NotNull Set<Class<?>> getAllInterfaces(@NotNull Class<?> clazz) {
@@ -234,14 +216,10 @@ public record OperationDetails(
     if (!isa(clazz)) {
       return Optional.empty();
     }
-    try {
-      Op op = emptyConstructor().newInstance();
-      op.setOperation(operation);
-      return Optional.of(clazz.cast(op));
-    } catch (Exception e) {
-      throw new RuntimeException(
-          "Failed to create operation instance of type " + clazz.getName(), e);
-    }
+    var result = opFactory.apply(operation);
+    assert result.getOperationOrNull() == operation
+        : "Op factory for " + ident() + " did not return an op wrapping the given operation";
+    return Optional.of(clazz.cast(result));
   }
 
   /**
@@ -252,14 +230,10 @@ public record OperationDetails(
    */
   @Contract(pure = true)
   public @NotNull Op asOp(@NotNull Operation operation) {
-    try {
-      Op op = emptyConstructor().newInstance();
-      op.setOperation(operation);
-      return op;
-    } catch (Exception e) {
-      throw new RuntimeException(
-          "Failed to create operation instance of type " + type().getName(), e);
-    }
+    var result = opFactory.apply(operation);
+    assert result.getOperationOrNull() == operation
+        : "Op factory for " + ident() + " did not return an op wrapping the given operation";
+    return result;
   }
 
   /**
@@ -302,28 +276,5 @@ public record OperationDetails(
       }
     }
     return true;
-  }
-
-  // =========================================================================
-  // Op Construction
-  // =========================================================================
-
-  /**
-   * Create a default (no-arg) instance of the op represented by this details object. Intended for
-   * use during dialect registration and introspection, not for building live IR nodes.
-   *
-   * @return a freshly constructed default op instance; never {@code null}.
-   * @throws RuntimeException if the no-arg constructor cannot be invoked.
-   */
-  public Op createDefaultInstance() {
-    try {
-      return emptyConstructor().newInstance();
-    } catch (Exception e) {
-      throw new RuntimeException(
-          "Failed to create default instance of operation type "
-              + type().getName()
-              + e.getMessage(),
-          e);
-    }
   }
 }
