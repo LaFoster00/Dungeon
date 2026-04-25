@@ -71,6 +71,21 @@ public class IrToText {
       }
     }
 
+    if (!operation.getDynamicNamedAttributes().isEmpty()) {
+      String dynamicAttrs =
+          operation.getDynamicNamedAttributes().stream()
+              .map(
+                  attr ->
+                      "%s = {%s}"
+                          .formatted(attr.getName(), attr.getAttributeOrThrow().getStorage()))
+              .collect(Collectors.joining(" , "));
+      if (!dynamicAttrs.isEmpty()) {
+        sb.append(" <dynamic [ ");
+        sb.append(dynamicAttrs);
+        sb.append(" ]>");
+      }
+    }
+
     if (!operation.getSuccessors().isEmpty()) {
       sb.append(" ==> [");
       if (!operation.getSuccessors().isEmpty()) sb.append(' ');

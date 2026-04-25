@@ -150,6 +150,9 @@ public final class Operation implements Serializable {
   /** The attributes of this operation. */
   private final @Unmodifiable @NotNull Map<@NotNull String, @NotNull NamedAttribute> attributes;
 
+  /** The dynamic attributes of this operation. */
+  private final @NotNull Map<@NotNull String, @NotNull NamedAttribute> dynamicAttributes;
+
   /** The regions of this operation. */
   private final @NotNull @Unmodifiable List<@NotNull Region> regions;
 
@@ -187,6 +190,8 @@ public final class Operation implements Serializable {
     this.details = details;
 
     this.output = resultType != null ? new OperationResult(this, resultType) : null;
+
+    this.dynamicAttributes = new HashMap<>();
 
     List<ValueOperand> operandsList = new ArrayList<>(operands.size());
     for (var operand : operands) operandsList.add(new ValueOperand(this, operand));
@@ -464,7 +469,7 @@ public final class Operation implements Serializable {
    * @return an unmodifiable map from attribute name to {@link NamedAttribute}.
    */
   @Contract(pure = true)
-  public @NotNull @Unmodifiable Map<String, NamedAttribute> getAttributeMap() {
+  public @NotNull @Unmodifiable Map<String, NamedAttribute> getAttributesMap() {
     return attributes;
   }
 
@@ -486,8 +491,8 @@ public final class Operation implements Serializable {
    */
   @Contract(pure = true)
   public @NotNull Optional<Attribute> getAttribute(@NotNull String name) {
-    if (!getAttributeMap().containsKey(name)) return Optional.empty();
-    return Optional.of(getAttributeMap().get(name).getAttributeOrThrow());
+    if (!getAttributesMap().containsKey(name)) return Optional.empty();
+    return Optional.of(getAttributesMap().get(name).getAttributeOrThrow());
   }
 
   /**
@@ -520,7 +525,7 @@ public final class Operation implements Serializable {
   @Contract(pure = true)
   public <T extends Attribute> @NotNull T getAttributeAsOrThrow(
       @NotNull String name, @NotNull Class<T> clazz) {
-    var attribute = getAttributeMap().get(name);
+    var attribute = getAttributesMap().get(name);
     if (attribute == null)
       throw new NoSuchElementException(
           "Attribute '" + name + "' of type " + clazz.getSimpleName() + " not found on: " + this);
@@ -535,10 +540,123 @@ public final class Operation implements Serializable {
    * @throws AssertionError if no attribute with the given name exists.
    */
   public void setAttribute(@NotNull String name, @NotNull Attribute attribute) {
-    NamedAttribute namedAttribute = getAttributeMap().get(name);
+    NamedAttribute namedAttribute = getAttributesMap().get(name);
     assert namedAttribute != null
         : MessageFormat.format("Attribute with name {0} does not exist.", name);
     namedAttribute.setAttribute(attribute);
+  }
+
+  // =========================================================================
+  // Dynamic Attributes
+  // =========================================================================
+
+  /**
+   * Returns all dynamic named attributes of this operation.
+   *
+   * @return a map from attribute name to {@link NamedAttribute}.
+   */
+  @Contract(pure = true)
+  public @NotNull Map<String, NamedAttribute> getDynamicAttributesMap() {
+    return dynamicAttributes;
+  }
+
+  @Contract(pure = true)
+  public @NotNull @Unmodifiable List<NamedAttribute> getDynamicNamedAttributes() {
+    return dynamicAttributes.values().stream().toList();
+  }
+
+  @Contract(pure = true)
+  public @NotNull @Unmodifiable List<Attribute> getDynamicAttributes() {
+    return dynamicAttributes.values().stream().map(NamedAttribute::getAttributeOrThrow).toList();
+  }
+
+  /**
+   * Returns the dynamic attribute value for the given name, if present and set.
+   *
+   * @param name the dynamic attribute name to look up.
+   * @return the {@link Attribute}, or empty if not present or not set.
+   */
+  @Contract(pure = true)
+  public @NotNull Optional<Attribute> getDynamicAttribute(@NotNull String name) {
+    if (!getDynamicAttributesMap().containsKey(name)) return Optional.empty();
+    return Optional.of(getDynamicAttributesMap().get(name).getAttributeOrThrow());
+  }
+
+  /**
+   * Returns the attribute for the given name cast to {@code clazz}, if present, set, and of the
+   * correct type.
+   *
+   * @param clazz the expected attribute class.
+   * @param name the attribute name.
+   * @param <T> the attribute type.
+   * @return the typed attribute, or empty if absent, unset, or the wrong type.
+   */
+  @Contract(pure = true)
+  public <T extends Attribute> @NotNull Optional<T> getDynamicAttributeAs(
+      @NotNull String name, @NotNull Class<T> clazz) {
+    var attribute = getDynamicAttribute(name);
+    if (attribute.isEmpty() || !clazz.isInstance(attribute.get())) return Optional.empty();
+    return Optional.of(clazz.cast(attribute.get()));
+  }
+
+  /**
+   * Returns the dynamic attribute for the given name cast to {@code clazz}, throwing if absent,
+   * unset, or the wrong type.
+   *
+   * @param name the dattribute name.
+   * @param clazz the expected attribute class.
+   * @param <T> the attribute type.
+   * @return the typed attribute, never {@code null}.
+   * @throws NoSuchElementException if the attribute is absent, unset, or the wrong type.
+   */
+  @Contract(pure = true)
+  public <T extends Attribute> @NotNull T getDynamicAttributeAsOrThrow(
+      @NotNull String name, @NotNull Class<T> clazz) {
+    var attribute = getDynamicAttributesMap().get(name);
+    if (attribute == null)
+      throw new NoSuchElementException(
+          "Attribute '" + name + "' of type " + clazz.getSimpleName() + " not found on: " + this);
+    return clazz.cast(attribute.getAttributeOrThrow());
+  }
+
+  /**
+   * Set (or replace) a dynamic attribute by name.
+   *
+   * @param name the dynamic attribute name.
+   * @param attribute the dynamic attribute value.
+   */
+  public void setDynamicAttribute(@NotNull String name, @NotNull Attribute attribute) {
+    NamedAttribute namedAttribute = getDynamicAttributesMap().get(name);
+    if (namedAttribute == null) {
+      getDynamicAttributesMap().put(name, new NamedAttribute(name, attribute));
+      return;
+    }
+    namedAttribute.setAttribute(attribute);
+  }
+
+  /**
+   * Add a new dynamic attribute.
+   *
+   * @param name the dynamic attribute name.
+   * @param attribute the dynamic attribute value.
+   * @throws AssertionError if a dynamic attribute with the same name already exists.
+   */
+  public void addDynamicAttribute(@NotNull String name, @NotNull Attribute attribute) {
+    assert !getDynamicAttributesMap().containsKey(name)
+        : MessageFormat.format("Dynamic attribute with name {0} already exists.", name);
+    getDynamicAttributesMap().put(name, new NamedAttribute(name, attribute));
+  }
+
+  /**
+   * Remove a dynamic attribute.
+   *
+   * @param name the dynamic attribute name.
+   * @return the removed dynamic attribute value, or empty if no entry existed for the given name.
+   */
+  public @NotNull Optional<Attribute> removeDynamicAttribute(@NotNull String name) {
+    NamedAttribute removed = getDynamicAttributesMap().remove(name);
+    if (removed == null) return Optional.empty();
+    return removed.getAttribute();
   }
 
   // =========================================================================
@@ -852,6 +970,21 @@ public final class Operation implements Serializable {
         sb.append(" [ ");
         sb.append(attrs);
         sb.append(" ]");
+      }
+    }
+
+    if (!dynamicAttributes.isEmpty()) {
+      String dynAttrs =
+          dynamicAttributes.values().stream()
+              .map(
+                  attr ->
+                      MessageFormat.format(
+                          "{0} = {1}", attr.getName(), attr.getAttributeOrThrow().getStorage()))
+              .collect(Collectors.joining(", "));
+      if (!dynAttrs.isEmpty()) {
+        sb.append(" <dynamic [ ");
+        sb.append(dynAttrs);
+        sb.append(" ]>");
       }
     }
 

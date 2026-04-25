@@ -27,7 +27,7 @@ public interface ISymbol extends IOpTrait {
    */
   @Contract(pure = true)
   default boolean verify(@NotNull ISymbol ignored) {
-    if (!getOperation().getAttributeMap().containsKey(SymbolTable.getSymbolAttributeName())) {
+    if (!getOperation().getAttributesMap().containsKey(SymbolTable.getSymbolAttributeName())) {
       getOperation().emitError("Symbol must have a symbol attribute.");
       return false;
     }

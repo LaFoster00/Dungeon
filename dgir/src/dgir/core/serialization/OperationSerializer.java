@@ -33,9 +33,12 @@ public class OperationSerializer extends StdSerializer<Operation> {
     if (!value.getOperands().isEmpty()) gen.writePOJOProperty("operands", value.getOperands());
     if (!value.getBlockOperands().isEmpty())
       gen.writePOJOProperty("successors", value.getBlockOperands());
-    if (!value.getAttributeMap().isEmpty()) {
+    if (!value.getAttributesMap().isEmpty()) {
       // Convert the map to a list of attributes.
-      gen.writePOJOProperty("attributes", value.getAttributeMap().values());
+      gen.writePOJOProperty("attributes", value.getAttributesMap().values());
+    }
+    if (!value.getDynamicAttributesMap().isEmpty()) {
+      gen.writePOJOProperty("dynamicAttributes", value.getDynamicAttributesMap().values());
     }
     if (value.getOutput().isPresent()) gen.writePOJOProperty("output", value.getOutput());
     if (!value.getRegions().isEmpty()) gen.writePOJOProperty("regions", value.getRegions());

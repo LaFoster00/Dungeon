@@ -1,9 +1,12 @@
 import dgir.core.Dialect;
 import dgir.core.DgirCoreUtils;
+import dgir.core.IrToText;
 import dgir.core.debug.Location;
+import dgir.core.ir.Operation;
 import dgir.core.ir.Block;
 import dgir.core.ir.TypeDetails;
 import dgir.core.serialization.Utils;
+import dgir.dialect.builtin.BuiltinAttrs;
 import dgir.dialect.mem.MemTypes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeAll;
@@ -176,5 +179,42 @@ public class CoreTests {
     mergeBlock.addOperation(new ReturnOp(LOC));
 
     assertTrue(TestUtils.testValidityAndSerialization(programOp));
+  }
+
+  @Test
+  public void dynamicAttributeSerializationRoundTrip() {
+    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    FuncOp funcOp = entry.getRight();
+
+    var constOp = funcOp.addOperation(new ConstantOp(LOC, 42), 0);
+    Operation operation = constOp.getOperation();
+    operation.addDynamicAttribute("tag", new BuiltinAttrs.SymbolRefAttribute("runtime"));
+    operation.addDynamicAttribute(
+        "priority", new BuiltinAttrs.IntegerAttribute(7, IntegerT.INT32()));
+
+    String json = mapper.writeValueAsString(operation);
+    Operation roundTripped = mapper.readValue(json, Operation.class);
+
+    assertEquals("", TestUtils.compareSerializedOperations(mapper, operation, roundTripped));
+    assertTrue(
+        roundTripped
+            .getDynamicAttributeAs("tag", BuiltinAttrs.SymbolRefAttribute.class)
+            .isPresent());
+    assertEquals(
+        "runtime",
+        roundTripped
+            .getDynamicAttributeAsOrThrow("tag", BuiltinAttrs.SymbolRefAttribute.class)
+            .getValue());
+    assertEquals(
+        7,
+        roundTripped
+            .getDynamicAttributeAsOrThrow("priority", BuiltinAttrs.IntegerAttribute.class)
+            .getValue()
+            .intValue());
+    assertTrue(roundTripped.toString().contains("<dynamic ["));
+    assertTrue(IrToText.toText(roundTripped).contains("<dynamic ["));
+
+    assertTrue(roundTripped.removeDynamicAttribute("tag").isPresent());
+    assertTrue(roundTripped.getDynamicAttribute("tag").isEmpty());
   }
 }

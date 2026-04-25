@@ -17,8 +17,9 @@ import java.util.Map;
  * Deserializes an {@link Operation} from its JSON object form.
  *
  * <p>Required field: {@code ident}. Optional fields ({@code operands}, {@code attributes}, {@code
- * output}, {@code successors}, {@code regions}, {@code loc}) are validated when present. Malformed
- * input is reported via {@link DeserializationContext#reportInputMismatch}.
+ * dynamicAttributes}, {@code output}, {@code successors}, {@code regions}, {@code loc}) are
+ * validated when present. Malformed input is reported via {@link
+ * DeserializationContext#reportInputMismatch}.
  */
 public class OperationDeserializer extends StdDeserializer<Operation> {
   /**
@@ -94,6 +95,21 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       for (JsonNode attributeNode : attributesNode) {
         NamedAttribute attribute = ctxt.readTreeAsValue(attributeNode, NamedAttribute.class);
         attributes.add(attribute);
+      }
+    }
+
+    List<NamedAttribute> dynamicAttributes = null;
+    JsonNode dynamicAttributesNode = node.get("dynamicAttributes");
+    if (dynamicAttributesNode != null && !dynamicAttributesNode.isNull()) {
+      if (!dynamicAttributesNode.isArray()) {
+        return ctxt.reportInputMismatch(
+            Operation.class, "Field 'dynamicAttributes' must be an array.");
+      }
+      dynamicAttributes = new ArrayList<>();
+      for (JsonNode dynamicAttributeNode : dynamicAttributesNode) {
+        NamedAttribute dynamicAttribute =
+            ctxt.readTreeAsValue(dynamicAttributeNode, NamedAttribute.class);
+        dynamicAttributes.add(dynamicAttribute);
       }
     }
 
@@ -181,6 +197,13 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
     if (attributes != null) {
       for (NamedAttribute attribute : attributes) {
         operation.setAttribute(attribute.getName(), attribute.getAttributeOrThrow());
+      }
+    }
+
+    if (dynamicAttributes != null) {
+      for (NamedAttribute dynamicAttribute : dynamicAttributes) {
+        operation.setDynamicAttribute(
+            dynamicAttribute.getName(), dynamicAttribute.getAttributeOrThrow());
       }
     }
 

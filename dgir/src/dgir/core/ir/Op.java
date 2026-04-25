@@ -259,8 +259,8 @@ public abstract class Op {
   // =========================================================================
 
   @Contract(pure = true)
-  public @NotNull @Unmodifiable Map<String, NamedAttribute> getAttributeMap() {
-    return getOperation().getAttributeMap();
+  public @NotNull @Unmodifiable Map<String, NamedAttribute> getAttributesMap() {
+    return getOperation().getAttributesMap();
   }
 
   @Contract(pure = true)
@@ -286,6 +286,44 @@ public abstract class Op {
 
   public void setAttribute(@NotNull String name, @NotNull Attribute attribute) {
     getOperation().setAttribute(name, attribute);
+  }
+
+  @Contract(pure = true)
+  public @NotNull Map<String, NamedAttribute> getDynamicAttributesMap() {
+    return getOperation().getDynamicAttributesMap();
+  }
+
+  @Contract(pure = true)
+  public @NotNull @Unmodifiable List<NamedAttribute> getDynamicNamedAttributes() {
+    return getOperation().getDynamicNamedAttributes();
+  }
+
+  @Contract(pure = true)
+  public @NotNull @Unmodifiable List<Attribute> getDynamicAttributes() {
+    return getOperation().getDynamicAttributes();
+  }
+
+  @Contract(pure = true)
+  public @NotNull Optional<Attribute> getDynamicAttribute(@NotNull String name) {
+    return getOperation().getDynamicAttribute(name);
+  }
+
+  @Contract(pure = true)
+  public <T extends Attribute> @NotNull Optional<T> getDynamicAttributeAs(
+      @NotNull String name, @NotNull Class<T> clazz) {
+    return getOperation().getDynamicAttributeAs(name, clazz);
+  }
+
+  public void setDynamicAttribute(@NotNull String name, @NotNull Attribute attribute) {
+    getOperation().setDynamicAttribute(name, attribute);
+  }
+
+  public void addDynamicAttribute(@NotNull String name, @NotNull Attribute attribute) {
+    getOperation().addDynamicAttribute(name, attribute);
+  }
+
+  public @NotNull Optional<Attribute> removeDynamicAttribute(@NotNull String name) {
+    return getOperation().removeDynamicAttribute(name);
   }
 
   // =========================================================================

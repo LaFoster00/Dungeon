@@ -502,7 +502,7 @@ public sealed interface ArithOps {
      */
     public ConstantOp(@NotNull Location location, @NotNull TypedAttribute value) {
       setOperation(true, Operation.Create(location, this, null, null, value.getType()));
-      getAttributeMap().get("value").setAttribute(value);
+      getAttributesMap().get("value").setAttribute(value);
     }
 
     /**
