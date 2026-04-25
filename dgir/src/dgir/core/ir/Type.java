@@ -44,10 +44,10 @@ public abstract class Type {
    *
    * <p>Syntax:
    *
-   * <pre>
+   * <pre>{@code
    * ident:
    *    namespace '.' name
-   * </pre>
+   * }</pre>
    *
    * @return The ident string.
    */
@@ -62,12 +62,15 @@ public abstract class Type {
    *
    * <p>Syntax:
    *
-   * <pre>
+   * <pre>{@code
    * parameterizedType:
    *    ident
-   *    | ident '&lt;' typeParameter (',' typeParameter)* '&gt;'
-   *    | ident '&lt;' verbatim '&gt;'
-   * </pre>
+   *    | ident '<' typeParam (',' typeParam)* '>'
+   *
+   * typeParam:
+   *    parameterizedType
+   *    | string
+   * }</pre>
    *
    * @return The parameterized ident string.
    */
