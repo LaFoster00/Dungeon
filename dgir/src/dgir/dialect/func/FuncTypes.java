@@ -63,10 +63,11 @@ public sealed interface FuncTypes {
             return FuncType.empty();
           }
           // Extract the single parameter (the full "(inputs) -> (output)" string), then
-          // split on
-          // "->" at depth 0 so nested func types containing "->" are never split
+          // split on "->" at depth 0 so nested func types containing "->" are never split
           // prematurely.
-          String param = DgirCoreUtils.getParameterStrings(args.getLeft()).getFirst();
+          String param =
+              TypeDetails.unquoteCustomExpression(
+                  DgirCoreUtils.getParameterStrings(args.getLeft()).getFirst());
           List<String> arrowParts = DgirCoreUtils.splitAtDepthZero(param, "->");
           String inputsPart = arrowParts.get(0).trim();
           String outputPart = arrowParts.get(1).trim();
@@ -96,7 +97,7 @@ public sealed interface FuncTypes {
    * <p>A {@code FuncType} describes a function's parameter types and optional return type:
    *
    * <pre>
-   *   func.func&lt;(int32, string) -&gt; (bool)&gt;
+   *   func.func&lt;"(int32, string) -&gt; (bool)"&gt;
    * </pre>
    *
    * <p>The {@link #getParameterizedIdent()} method renders the full signature; simple (void/no-arg)
@@ -111,12 +112,13 @@ public sealed interface FuncTypes {
     @Contract(pure = true)
     @Override
     public @NotNull String getParameterizedIdent() {
-      return "func.func"
-          + "<("
-          + String.join(", ", getInputs().stream().map(Type::getParameterizedIdent).toList())
-          + ") -> ("
-          + (getOutput() == null ? "" : getOutput().getParameterizedIdent())
-          + ")>";
+      String signature =
+          "("
+              + String.join(", ", getInputs().stream().map(Type::getParameterizedIdent).toList())
+              + ") -> ("
+              + (getOutput() == null ? "" : getOutput().getParameterizedIdent())
+              + ")";
+      return "func.func<\"" + TypeDetails.quoteCustomExpression(signature) + "\">";
     }
 
     // =========================================================================

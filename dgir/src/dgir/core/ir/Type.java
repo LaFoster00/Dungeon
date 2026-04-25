@@ -14,8 +14,8 @@ import java.util.function.Function;
  * Base class for all IR types.
  *
  * <p>Types are contributed by dialects and are either non-parameterized (for example, {@code
- * int32}) or parameterized (for example, {@code ptr<int32>} or {@code func.func<(int32) ->
- * (int32)>}). Each type has a stable ident and a validator used to check storage values.
+ * int32}) or parameterized (for example, {@code ptr<int32>} or {@code func.func<"(int32) ->
+ * (int32)">}). Each type has a stable ident and a validator used to check storage values.
  *
  * <p>Type instances are treated as canonical values. Implementations should return shared instances
  * (singletons for non-parameterized types and {@link TypeUniquer}-canonicalized instances for
@@ -69,8 +69,14 @@ public abstract class Type {
    *
    * typeParam:
    *    parameterizedType
-   *    | string
+   *    | quotedString
+   *
+   * quotedString:
+   *    '"' .* '"'
    * }</pre>
+   *
+   * <p>Custom expressions should use the quoted form so embedded punctuation remains part of the
+   * parameter value instead of being parsed structurally.
    *
    * @return The parameterized ident string.
    */

@@ -35,11 +35,13 @@ public class DgirCoreUtils {
 
   /**
    * Split {@code text} by the first occurrence of {@code delimiter} that appears at nesting depth
-   * 0, where depth is tracked by counting matched pairs of {@code < >} and {@code ( )}.
+   * 0, where depth is tracked by counting matched pairs of {@code < >} and {@code ( )}. Quoted
+   * substrings (delimited by {@code "..."}) are treated as atomic and may contain delimiters or
+   * nested bracket characters without affecting the split.
    *
    * <p>This is the core primitive used by {@link #getParameterStrings(String)}. It can be reused
    * whenever a string must be split on an arbitrary delimiter sequence while respecting bracket
-   * nesting — for example splitting {@code "(i32, string) -> (bool)"} on {@code "->"}.
+   * nesting.
    *
    * <p>If the delimiter does not appear at depth 0, the whole input is returned as a single-element
    * list.
@@ -47,14 +49,8 @@ public class DgirCoreUtils {
    * <p>Examples:
    *
    * <pre>
-   *   splitAtDepthZero("(i32, string) -> (bool)", "->")
-   *       → ["(i32, string) ", " (bool)"]          // raw, untrimmed
-   *
    *   splitAtDepthZero("i32, string", ",")
    *       → ["i32", " string"]
-   *
-   *   splitAtDepthZero("func.func&lt;(string) -&gt; (bool)&gt;, i32", ",")
-   *       → ["func.func&lt;(string) -&gt; (bool)&gt;", " i32"]
    * </pre>
    *
    * @param text the string to split; must not be {@code null}.
@@ -68,11 +64,26 @@ public class DgirCoreUtils {
 
     List<String> result = new ArrayList<>();
     int depth = 0;
+    boolean inQuotes = false;
     int start = 0;
     int i = 0;
 
     while (i < text.length()) {
       char c = text.charAt(i);
+
+      if (inQuotes) {
+        if (c == '"' && (i == 0 || text.charAt(i - 1) != '\\')) {
+          inQuotes = false;
+        }
+        i++;
+        continue;
+      }
+
+      if (c == '"') {
+        inQuotes = true;
+        i++;
+        continue;
+      }
 
       // Track nesting depth
       if (c == '<' || c == '(') {
@@ -80,7 +91,12 @@ public class DgirCoreUtils {
         i++;
         continue;
       }
-      if (c == '>' || c == ')') {
+      if (c == '>') {
+        depth--;
+        i++;
+        continue;
+      }
+      if (c == ')') {
         depth--;
         i++;
         continue;
@@ -109,20 +125,15 @@ public class DgirCoreUtils {
    * <p>The method strips the outermost {@code <…>} wrapper and then splits the inner text by {@code
    * ','} at nesting depth 0 via {@link #splitAtDepthZero(String, String)}. Both angle-bracket pairs
    * ({@code < >}) and parenthesis pairs ({@code ( )}) increment/decrement the depth counter, so
-   * nested generic types and parenthesised signatures are never split mid-way. Each resulting
-   * segment is trimmed of surrounding whitespace and empty segments are dropped.
+   * nested generic types and parenthesised signatures are never split mid-way. Quoted custom
+   * expressions are preserved as-is. Each resulting segment is trimmed of surrounding whitespace,
+   * and empty segments are rejected.
    *
    * <p>Examples:
    *
    * <pre>
-   *   "func.func&lt;(i32, string) -&gt; (bool)&gt;"
-   *       → ["(i32, string) -> (bool)"]
-   *
    *   "struct.struct&lt;i32, string&gt;"
    *       → ["i32", "string"]
-   *
-   *   "func.func&lt;(i32, func.func&lt;(string) -&gt; (bool)&gt;) -&gt; (bool)&gt;"
-   *       → ["(i32, func.func&lt;(string) -&gt; (bool)&gt;) -> (bool)"]
    * </pre>
    *
    * @param parameterizedIdent a parameterized ident string that contains exactly one outermost
@@ -132,15 +143,30 @@ public class DgirCoreUtils {
   @Contract(pure = true)
   public static @NotNull @Unmodifiable List<String> getParameterStrings(
       @NotNull String parameterizedIdent) {
+    String normalizedIdent = parameterizedIdent.trim();
+    if (normalizedIdent.isEmpty()) {
+      throw new IllegalArgumentException("Parameterized ident must not be empty.");
+    }
+
     // Strip the outermost < … >
     String inner =
-        parameterizedIdent.substring(
-            parameterizedIdent.indexOf('<') + 1, parameterizedIdent.length() - 1);
+        normalizedIdent.substring(normalizedIdent.indexOf('<') + 1, normalizedIdent.length() - 1);
 
-    // Delegate to the general splitter, then trim and drop empty segments
+    if (inner.isBlank()) {
+      throw new IllegalArgumentException(
+          "Malformed parameterized ident (empty parameter list): " + parameterizedIdent);
+    }
+
+    // Delegate to the general splitter, then trim and reject empty segments
     return splitAtDepthZero(inner, ",").stream()
         .map(String::trim)
-        .filter(s -> !s.isEmpty())
+        .peek(
+            s -> {
+              if (s.isEmpty()) {
+                throw new IllegalArgumentException(
+                    "Malformed parameterized ident (empty parameter): " + parameterizedIdent);
+              }
+            })
         .toList();
   }
 

@@ -10,7 +10,7 @@ sourceSets.test.java.srcDirs = ['test/']
 sourceSets.test.resources.srcDirs = ['test_assets/']
 
 dependencies {
-    implementation libs.commons.lang3
+    api libs.commons.lang3
     api 'tools.jackson.core:jackson-databind:3.0.3'
     implementation 'guru.nidi:graphviz-java-all-j2v8:0.18.1'
     implementation 'org.eclipse.collections:eclipse-collections-api:13.0.0'

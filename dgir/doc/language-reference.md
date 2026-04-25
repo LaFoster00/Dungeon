@@ -81,9 +81,9 @@ The `func` dialect models function definitions, calls and returns. Its namespace
 
 **Types**
 
-| Ident                             | Class      | Description |
-|-----------------------------------|------------|-------------|
-| `func.func<(inputs) -> (output)>` | `FuncType` | A function signature: an ordered list of parameter types and an optional return type. |
+| Ident                               | Class      | Description                                                                           |
+|-------------------------------------|------------|---------------------------------------------------------------------------------------|
+| `func.func<"(inputs) -> (output)">` | `FuncType` | A function signature: an ordered list of parameter types and an optional return type. |
 
 ---
 

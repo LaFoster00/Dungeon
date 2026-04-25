@@ -7,6 +7,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -75,8 +76,8 @@ public record TypeDetails(
    * <pre>{@literal
    *   int32
    *   float64
-   *   func.func<(int32, string) -> (bool)>
-   *   func.func<(func.func<(int32) -> (bool)>) -> ()>
+   *   func.func<"(int32, string) -> (bool)">
+   *   func.func<"(func.func<\"(int32) -> (bool)\">) -> ()">
    * }</pre>
    *
    * @param parameterizedIdent The parameterized ident string.
@@ -84,11 +85,33 @@ public record TypeDetails(
    */
   @Contract(pure = true)
   public static @NotNull Type fromParameterizedIdent(@NotNull String parameterizedIdent) {
-    String baseIdent = parameterizedIdent;
-    int genericStart = parameterizedIdent.indexOf('<');
-    if (genericStart != -1) {
-      baseIdent = parameterizedIdent.substring(0, genericStart);
+    String normalizedIdent = parameterizedIdent.trim();
+    if (normalizedIdent.isEmpty()) {
+      throw new IllegalArgumentException("Parameterized ident must not be empty.");
     }
+
+    int genericStart = normalizedIdent.indexOf('<');
+    String baseIdent = normalizedIdent;
+    if (genericStart != -1) {
+      int genericEnd = findMatchingGenericEnd(normalizedIdent, genericStart);
+      if (genericEnd != normalizedIdent.length() - 1) {
+        throw new IllegalArgumentException(
+            "Malformed parameterized ident (unexpected trailing content): " + parameterizedIdent);
+      }
+
+      baseIdent = normalizedIdent.substring(0, genericStart).trim();
+      if (baseIdent.isEmpty()) {
+        throw new IllegalArgumentException(
+            "Malformed parameterized ident (missing base ident): " + parameterizedIdent);
+      }
+
+      String parameterText = normalizedIdent.substring(genericStart + 1, genericEnd);
+      if (parameterText.isBlank()) {
+        throw new IllegalArgumentException(
+            "Malformed parameterized ident (empty parameter list): " + parameterizedIdent);
+      }
+    }
+
     return TypeDetails.get(baseIdent)
         .map(
             typeDetails ->
@@ -113,8 +136,8 @@ public record TypeDetails(
    *
    * <pre>{@literal
    *   int32, float64
-   *   func.func<(int32, string) -> (bool)>, float64
-   *   func.func<(func.func<(int32) -> (bool)>) -> ()>, string
+   *   func.func<"(int32, string) -> (bool)">, float64
+   *   func.func<"(int32) -> (bool)">, string
    * }</pre>
    *
    * @param parameterString The comma-separated parameter string (may be empty).
@@ -125,11 +148,104 @@ public record TypeDetails(
     if (parameterString.isBlank()) {
       return List.of();
     }
-    return DgirCoreUtils.splitAtDepthZero(parameterString, ",").stream()
-        .map(String::trim)
-        .filter(s -> !s.isEmpty())
-        .map(TypeDetails::fromParameterizedIdent)
-        .toList();
+
+    List<Type> parameters = new ArrayList<>();
+    for (String parameter : DgirCoreUtils.splitAtDepthZero(parameterString, ",")) {
+      String trimmedParameter = parameter.trim();
+      if (trimmedParameter.isEmpty()) {
+        throw new IllegalArgumentException(
+            "Malformed parameter string (empty parameter): " + parameterString);
+      }
+      parameters.add(fromParameterizedIdent(trimmedParameter));
+    }
+    return List.copyOf(parameters);
+  }
+
+  /**
+   * Quote a custom type expression so it can be embedded as a parameter value.
+   *
+   * <p>Backslashes and double quotes are escaped using JSON-style escaping.
+   *
+   * @param value the raw custom expression.
+   * @return the quoted and escaped expression payload.
+   */
+  @Contract(pure = true)
+  public static @NotNull String quoteCustomExpression(@NotNull String value) {
+    return escapeCustomExpression(value);
+  }
+
+  /**
+   * Unquote a custom type expression previously wrapped with {@link
+   * #quoteCustomExpression(String)}.
+   *
+   * @param parameter the possibly quoted custom expression.
+   * @return the unquoted expression if it was quoted, otherwise the original value.
+   */
+  @Contract(pure = true)
+  public static @NotNull String unquoteCustomExpression(@NotNull String parameter) {
+    if (parameter.length() >= 2 && parameter.startsWith("\"") && parameter.endsWith("\"")) {
+      return unescapeCustomExpression(parameter.substring(1, parameter.length() - 1));
+    }
+    return parameter;
+  }
+
+  @Contract(pure = true)
+  private static @NotNull String escapeCustomExpression(@NotNull String value) {
+    return value.replace("\\", "\\\\").replace("\"", "\\\"");
+  }
+
+  @Contract(pure = true)
+  private static @NotNull String unescapeCustomExpression(@NotNull String value) {
+    StringBuilder builder = new StringBuilder(value.length());
+    boolean escaping = false;
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (escaping) {
+        builder.append(c);
+        escaping = false;
+      } else if (c == '\\') {
+        escaping = true;
+      } else {
+        builder.append(c);
+      }
+    }
+    if (escaping) {
+      throw new IllegalArgumentException("Malformed escaped custom expression: " + value);
+    }
+    return builder.toString();
+  }
+
+  @Contract(pure = true)
+  private static int findMatchingGenericEnd(@NotNull String text, int genericStart) {
+    int depth = 0;
+    boolean inQuotes = false;
+    for (int i = genericStart; i < text.length(); i++) {
+      char c = text.charAt(i);
+      if (inQuotes) {
+        if (c == '"' && text.charAt(i - 1) != '\\') {
+          inQuotes = false;
+        }
+        continue;
+      }
+      if (c == '"') {
+        inQuotes = true;
+        continue;
+      }
+      if (c == '<') {
+        depth++;
+      } else if (c == '>') {
+        depth--;
+        if (depth == 0) {
+          return i;
+        }
+        if (depth < 0) {
+          break;
+        }
+      }
+    }
+
+    throw new IllegalArgumentException(
+        "Malformed parameterized ident (unbalanced angle brackets): " + text);
   }
 
   // =========================================================================

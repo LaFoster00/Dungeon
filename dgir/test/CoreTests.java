@@ -1,20 +1,31 @@
 import dgir.core.Dialect;
+import dgir.core.DgirCoreUtils;
 import dgir.core.debug.Location;
 import dgir.core.ir.Block;
+import dgir.core.ir.TypeDetails;
 import dgir.core.serialization.Utils;
+import dgir.dialect.mem.MemTypes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.List;
+import java.util.OptionalInt;
+
 import static dgir.dialect.arith.ArithOps.ConstantOp;
 import static dgir.dialect.builtin.BuiltinOps.ProgramOp;
+import static dgir.dialect.builtin.BuiltinTypes.IntegerT;
 import static dgir.dialect.cf.CfOps.BranchCondOp;
 import static dgir.dialect.cf.CfOps.BranchOp;
 import static dgir.dialect.func.FuncOps.FuncOp;
 import static dgir.dialect.func.FuncOps.ReturnOp;
+import static dgir.dialect.func.FuncTypes.FuncType;
 import static dgir.dialect.io.IoOps.PrintOp;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -32,6 +43,44 @@ public class CoreTests {
   public static void setup() {
     Dialect.registerAllDialects();
     mapper = Utils.getMapper(true);
+  }
+
+  @Test
+  public void parameterizedTypeParsingRoundTrips() {
+    var nestedFunc = FuncType.of(List.of(IntegerT.INT32()), IntegerT.INT32());
+    var arrayType = MemTypes.ArrayT.of(nestedFunc, OptionalInt.of(4));
+    var topLevelFunc = FuncType.of(List.of(IntegerT.INT32(), arrayType), IntegerT.INT64());
+
+    assertSame(
+        IntegerT.INT32(),
+        TypeDetails.fromParameterizedIdent(IntegerT.INT32().getParameterizedIdent()));
+    assertSame(nestedFunc, TypeDetails.fromParameterizedIdent(nestedFunc.getParameterizedIdent()));
+    assertSame(arrayType, TypeDetails.fromParameterizedIdent(arrayType.getParameterizedIdent()));
+    assertSame(
+        topLevelFunc, TypeDetails.fromParameterizedIdent(topLevelFunc.getParameterizedIdent()));
+    assertEquals("func.func<\"(int32) -> (int32)\">", nestedFunc.getParameterizedIdent());
+
+    assertEquals(
+        List.of(IntegerT.INT32(), arrayType, nestedFunc),
+        TypeDetails.fromParameterString(
+            "int32, mem.array<func.func<\"(int32) -> (int32)\">, 4>, func.func<\"(int32) -> (int32)\">"));
+  }
+
+  @Test
+  public void malformedParameterizedSyntaxIsRejected() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> TypeDetails.fromParameterizedIdent("func.func<\"(int32) -> (int32)"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> TypeDetails.fromParameterString("int32,,func.func<\"(int32) -> (int32)\">"));
+  }
+
+  @Test
+  public void quotedCustomExpressionsArePreservedInParameterStrings() {
+    assertEquals(
+        List.of("\"(int32, string) -> (bool)\"", "int32"),
+        DgirCoreUtils.getParameterStrings("custom<\"(int32, string) -> (bool)\", int32>"));
   }
 
   @Test
