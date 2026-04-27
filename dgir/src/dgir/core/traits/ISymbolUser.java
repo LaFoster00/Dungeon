@@ -1,5 +1,6 @@
 package dgir.core.traits;
 
+import dgir.core.ir.Operation;
 import dgir.core.ir.SymbolTable;
 import dgir.dialect.func.FuncOps;
 import org.jetbrains.annotations.Contract;
@@ -20,15 +21,16 @@ public interface ISymbolUser extends IOpTrait {
   /**
    * Verifies that the referenced symbol can be resolved in the nearest symbol table.
    *
-   * @param trait trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if symbol resolution succeeds.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull ISymbolUser trait) {
+  static boolean verify(@NotNull Operation operation) {
+    var trait = operation.asTrait(ISymbolUser.class).orElseThrow();
     var symbolName = trait.getSymbolRefAttribute().getValue();
-    var symbolOp = SymbolTable.lookupSymbolInNearestTable(getOperation(), symbolName);
+    var symbolOp = SymbolTable.lookupSymbolInNearestTable(operation, symbolName);
     if (symbolOp.isEmpty()) {
-      getOperation().emitError("Could not find symbol " + symbolName);
+      operation.emitError("Could not find symbol " + symbolName);
       return false;
     }
     return true;

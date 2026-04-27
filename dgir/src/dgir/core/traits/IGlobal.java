@@ -1,5 +1,6 @@
 package dgir.core.traits;
 
+import dgir.core.ir.Operation;
 import dgir.dialect.func.FuncOps;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -17,12 +18,12 @@ public interface IGlobal extends IOpTrait {
   /**
    * Verifies that the parent operation is a global container when present.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the op is top-level or parented by a global container.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull IGlobal ignored) {
-    return getOperation()
+  static boolean verify(@NotNull Operation operation) {
+    return operation
         .getParentOperation()
         // Ensure that the op is inside a global container op
         .map(parent -> parent.hasTrait(IGlobalContainer.class))

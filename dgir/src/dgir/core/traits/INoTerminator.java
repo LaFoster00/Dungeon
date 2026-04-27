@@ -9,12 +9,11 @@ public interface INoTerminator extends IOpTrait {
   /**
    * Verifies one-region/one-block structure without a terminator operation.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the structural constraints are satisfied.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull INoTerminator ignored) {
-    Operation operation = getOperation();
+  static boolean verify(@NotNull Operation operation) {
     // Check that the operation has exactly one region, block and no terminator.
     if (operation.getRegions().size() != 1) {
       operation.emitError("Operation must have exactly one region.");

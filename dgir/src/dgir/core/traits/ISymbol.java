@@ -1,5 +1,6 @@
 package dgir.core.traits;
 
+import dgir.core.ir.Operation;
 import dgir.core.ir.SymbolTable;
 import dgir.dialect.func.FuncOps;
 import dgir.dialect.str.StrAttrs;
@@ -22,13 +23,13 @@ public interface ISymbol extends IOpTrait {
   /**
    * Verifies that the operation carries the required symbol-name attribute.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the symbol attribute exists.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull ISymbol ignored) {
-    if (!getOperation().getAttributesMap().containsKey(SymbolTable.getSymbolAttributeName())) {
-      getOperation().emitError("Symbol must have a symbol attribute.");
+  static boolean verify(@NotNull Operation operation) {
+    if (!operation.getAttributesMap().containsKey(SymbolTable.getSymbolAttributeName())) {
+      operation.emitError("Symbol must have a symbol attribute.");
       return false;
     }
     return true;

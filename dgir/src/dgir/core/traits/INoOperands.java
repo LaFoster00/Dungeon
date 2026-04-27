@@ -1,5 +1,8 @@
 package dgir.core.traits;
 
+import dgir.core.ir.Operation;
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Marks an operation that must have no operands.
  */
@@ -7,12 +10,12 @@ public interface INoOperands extends IOpTrait {
   /**
    * Verifies that the operation has no operands.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if no operands are present.
    */
-  default boolean verify(INoOperands ignored) {
-    if (!getOperation().getOperands().isEmpty()) {
-      getOperation().emitError("Operation must have no operands.");
+  static boolean verify(@NotNull Operation operation) {
+    if (!operation.getOperands().isEmpty()) {
+      operation.emitError("Operation must have no operands.");
       return false;
     }
     return true;

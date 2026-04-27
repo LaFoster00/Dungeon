@@ -21,28 +21,27 @@ public interface ITerminator extends IOpTrait {
   /**
    * Verifies that this operation is placed as the last operation of its parent block.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the operation is a valid block terminator positionally.
    */
-  default boolean verify(@NotNull ITerminator ignored) {
+  static boolean verify(@NotNull Operation operation) {
     // Make sure the terminator is the last operation in the region.
-    Optional<Block> block = getOperation().getParent();
-    Operation self = getOperation();
+    Optional<Block> block = operation.getParent();
     if (block.isEmpty()) {
-      self.emitError("Terminator must be in a block.");
+      operation.emitError("Terminator must be in a block.");
       return false;
     }
-    if (!block.get().getOperations().getLast().equals(self)) {
-      self.emitError(
+    if (!block.get().getOperations().getLast().equals(operation)) {
+      operation.emitError(
           "Terminator must be the last operation in the block.\n\t"
               + " Found terminator at index "
-              + block.get().getOperations().indexOf(self)
+              + block.get().getOperations().indexOf(operation)
               + " but expected at index "
               + (block.get().getOperations().size() - 1)
               + " \n\tGot terminator: \n\t\t"
               + block.get().getOperations().getLast()
               + " \n\tin operation: \n\t\t"
-              + self.getParentOperation().orElse(null)
+              + operation.getParentOperation().orElse(null)
               + " \n\tin region\n\t\t "
               + block.get().getParent().map(Region::getIndex).orElse(null));
       return false;

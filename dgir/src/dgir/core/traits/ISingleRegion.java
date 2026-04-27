@@ -21,13 +21,13 @@ public interface ISingleRegion extends IOpTrait {
   /**
    * Verifies that the operation owns exactly one region.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the operation has exactly one region.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull ISingleRegion ignored) {
-    if (getOperation().getRegions().size() != 1) {
-      getOperation().emitError("Operation must have exactly one region.");
+  static boolean verify(@NotNull Operation operation) {
+    if (operation.getRegions().size() != 1) {
+      operation.emitError("Operation must have exactly one region.");
       return false;
     }
     return true;

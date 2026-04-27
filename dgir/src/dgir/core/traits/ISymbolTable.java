@@ -21,13 +21,13 @@ public interface ISymbolTable extends IOpTrait {
   /**
    * Verifies that the symbol table operation has exactly one region.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the structure is valid.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull ISymbolTable ignored) {
-    if (getOperation().getRegions().size() != 1) {
-      getOperation().emitError("Symbol table must have exactly one region.");
+  static boolean verify(@NotNull Operation operation) {
+    if (operation.getRegions().size() != 1) {
+      operation.emitError("Symbol table must have exactly one region.");
       return false;
     }
     return true;

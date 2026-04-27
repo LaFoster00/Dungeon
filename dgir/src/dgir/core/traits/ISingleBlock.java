@@ -21,17 +21,17 @@ public interface ISingleBlock extends IOpTrait {
   /**
    * Verifies that the operation has exactly one region with exactly one block.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the one-region/one-block constraint is satisfied.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull ISingleBlock ignored) {
-    if (getOperation().getRegions().size() != 1) {
-      getOperation().emitError("Operation must have exactly one region.");
+  static boolean verify(@NotNull Operation operation) {
+    if (operation.getRegions().size() != 1) {
+      operation.emitError("Operation must have exactly one region.");
       return false;
     }
-    if (getOperation().getFirstRegion().orElseThrow().getBlocks().size() != 1) {
-      getOperation().emitError("Operation's single region must have exactly one block.");
+    if (operation.getFirstRegion().orElseThrow().getBlocks().size() != 1) {
+      operation.emitError("Operation's single region must have exactly one block.");
       return false;
     }
     return true;

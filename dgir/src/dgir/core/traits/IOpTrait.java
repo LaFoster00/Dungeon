@@ -1,6 +1,7 @@
 package dgir.core.traits;
 
 import dgir.core.ir.Operation;
+import dgir.core.ir.Op;
 import dgir.core.ir.OperationDetails;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -11,14 +12,14 @@ import org.jetbrains.annotations.NotNull;
  * <p>Every trait is a Java interface that extends {@code IOpTrait}. A trait can provide:
  *
  * <ul>
- *   <li>a {@code default boolean verify(@NotNull SelfTrait ignored)} method that is called during
+ *   <li>a {@code static boolean verify(@NotNull Operation operation)} method that is called during
  *       verification (see {@link OperationDetails#verifyTraits});
  *   <li>convenience accessor default methods backed by {@link #getOperation()}.
  * </ul>
  *
- * <p>Op classes pick up traits by simply implementing the desired trait interfaces. The
- * {@link OperationDetails.Registered} introspects declared interfaces at registration
- * time and stores both the trait set and the verifier methods.
+ * <p>Op classes pick up traits by simply implementing the desired trait interfaces. The {@link
+ * OperationDetails#create(Op)} path introspects declared interfaces at registration time and stores
+ * both the trait set and the verifier methods.
  */
 public interface IOpTrait {
 

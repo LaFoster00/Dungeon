@@ -1,5 +1,6 @@
 package dgir.core.traits;
 
+import dgir.core.ir.Operation;
 import dgir.core.ir.Type;
 import dgir.core.ir.Value;
 import org.jetbrains.annotations.Contract;
@@ -15,18 +16,18 @@ public interface ISingleOperand extends IOpTrait {
   /**
    * Verifies that the operation has exactly one non-null operand.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the single-operand constraint is satisfied.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull ISingleOperand ignored) {
+  static boolean verify(@NotNull Operation operation) {
     // Ensure that the operation only has one operator
-    if (getOperation().getOperands().size() != 1) {
-      getOperation().emitError("Operation must have exactly one operand.");
+    if (operation.getOperands().size() != 1) {
+      operation.emitError("Operation must have exactly one operand.");
       return false;
     }
-    if (getOperation().getOperand(0).isEmpty()) {
-      getOperation().emitError("Operation must have non-null operand");
+    if (operation.getOperand(0).isEmpty()) {
+      operation.emitError("Operation must have non-null operand");
       return false;
     }
     return true;

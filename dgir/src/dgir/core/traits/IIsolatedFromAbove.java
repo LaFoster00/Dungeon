@@ -1,5 +1,6 @@
 package dgir.core.traits;
 
+import dgir.core.ir.Operation;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,11 +13,11 @@ public interface IIsolatedFromAbove extends IOpTrait {
   /**
    * Trait-level verifier placeholder; semantic validation is done by analysis.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param ignored the operation to verify.
    * @return always {@code true}.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull IIsolatedFromAbove ignored) {
+  static boolean verify(@NotNull Operation ignored) {
     // The verification of this trait is done in the reaching definitions analysis.
     return true;
   }

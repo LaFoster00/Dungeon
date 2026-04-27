@@ -14,17 +14,17 @@ public interface IGlobalContainer extends IOpTrait {
   /**
    * Verifies that all contained operations implement {@link IGlobal}.
    *
-   * @param op trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if all nested operations are global.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull IGlobalContainer op) {
+  static boolean verify(@NotNull Operation operation) {
     // Ensure that all operations contained in the regions are global operations.
-    for (Region region : op.getOperation().getRegions()) {
+    for (Region region : operation.getRegions()) {
       for (Block block : region.getBlocks()) {
-        for (Operation operation : block.getOperations()) {
-          if (!operation.hasTrait(IGlobal.class)) {
-            operation.emitError(
+        for (Operation nestedOperation : block.getOperations()) {
+          if (!nestedOperation.hasTrait(IGlobal.class)) {
+            nestedOperation.emitError(
                 "Operation is not a global operation and cannot be contained in a global container.");
             return false;
           }

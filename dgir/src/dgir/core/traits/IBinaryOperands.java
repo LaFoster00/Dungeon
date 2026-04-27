@@ -15,17 +15,16 @@ public interface IBinaryOperands extends IOpTrait {
   /**
    * Verifies that the operation has exactly two value operands.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if both operands exist.
    */
-  default boolean verify(IBinaryOperands ignored) {
-    Operation op = getOperation();
-    if (op.getOperands().size() != 2) {
-      op.emitError("Operation must have exactly two operands.");
+  static boolean verify(@NotNull Operation operation) {
+    if (operation.getOperands().size() != 2) {
+      operation.emitError("Operation must have exactly two operands.");
       return false;
     }
-    if (op.getOperandType(0).isEmpty() || op.getOperandType(1).isEmpty()) {
-      op.emitError("Operation must have non-null operands");
+    if (operation.getOperandType(0).isEmpty() || operation.getOperandType(1).isEmpty()) {
+      operation.emitError("Operation must have non-null operands");
       return false;
     }
     return true;

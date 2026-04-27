@@ -1,6 +1,7 @@
 package dgir.core.traits;
 
 import dgir.core.ir.Block;
+import dgir.core.ir.Operation;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,11 +16,11 @@ public interface IControlFlow extends IOpTrait {
   /**
    * Semantic tag verifier for control-flow operations.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param ignored the operation to verify, ignored since this trait has no invariants.
    * @return always {@code true}.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull IControlFlow ignored) {
+  static boolean verify(@NotNull Operation ignored) {
     return true;
   }
 }

@@ -1,5 +1,6 @@
 package dgir.core.traits;
 
+import dgir.core.ir.Operation;
 import dgir.core.ir.Type;
 import dgir.core.ir.Value;
 import dgir.core.ir.ValueOperand;
@@ -16,14 +17,14 @@ public interface IZeroOrOneOperand extends IOpTrait {
   /**
    * Verifies that the operation has at most one operand.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if the operand count is zero or one.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull IZeroOrOneOperand ignored) {
+  static boolean verify(@NotNull Operation operation) {
     // Ensure that the operation only has one operator
-    if (getOperation().getOperands().size() > 1) {
-      getOperation().emitError("Operation must have at most one operand.");
+    if (operation.getOperands().size() > 1) {
+      operation.emitError("Operation must have at most one operand.");
       return false;
     }
     return true;

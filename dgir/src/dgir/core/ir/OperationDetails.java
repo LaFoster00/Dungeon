@@ -70,15 +70,23 @@ public record OperationDetails(
                 Collectors.toMap(
                     trait -> trait,
                     trait -> {
+                      Method verify;
                       try {
-                        return trait.getMethod("verify", trait);
+                        verify = trait.getMethod("verify", Operation.class);
                       } catch (NoSuchMethodException e) {
                         throw new RuntimeException(
                             "Trait "
                                 + trait.getName()
-                                + " must have a method called verify that takes an instance of the trait as parameter.",
+                                + " must have a static method called verify that takes an operation as parameter.",
                             e);
                       }
+                      if (!verify.canAccess(null)) {
+                        throw new RuntimeException(
+                            "Verifier method for trait "
+                                + trait.getName()
+                                + " must be public and static.");
+                      }
+                      return verify;
                     }));
 
     return new OperationDetails(
@@ -255,7 +263,6 @@ public record OperationDetails(
    */
   @Contract(pure = true)
   public boolean verifyTraits(@NotNull Operation operation) {
-    Op op = asOp(operation);
     for (Class<? extends IOpTrait> trait : traits()) {
       Method verifier =
           getTraitVerifier(trait)
@@ -264,7 +271,7 @@ public record OperationDetails(
                       new RuntimeException(
                           "No verifier found for trait " + trait.getName() + " on op " + ident()));
       try {
-        boolean result = (boolean) verifier.invoke(trait.cast(op), trait.cast(op));
+        boolean result = (boolean) verifier.invoke(null, operation);
         if (!result) {
           operation.emitError("Operation failed verification for trait " + trait.getName());
           return false;

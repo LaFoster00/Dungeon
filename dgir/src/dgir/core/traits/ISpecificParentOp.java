@@ -25,18 +25,18 @@ public interface ISpecificParentOp extends IOpTrait {
   /**
    * Verifies that the direct parent operation matches one of {@link #getValidParentTypes()}.
    *
-   * @param ignored trait receiver required by verifier signature.
+   * @param operation the operation to verify.
    * @return {@code true} if there is no parent or the parent type is allowed.
    */
   @Contract(pure = true)
-  default boolean verify(@NotNull ISpecificParentOp ignored) {
-    Operation operation = getOperation();
+  static boolean verify(@NotNull Operation operation) {
+    var trait = operation.asTrait(ISpecificParentOp.class).orElseThrow();
     Optional<Operation> parentOp = operation.getParentOperation();
     if (parentOp.isEmpty()) {
       return true;
     }
     // Check if the parent op has one of the valid types.
-    for (Class<? extends Op> validParentType : getValidParentTypes()) {
+    for (Class<? extends Op> validParentType : trait.getValidParentTypes()) {
       if (parentOp.get().isa(validParentType)) {
         return true;
       }
@@ -44,7 +44,7 @@ public interface ISpecificParentOp extends IOpTrait {
     // If we get here, the parent op is not valid.
     operation.emitError(
         "Operation can only be nested in the following parent operation types: "
-            + getValidParentTypes().stream()
+            + trait.getValidParentTypes().stream()
                 .map(Class::getSimpleName)
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("")
