@@ -1,6 +1,6 @@
 package dgir.vm.dialect.func;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.dialect.func.FuncDialect;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.OpRunner;

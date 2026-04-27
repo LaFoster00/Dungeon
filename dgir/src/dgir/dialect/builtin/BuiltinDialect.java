@@ -1,6 +1,6 @@
 package dgir.dialect.builtin;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.Type;
@@ -66,18 +66,18 @@ public class BuiltinDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return allOps(BuiltinOps.class);
+    return allOpsFromSealedInterface(BuiltinOps.class);
   }
 
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<TypeDescriptor> allTypes() {
-    return allTypes(BuiltinTypes.BuiltinTypeDescriptor.class);
+    return allTypesFromSealedInterface(BuiltinTypes.BuiltinTypeDescriptor.class);
   }
 
   @Contract(pure = true)
   @Override
   public @Unmodifiable @NotNull List<AttributeDescriptor> allAttributes() {
-    return allAttributes(BuiltinAttrs.BuiltinAttrDescriptor.class);
+    return allAttributesFromSealedInterface(BuiltinAttrs.BuiltinAttrDescriptor.class);
   }
 }

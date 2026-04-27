@@ -1,6 +1,6 @@
 package dgir.dialect.str;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.TypedAttribute;

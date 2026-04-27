@@ -1,6 +1,6 @@
 package dgir.dialect.mem;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.debug.Location;
 import dgir.core.ir.*;
 import dgir.core.traits.IHasResult;
@@ -19,7 +19,7 @@ import java.util.function.Function;
  * Sealed marker interface for all operations in the {@link MemoryDialect}.
  *
  * <p>Every concrete op must both extend {@link MemOp} and implement this interface so that {@link
- * Dialect#allOps(Class)} can discover it automatically via reflection.
+ * Dialect#allOpsFromSealedInterface(Class)} can discover it automatically via reflection.
  */
 public sealed interface MemOps {
   /**

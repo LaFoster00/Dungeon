@@ -1,4 +1,4 @@
-package dgir.core;
+package dgir.core.utility;
 
 import dgir.core.debug.Location;
 import dgir.core.debug.ValueDebugInfo;
@@ -11,7 +11,7 @@ import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static dgir.core.DgirCoreUtils.indent;
+import static dgir.core.utility.DgirCoreUtils.indent;
 
 /** Util class to convert IR to text. */
 public class IrToText {

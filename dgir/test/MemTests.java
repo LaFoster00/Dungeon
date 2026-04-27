@@ -1,4 +1,4 @@
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.debug.Location;
 import dgir.dialect.builtin.BuiltinTypes.FloatT;
 import dgir.dialect.mem.MemTypes;

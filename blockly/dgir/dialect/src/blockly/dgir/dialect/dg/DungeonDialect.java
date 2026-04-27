@@ -1,6 +1,6 @@
 package blockly.dgir.dialect.dg;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.TypeDescriptor;
@@ -31,7 +31,7 @@ public class DungeonDialect extends Dialect {
 
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return allOps(DgOps.class);
+    return allOpsFromSealedInterface(DgOps.class);
   }
 
   @NotNull

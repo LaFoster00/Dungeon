@@ -1,4 +1,4 @@
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.debug.Location;
 import dgir.core.ir.Attribute;
 import dgir.dialect.builtin.BuiltinAttrs;

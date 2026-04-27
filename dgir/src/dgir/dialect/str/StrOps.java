@@ -1,6 +1,6 @@
 package dgir.dialect.str;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.debug.Location;
 import dgir.core.ir.Op;
 import dgir.core.ir.Operation;
@@ -20,7 +20,7 @@ import java.util.function.Function;
  * Sealed marker interface for all operations in the {@link StrDialect}.
  *
  * <p>Every concrete op must both extend {@link StrOp} and implement this interface so that {@link
- * Dialect#allOps(Class)} can discover it automatically via reflection.
+ * Dialect#allOpsFromSealedInterface(Class)} can discover it automatically via reflection.
  */
 public sealed interface StrOps {
   /**

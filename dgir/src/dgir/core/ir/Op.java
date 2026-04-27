@@ -1,6 +1,5 @@
 package dgir.core.ir;
 
-import dgir.core.Dialect;
 import dgir.core.debug.Location;
 import dgir.core.serialization.OpDeserializer;
 import dgir.core.serialization.OpSerializer;

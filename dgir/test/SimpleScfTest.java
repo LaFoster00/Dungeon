@@ -1,4 +1,4 @@
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.debug.Location;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

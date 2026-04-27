@@ -1,6 +1,6 @@
 package dgir.dialect.mem;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.TypeDescriptor;
@@ -36,12 +36,12 @@ public class MemoryDialect extends Dialect {
 
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return allOps(MemOps.class);
+    return allOpsFromSealedInterface(MemOps.class);
   }
 
   @Override
   public @NotNull @Unmodifiable List<TypeDescriptor> allTypes() {
-    return allTypes(MemTypes.MemTypeDescriptor.class);
+    return allTypesFromSealedInterface(MemTypes.MemTypeDescriptor.class);
   }
 
   @Override

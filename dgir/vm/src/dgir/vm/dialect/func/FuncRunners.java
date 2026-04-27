@@ -1,6 +1,6 @@
 package dgir.vm.dialect.func;
 
-import dgir.core.SymbolTable;
+import dgir.core.ir.SymbolTable;
 import dgir.core.ir.Operation;
 import dgir.dialect.builtin.BuiltinAttrs;
 import dgir.dialect.func.FuncOps;

@@ -1,6 +1,6 @@
 package dgir.dialect.builtin;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.debug.Location;
 import dgir.core.ir.Block;
 import dgir.core.ir.Op;
@@ -19,7 +19,7 @@ import static dgir.dialect.func.FuncOps.FuncOp;
  * Sealed marker interface for all operations in the {@link BuiltinDialect}.
  *
  * <p>Every concrete op must both extend {@link BuiltinOp} and implement this interface so that
- * {@link Dialect#allOps(Class)} can discover it automatically via reflection.
+ * {@link Dialect#allOpsFromSealedInterface(Class)} can discover it automatically via reflection.
  */
 public sealed interface BuiltinOps {
   /**

@@ -1,6 +1,6 @@
 package dgir.core.traits;
 
-import dgir.core.OperationVerifier;
+import dgir.core.analysis.OperationVerifier;
 import dgir.core.ir.Block;
 import dgir.core.ir.Operation;
 import dgir.core.ir.Region;

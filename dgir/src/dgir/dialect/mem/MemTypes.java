@@ -1,7 +1,7 @@
 package dgir.dialect.mem;
 
-import dgir.core.DgirCoreUtils;
-import dgir.core.Dialect;
+import dgir.core.utility.DgirCoreUtils;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypeDescriptor;
 import dgir.core.ir.TypeDetails;

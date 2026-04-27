@@ -1,6 +1,5 @@
 package dgir.core.ir;
 
-import dgir.core.Dialect;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 

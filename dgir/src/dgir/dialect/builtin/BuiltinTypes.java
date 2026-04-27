@@ -1,7 +1,7 @@
 package dgir.dialect.builtin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.Type;
 import dgir.core.ir.TypeDescriptor;
 import dgir.core.ir.TypeDetails;

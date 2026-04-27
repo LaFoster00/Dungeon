@@ -1,6 +1,6 @@
 package dgir.dialect.str;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.TypeDescriptor;
@@ -36,16 +36,16 @@ public class StrDialect extends Dialect {
 
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return allOps(StrOps.class);
+    return allOpsFromSealedInterface(StrOps.class);
   }
 
   @Override
   public @NotNull @Unmodifiable List<TypeDescriptor> allTypes() {
-    return allTypes(StrTypes.StrTypeDescriptor.class);
+    return allTypesFromSealedInterface(StrTypes.StrTypeDescriptor.class);
   }
 
   @Override
   public @NotNull @Unmodifiable List<AttributeDescriptor> allAttributes() {
-    return allAttributes(StrAttrs.StrAttrDescriptor.class);
+    return allAttributesFromSealedInterface(StrAttrs.StrAttrDescriptor.class);
   }
 }

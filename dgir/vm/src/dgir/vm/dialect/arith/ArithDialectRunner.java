@@ -1,6 +1,6 @@
 package dgir.vm.dialect.arith;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.dialect.arith.ArithDialect;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.OpRunner;

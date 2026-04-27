@@ -1,7 +1,7 @@
 package dgir.core.ir;
 
-import dgir.core.DgirCoreUtils;
-import dgir.core.OperationVerifier;
+import dgir.core.utility.DgirCoreUtils;
+import dgir.core.analysis.OperationVerifier;
 import dgir.core.debug.Location;
 import dgir.core.debug.ValueDebugInfo;
 import dgir.core.serialization.OperationDeserializer;

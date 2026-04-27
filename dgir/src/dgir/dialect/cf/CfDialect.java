@@ -1,6 +1,6 @@
 package dgir.dialect.cf;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.TypeDescriptor;
@@ -48,7 +48,7 @@ public class CfDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return allOps(CfOps.class);
+    return allOpsFromSealedInterface(CfOps.class);
   }
 
   @Contract(pure = true)

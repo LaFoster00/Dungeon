@@ -1,7 +1,6 @@
 package dgir.core.ir;
 
 import com.fasterxml.jackson.annotation.*;
-import dgir.core.IRObjectWithUseList;
 import dgir.core.debug.Location;
 import dgir.core.debug.ValueDebugInfo;
 import dgir.core.serialization.ValueIdGenerator;

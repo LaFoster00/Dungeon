@@ -1,6 +1,6 @@
 package dgir.vm.api;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.Op;
 import dgir.core.ir.Operation;
 import dgir.core.ir.OperationDetails;

@@ -1,7 +1,7 @@
 package blockly.dgir.compiler.java;
 
-import dgir.core.DgirCoreUtils;
-import dgir.core.IrToText;
+import dgir.core.utility.DgirCoreUtils;
+import dgir.core.utility.IrToText;
 import dgir.dialect.builtin.BuiltinOps;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;

@@ -1,7 +1,6 @@
-package dgir.core;
+package dgir.core.ir;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import dgir.core.ir.*;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 

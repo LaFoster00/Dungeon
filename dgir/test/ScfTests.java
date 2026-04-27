@@ -1,4 +1,4 @@
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.debug.Location;
 import dgir.core.serialization.Utils;
 import org.apache.commons.lang3.tuple.Pair;

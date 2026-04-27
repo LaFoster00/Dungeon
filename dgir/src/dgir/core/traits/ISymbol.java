@@ -1,6 +1,6 @@
 package dgir.core.traits;
 
-import dgir.core.SymbolTable;
+import dgir.core.ir.SymbolTable;
 import dgir.dialect.func.FuncOps;
 import dgir.dialect.str.StrAttrs;
 import org.jetbrains.annotations.Contract;

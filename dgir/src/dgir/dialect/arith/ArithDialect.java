@@ -1,6 +1,6 @@
 package dgir.dialect.arith;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.TypeDescriptor;
@@ -49,7 +49,7 @@ public class ArithDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return allOps(ArithOps.class);
+    return allOpsFromSealedInterface(ArithOps.class);
   }
 
   @Contract(pure = true)
@@ -61,6 +61,6 @@ public class ArithDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @Unmodifiable @NotNull List<AttributeDescriptor> allAttributes() {
-    return allAttributes(ArithAttrs.ArithAttrDescriptor.class);
+    return allAttributesFromSealedInterface(ArithAttrs.ArithAttrDescriptor.class);
   }
 }

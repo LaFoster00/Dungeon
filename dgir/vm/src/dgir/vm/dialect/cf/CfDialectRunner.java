@@ -1,6 +1,6 @@
 package dgir.vm.dialect.cf;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.dialect.cf.CfDialect;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.OpRunner;

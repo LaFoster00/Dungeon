@@ -1,6 +1,5 @@
-package dgir.core;
+package dgir.core.analysis;
 
-import dgir.core.analysis.ReachingDefinitions;
 import dgir.core.ir.*;
 import dgir.core.traits.IIsolatedFromAbove;
 import dgir.core.traits.INoTerminator;

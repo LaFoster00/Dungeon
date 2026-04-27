@@ -1,6 +1,6 @@
-import dgir.core.Dialect;
-import dgir.core.DgirCoreUtils;
-import dgir.core.IrToText;
+import dgir.core.ir.Dialect;
+import dgir.core.utility.DgirCoreUtils;
+import dgir.core.utility.IrToText;
 import dgir.core.debug.Location;
 import dgir.core.ir.Operation;
 import dgir.core.ir.Block;

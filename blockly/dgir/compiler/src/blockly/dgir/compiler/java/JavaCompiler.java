@@ -9,8 +9,8 @@ import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
-import dgir.core.Dialect;
-import dgir.core.IrToText;
+import dgir.core.ir.Dialect;
+import dgir.core.utility.IrToText;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

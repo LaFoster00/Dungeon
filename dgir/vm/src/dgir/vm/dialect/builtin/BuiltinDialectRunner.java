@@ -1,6 +1,6 @@
 package dgir.vm.dialect.builtin;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.dialect.builtin.BuiltinDialect;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.OpRunner;

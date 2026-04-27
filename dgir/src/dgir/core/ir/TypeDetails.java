@@ -1,8 +1,6 @@
 package dgir.core.ir;
 
-import dgir.core.DGIRContext;
-import dgir.core.DgirCoreUtils;
-import dgir.core.Dialect;
+import dgir.core.utility.DgirCoreUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

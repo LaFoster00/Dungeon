@@ -1,6 +1,6 @@
 package blockly.dgir.dialect.dg;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.debug.Location;
 import dgir.core.ir.Op;
 import dgir.core.ir.Operation;
@@ -19,7 +19,7 @@ import java.util.function.Function;
  * Sealed marker interface for all operations in the {@link DungeonDialect}.
  *
  * <p>Every concrete op must both extend {@link DungeonOp} and implement this interface so that
- * {@link Dialect#allOps(Class)} can discover it automatically via reflection.
+ * {@link Dialect#allOpsFromSealedInterface(Class)} can discover it automatically via reflection.
  */
 public sealed interface DgOps {
   /**

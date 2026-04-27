@@ -2,7 +2,7 @@ import static dgir.dialect.builtin.BuiltinOps.ProgramOp;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.serialization.Utils;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.VM;

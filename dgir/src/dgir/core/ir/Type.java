@@ -2,7 +2,6 @@ package dgir.core.ir;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
-import dgir.core.Dialect;
 import dgir.core.serialization.TypeDeserializer;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

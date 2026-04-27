@@ -3,7 +3,6 @@ package dgir.core.ir;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import dgir.core.Dialect;
 import dgir.core.serialization.AttributeTypeIdResolver;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

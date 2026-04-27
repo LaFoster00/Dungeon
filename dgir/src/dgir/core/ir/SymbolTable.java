@@ -1,8 +1,5 @@
-package dgir.core;
+package dgir.core.ir;
 
-import dgir.core.ir.Op;
-import dgir.core.ir.Operation;
-import dgir.core.ir.Region;
 import dgir.core.traits.IOpTrait;
 import dgir.core.traits.ISymbol;
 import dgir.core.traits.ISymbolTable;

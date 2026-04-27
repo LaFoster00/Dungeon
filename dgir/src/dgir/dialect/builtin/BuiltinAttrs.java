@@ -2,7 +2,7 @@ package dgir.dialect.builtin;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.Attribute;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Type;

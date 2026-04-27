@@ -1,6 +1,6 @@
 package dgir.vm.dialect.scf;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.dialect.scf.ScfDialect;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.OpRunner;

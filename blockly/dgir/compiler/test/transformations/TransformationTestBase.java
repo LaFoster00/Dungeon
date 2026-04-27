@@ -8,7 +8,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
-import dgir.core.DgirCoreUtils;
+import dgir.core.utility.DgirCoreUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;

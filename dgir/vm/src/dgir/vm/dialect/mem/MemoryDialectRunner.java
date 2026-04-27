@@ -1,6 +1,6 @@
 package dgir.vm.dialect.mem;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.dialect.mem.MemoryDialect;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.OpRunner;

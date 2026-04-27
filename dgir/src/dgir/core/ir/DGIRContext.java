@@ -1,6 +1,5 @@
-package dgir.core;
+package dgir.core.ir;
 
-import dgir.core.ir.*;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 

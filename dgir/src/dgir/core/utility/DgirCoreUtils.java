@@ -1,4 +1,4 @@
-package dgir.core;
+package dgir.core.utility;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

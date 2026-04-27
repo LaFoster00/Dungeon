@@ -1,7 +1,5 @@
 package dgir.core.ir;
 
-import dgir.core.DGIRContext;
-import dgir.core.Dialect;
 import dgir.dialect.builtin.BuiltinTypes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;

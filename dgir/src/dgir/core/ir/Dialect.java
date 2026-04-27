@@ -1,6 +1,5 @@
-package dgir.core;
+package dgir.core.ir;
 
-import dgir.core.ir.*;
 import dgir.dialect.arith.ArithDialect;
 import dgir.dialect.builtin.BuiltinDialect;
 import dgir.dialect.builtin.BuiltinOps;
@@ -33,25 +32,24 @@ public abstract class Dialect {
 
   /**
    * Cache of already-computed operation prototype lists, keyed by dialect class. Populated lazily
-   * by {@link #allOps(Class)} on the first call for each dialect.
+   * by {@link #allOpsFromSealedInterface(Class)} on the first call for each dialect.
    */
   private static final @NotNull Map<Class<? extends Dialect>, @Unmodifiable List<Op>> dialectOps =
       new HashMap<>();
 
   /**
    * Cache of already-computed attribute prototype lists, keyed by dialect class. Populated lazily
-   * by {@link #allAttributes(Class)} on the first call for each dialect.
+   * by {@link #allAttributesFromSealedInterface(Class)} on the first call for each dialect.
    */
   private static final @NotNull Map<
-          Class<? extends dgir.core.Dialect>, @Unmodifiable List<AttributeDescriptor>>
+          Class<? extends Dialect>, @Unmodifiable List<AttributeDescriptor>>
       dialectAttributes = new HashMap<>();
 
   /**
    * Cache of already-computed type prototype lists, keyed by dialect class. Populated lazily by
-   * {@link #allTypes(Class)} on the first call for each dialect.
+   * {@link #allTypesFromSealedInterface(Class)} on the first call for each dialect.
    */
-  private static final @NotNull Map<
-          Class<? extends dgir.core.Dialect>, @Unmodifiable List<TypeDescriptor>>
+  private static final @NotNull Map<Class<? extends Dialect>, @Unmodifiable List<TypeDescriptor>>
       dialectTypes = new HashMap<>();
 
   // =========================================================================
@@ -191,7 +189,7 @@ public abstract class Dialect {
    */
   @NotNull
   @Unmodifiable
-  public List<Op> allOps(Class<?> diOps) {
+  public List<Op> allOpsFromSealedInterface(Class<?> diOps) {
     // Check that diOps is a sealed interface
     assert diOps.isSealed() : "IDialectOperations interface must be sealed";
 
@@ -252,7 +250,7 @@ public abstract class Dialect {
    */
   @NotNull
   @Unmodifiable
-  public List<AttributeDescriptor> allAttributes(Class<?> diAttrs) {
+  public List<AttributeDescriptor> allAttributesFromSealedInterface(Class<?> diAttrs) {
     assert diAttrs.isSealed() : "IDialectAttributes interface must be sealed";
 
     if (dialectAttributes.containsKey(this.getClass())) {
@@ -304,7 +302,7 @@ public abstract class Dialect {
    */
   @NotNull
   @Unmodifiable
-  public List<TypeDescriptor> allTypes(Class<?> diTypes) {
+  public List<TypeDescriptor> allTypesFromSealedInterface(Class<?> diTypes) {
     assert diTypes.isSealed() : "Interface " + diTypes.getName() + " must be sealed";
 
     if (dialectTypes.containsKey(this.getClass())) {

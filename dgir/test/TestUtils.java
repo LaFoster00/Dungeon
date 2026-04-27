@@ -1,4 +1,4 @@
-import dgir.core.DgirCoreUtils;
+import dgir.core.utility.DgirCoreUtils;
 import dgir.core.analysis.DotCFG;
 import dgir.core.debug.Location;
 import dgir.core.ir.Op;

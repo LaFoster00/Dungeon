@@ -1,7 +1,7 @@
 package blockly.dgir.vm.dialect.dg;
 
 import blockly.dgir.dialect.dg.DungeonDialect;
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.OpRunner;
 import org.jetbrains.annotations.NotNull;

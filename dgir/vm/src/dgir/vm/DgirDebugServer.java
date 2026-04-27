@@ -1,6 +1,6 @@
 package dgir.vm;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.serialization.Utils;
 import dgir.vm.api.DialectRunner;
 import dgir.vm.api.VM;

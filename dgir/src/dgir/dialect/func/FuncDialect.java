@@ -1,6 +1,6 @@
 package dgir.dialect.func;
 
-import dgir.core.Dialect;
+import dgir.core.ir.Dialect;
 import dgir.core.ir.AttributeDescriptor;
 import dgir.core.ir.Op;
 import dgir.core.ir.TypeDescriptor;
@@ -55,13 +55,13 @@ public class FuncDialect extends Dialect {
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<Op> allOps() {
-    return allOps(FuncOps.class);
+    return allOpsFromSealedInterface(FuncOps.class);
   }
 
   @Contract(pure = true)
   @Override
   public @NotNull @Unmodifiable List<TypeDescriptor> allTypes() {
-    return allTypes(FuncTypes.FuncTypeDescriptor.class);
+    return allTypesFromSealedInterface(FuncTypes.FuncTypeDescriptor.class);
   }
 
   @Contract(pure = true)

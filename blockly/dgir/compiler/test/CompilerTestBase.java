@@ -1,8 +1,8 @@
 import blockly.dgir.compiler.java.CompilationResult;
 import blockly.dgir.compiler.java.JavaCompiler;
 import blockly.dgir.vm.dialect.dg.DungeonDialectRunner;
-import dgir.core.DgirCoreUtils;
-import dgir.core.IrToText;
+import dgir.core.utility.DgirCoreUtils;
+import dgir.core.utility.IrToText;
 import dgir.core.serialization.Utils;
 import dgir.dialect.builtin.BuiltinOps;
 import dgir.vm.api.DialectRunner;
