@@ -1,12 +1,6 @@
 package dgir.dialect.builtin;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import dgir.core.ir.Dialect;
-import dgir.core.ir.Attribute;
-import dgir.core.ir.AttributeDescriptor;
-import dgir.core.ir.Type;
-import dgir.core.ir.TypedAttribute;
+import dgir.core.ir.*;
 import dgir.core.serialization.IntegerAttributeDeserializer;
 import dgir.core.serialization.IntegerAttributeSerializer;
 import org.jetbrains.annotations.Contract;
@@ -98,16 +92,6 @@ public sealed interface BuiltinAttrs {
       }
     }
   }
-  abstract class BuiltinBaseTypedAttr extends TypedAttribute {
-    /**
-     * Create a typed attribute associated with the given type.
-     *
-     * @param type the type that governs validation of the stored value.
-     */
-    protected BuiltinBaseTypedAttr(@NotNull Type type) {
-      super(type);
-    }
-  }
 
   /**
    * Attribute that carries an integer value together with its {@link IntegerT} type.
@@ -117,7 +101,7 @@ public sealed interface BuiltinAttrs {
    */
   @JsonSerialize(using = IntegerAttributeSerializer.class)
   @JsonDeserialize(using = IntegerAttributeDeserializer.class)
-  final class IntegerAttribute extends BuiltinBaseTypedAttr implements BuiltinAttrs {
+  final class IntegerAttribute extends TypedAttribute implements BuiltinAttrs {
     // =========================================================================
     // Members
     // =========================================================================
@@ -146,16 +130,13 @@ public sealed interface BuiltinAttrs {
     }
 
     /**
-     * Create an integer attribute with an explicit value and type (used during JSON
-     * deserialization).
+     * Create an integer attribute with an explicit value and type
      *
      * @param value the integer value; will be converted to the correct Java type via {@link
      *     IntegerT#convertToValidNumber(long)}.
      * @param type the integer type that determines the bit-width.
      */
-    @JsonCreator
-    public IntegerAttribute(
-        @JsonProperty("value") long value, @JsonProperty("type") IntegerT type) {
+    public IntegerAttribute(long value, IntegerT type) {
       super(type);
       this.value = ((IntegerT) getType()).convertToValidNumber(value);
     }
@@ -196,7 +177,7 @@ public sealed interface BuiltinAttrs {
   }
 
   /** Attribute that carries a floating-point value together with its {@link FloatT} type. */
-  final class FloatAttribute extends BuiltinBaseTypedAttr implements BuiltinAttrs {
+  final class FloatAttribute extends TypedAttribute implements BuiltinAttrs {
     private @NotNull Number value;
 
     public FloatAttribute() {
@@ -209,9 +190,7 @@ public sealed interface BuiltinAttrs {
       this.value = ((FloatT) getType()).convertToValidNumber(value);
     }
 
-    @JsonCreator
-    public FloatAttribute(
-        @JsonProperty("value") @NotNull Number value, @JsonProperty("type") @NotNull FloatT type) {
+    public FloatAttribute(@NotNull Number value, @NotNull FloatT type) {
       super(type);
       this.value = ((FloatT) getType()).convertToValidNumber(value);
     }

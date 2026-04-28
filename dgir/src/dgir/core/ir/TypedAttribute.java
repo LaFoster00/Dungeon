@@ -13,7 +13,7 @@ public abstract class TypedAttribute extends Attribute {
   // Members
   // =========================================================================
 
-  private final @NotNull Type type;
+  private @NotNull Type type;
 
   // =========================================================================
   // Constructors
@@ -40,5 +40,15 @@ public abstract class TypedAttribute extends Attribute {
   @Contract(pure = true)
   public @NotNull Type getType() {
     return type;
+  }
+
+  /**
+   * Sets the type associated with this attribute. This is used by the deserializer to populate the
+   * type field after constructing the attribute instance.
+   *
+   * @param type the type to set, never {@code null}.
+   */
+  private void setType(@NotNull Type type) {
+    this.type = type;
   }
 }
