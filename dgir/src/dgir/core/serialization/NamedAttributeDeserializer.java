@@ -7,6 +7,7 @@ import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Deserializes a named attribute object of the shape: {@code {"name": <string>, "attribute":
@@ -46,7 +47,15 @@ public class NamedAttributeDeserializer extends StdDeserializer<NamedAttribute> 
       return ctxt.reportInputMismatch(NamedAttribute.class, "Field 'name' must be a string.");
     }
 
-    JsonNode attributeNode = node.get("attribute");
+    // Reconstruct the attribute node by stripping the "attr_" prefix
+    ObjectNode attributeNode = ctxt.getNodeFactory().objectNode();
+    node.forEachEntry(
+        (entryName, entryValue) -> {
+          if (entryName.startsWith("attr_")) {
+            attributeNode.set(entryName.substring("attr_".length()), entryValue);
+          }
+        });
+
     if (attributeNode == null || attributeNode.isNull()) {
       return ctxt.reportInputMismatch(NamedAttribute.class, "Missing required field 'attribute'.");
     }

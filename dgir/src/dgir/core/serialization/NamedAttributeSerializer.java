@@ -5,6 +5,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.databind.util.NameTransformer;
 
 /** Serializes a {@link NamedAttribute} to JSON object format. */
 public class NamedAttributeSerializer extends StdSerializer<NamedAttribute> {
@@ -27,7 +28,10 @@ public class NamedAttributeSerializer extends StdSerializer<NamedAttribute> {
       throws JacksonException {
     gen.writeStartObject();
     gen.writeStringProperty("name", value.getName());
-    gen.writePOJOProperty("attribute", value.getAttributeOrThrow());
+    provider
+        .findValueSerializer(value.getAttribute().getClass())
+        .unwrappingSerializer(NameTransformer.simpleTransformer("attr_", ""))
+        .serialize(value.getAttribute(), gen, provider);
     gen.writeEndObject();
   }
 }

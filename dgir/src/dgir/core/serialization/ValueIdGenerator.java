@@ -5,11 +5,13 @@ import dgir.core.debug.ValueDebugInfo;
 import dgir.core.ir.Value;
 
 import java.io.Serial;
+import java.util.IdentityHashMap;
 
 /** JSON object-id generator for {@link Value} instances using debug name and sequence. */
 public class ValueIdGenerator extends ObjectIdGenerator<String> {
   @Serial private static final long serialVersionUID = 1L;
 
+  private static final IdentityHashMap<Value, String> valueIds = new IdentityHashMap<>();
   private static int nextId = 0;
 
   @Override
@@ -24,6 +26,7 @@ public class ValueIdGenerator extends ObjectIdGenerator<String> {
 
   @Override
   public ObjectIdGenerator<String> newForSerialization(Object context) {
+    valueIds.clear();
     nextId = 0;
     return this;
   }
@@ -44,7 +47,10 @@ public class ValueIdGenerator extends ObjectIdGenerator<String> {
   @Override
   public String generateId(Object forPojo) {
     Value value = (Value) forPojo;
-    if (value.getDebugInfo().equals(ValueDebugInfo.UNKNOWN)) return "%" + nextId++;
-    else return "%" + value.getDebugInfo().name() + "_" + nextId++;
+    if (value.getDebugInfo().equals(ValueDebugInfo.UNKNOWN))
+      return valueIds.computeIfAbsent(value, v -> "%" + nextId++);
+    else
+      return valueIds.computeIfAbsent(
+          value, v -> "%" + value.getDebugInfo().name() + "_" + nextId++);
   }
 }

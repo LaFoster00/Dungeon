@@ -1,10 +1,10 @@
 package dgir.core.ir;
 
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import dgir.core.serialization.OperandSerializer;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -17,6 +17,7 @@ import java.util.Optional;
  * @param <DerivedT> The concrete operand subclass (for self-referential use-list typing).
  */
 @SuppressWarnings("unchecked")
+@JsonSerialize(using = OperandSerializer.class)
 public abstract class Operand<
     // The type extending from this class
     DerivedT extends Operand<DerivedT, ValueT>,
@@ -28,11 +29,10 @@ public abstract class Operand<
   // =========================================================================
 
   /** The value referenced by this operand. */
-  @JsonIdentityReference(alwaysAsId = true)
   private @Nullable ValueT value;
 
   /** The operation that owns this operand. */
-  @JsonIgnore private final @NotNull Operation owner;
+  private final @NotNull Operation owner;
 
   // =========================================================================
   // Constructors
@@ -68,7 +68,6 @@ public abstract class Operand<
    * @return The index, or -1 if not found.
    */
   @Contract(pure = true)
-  @JsonIgnore
   public abstract int getIndex();
 
   /**
@@ -97,7 +96,6 @@ public abstract class Operand<
    * @return referenced value.
    */
   @Contract(pure = true)
-  @JsonIgnore
   public @NotNull ValueT getValueOrThrow() {
     return Objects.requireNonNull(value);
   }

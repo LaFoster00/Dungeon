@@ -74,13 +74,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
       operands = new ArrayList<>();
       for (JsonNode operandNode : operandsNode) {
-        // Operand entries are wrappers of the form {"value": <value-ref>}.
-        JsonNode valueRef = operandNode.get("value");
-        if (valueRef == null || valueRef.isNull()) {
-          return ctxt.reportInputMismatch(
-              Operation.class, "Each operand entry must contain field 'value'.");
-        }
-        Value value = ctxt.readTreeAsValue(valueRef, Value.class);
+        Value value = ctxt.readTreeAsValue(operandNode, Value.class);
         operands.add(value);
       }
     }
@@ -128,15 +122,10 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
       successors = new ArrayList<>();
       for (JsonNode successorNode : successorsNode) {
-        JsonNode valueRef = successorNode.get("value");
-        if (valueRef == null || valueRef.isNull()) {
-          return ctxt.reportInputMismatch(
-              Operation.class, "Each successor entry must contain field 'value'.");
-        }
         // Use placeholders first; resolve to real blocks once all child regions are read.
         Block placeHolderBlock = new Block();
         successors.add(placeHolderBlock);
-        unresolvedSuccessors.put(placeHolderBlock, valueRef);
+        unresolvedSuccessors.put(placeHolderBlock, successorNode);
       }
     }
 

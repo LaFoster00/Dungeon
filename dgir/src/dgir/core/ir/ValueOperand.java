@@ -1,6 +1,5 @@
 package dgir.core.ir;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -42,7 +41,6 @@ public final class ValueOperand extends Operand<ValueOperand, Value> {
    *
    * @return the operand value type if present.
    */
-  @JsonIgnore
   @Contract(pure = true)
   public @NotNull Optional<Type> getType() {
     return getValue().map(Value::getType);

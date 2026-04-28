@@ -5,14 +5,25 @@ import dgir.dialect.builtin.BuiltinTypes;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.jsontype.TypeSerializer;
 import tools.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.databind.util.NameTransformer;
 
 /** Serializes builtin {@code integerAttr} values as compact JSON objects. */
 public class IntegerAttributeSerializer extends StdSerializer<BuiltinAttrs.IntegerAttribute> {
+  private boolean unwrapping = false;
+  private NameTransformer unwrapper = NameTransformer.NOP;
+
   /** Constructs the serializer bound to {@link BuiltinAttrs.IntegerAttribute} class. */
   public IntegerAttributeSerializer() {
     super(BuiltinAttrs.IntegerAttribute.class);
+  }
+
+  public IntegerAttributeSerializer(boolean unwrapping, NameTransformer unwrapper) {
+    super(BuiltinAttrs.IntegerAttribute.class);
+    this.unwrapping = unwrapping;
+    this.unwrapper = unwrapper;
   }
 
   /**
@@ -28,7 +39,13 @@ public class IntegerAttributeSerializer extends StdSerializer<BuiltinAttrs.Integ
   public void serialize(
       BuiltinAttrs.IntegerAttribute value, JsonGenerator gen, SerializationContext provider)
       throws JacksonException {
-    writeIntegerAttribute(value, gen);
+    writeIntegerAttribute(value, gen, unwrapping, unwrapper);
+  }
+
+  @Override
+  public ValueSerializer<BuiltinAttrs.IntegerAttribute> unwrappingSerializer(
+      NameTransformer unwrapper) {
+    return new IntegerAttributeSerializer(true, unwrapper);
   }
 
   @Override
@@ -39,20 +56,24 @@ public class IntegerAttributeSerializer extends StdSerializer<BuiltinAttrs.Integ
       TypeSerializer typeSer)
       throws JacksonException {
     // Type id comes from the existing "ident" property, so normal object serialization is enough.
-    writeIntegerAttribute(value, gen);
+    writeIntegerAttribute(value, gen, unwrapping, unwrapper);
   }
 
-  private static void writeIntegerAttribute(BuiltinAttrs.IntegerAttribute value, JsonGenerator gen)
+  private static void writeIntegerAttribute(
+      BuiltinAttrs.IntegerAttribute value,
+      JsonGenerator gen,
+      boolean unwrapping,
+      NameTransformer unwrapper)
       throws JacksonException {
-    gen.writeStartObject();
-    gen.writeStringProperty("ident", value.getIdent());
-    gen.writePOJOProperty("type", value.getType());
+    if (!unwrapping) gen.writeStartObject();
+    gen.writeStringProperty(unwrapper.transform("ident"), value.getIdent());
+    gen.writePOJOProperty(unwrapper.transform("type"), value.getType());
     BuiltinTypes.IntegerT integerType = (BuiltinTypes.IntegerT) value.getType();
     if (integerType.equals(BuiltinTypes.IntegerT.BOOL())) {
-      gen.writeBooleanProperty("value", value.getValue().byteValue() != 0);
+      gen.writeBooleanProperty(unwrapper.transform("value"), value.getValue().byteValue() != 0);
     } else {
       if (integerType.isSigned()) {
-        gen.writeNumberProperty("value", value.getValue().longValue());
+        gen.writeNumberProperty(unwrapper.transform("value"), value.getValue().longValue());
       } else {
         String unsignedValue =
             String.valueOf(
@@ -67,9 +88,9 @@ public class IntegerAttributeSerializer extends StdSerializer<BuiltinAttrs.Integ
                 });
         gen.writeRaw(",");
         if (gen.getPrettyPrinter() != null) gen.getPrettyPrinter().beforeObjectEntries(gen);
-        gen.writeRaw("\"value\" : " + unsignedValue);
+        gen.writeRaw("\"" + unwrapper.transform("value") + "\" : " + unsignedValue);
       }
     }
-    gen.writeEndObject();
+    if (!unwrapping) gen.writeEndObject();
   }
 }
