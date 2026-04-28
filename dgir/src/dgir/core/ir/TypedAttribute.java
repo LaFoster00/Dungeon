@@ -33,6 +33,19 @@ public abstract class TypedAttribute extends Attribute {
   // =========================================================================
 
   /**
+   * Returns the storage object of this attribute, which should be validated against the associated
+   * type.
+   *
+   * <p>Subclasses must override this method to return the actual storage object, which cannot be
+   * null.
+   *
+   * @return the storage object, never {@code null}.
+   */
+  @Contract(pure = true)
+  @Override
+  public abstract @NotNull Object getStorage();
+
+  /**
    * Returns the type associated with this attribute.
    *
    * @return the type, never {@code null}.

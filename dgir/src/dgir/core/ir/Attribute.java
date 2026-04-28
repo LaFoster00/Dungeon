@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import dgir.core.serialization.AttributeTypeIdResolver;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import tools.jackson.databind.annotation.JsonTypeIdResolver;
 
 import java.io.Serializable;
@@ -98,10 +99,16 @@ public abstract class Attribute implements Serializable {
     return details;
   }
 
-  /** Return the raw storage value of this attribute (used for serialization and display). */
+  /**
+   * Return the raw storage value of this attribute (used for serialization and display).
+   *
+   * <p>Marker attributes may return {@code null}
+   *
+   * @return the storage value, or {@code null} for marker attributes.
+   */
   @Contract(pure = true)
   @JsonIgnore
-  public abstract @NotNull Object getStorage();
+  public abstract @Nullable Object getStorage();
 
   // =========================================================================
   // Object
@@ -111,16 +118,19 @@ public abstract class Attribute implements Serializable {
   public boolean equals(Object obj) {
     return obj instanceof Attribute other
         && this.details.equals(other.details)
-        && this.getStorage().equals(other.getStorage());
+        && (this.getStorage() != null && this.getStorage().equals(other.getStorage()));
   }
 
   @Override
   public int hashCode() {
-    return this.details.hashCode() + this.getStorage().hashCode();
+    return this.details.hashCode() + (this.getStorage() != null ? this.getStorage().hashCode() : 0);
   }
 
   @Override
   public String toString() {
-    return getIdent() + "(" + getStorage() + ")";
+    return getIdent()
+        + "("
+        + (getStorage() != null ? getStorage() : "MARKER<" + getIdent() + ">")
+        + ")";
   }
 }
