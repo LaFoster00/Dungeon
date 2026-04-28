@@ -26,7 +26,7 @@ public class Utils {
       mapperBuilder =
           mapperBuilder.enable(tools.jackson.databind.SerializationFeature.INDENT_OUTPUT);
     }
-
-    return mapperBuilder.build();
+    // Return a mapper that resets DGIR id generators before each String serialization.
+    return new ResettingObjectMapper(mapperBuilder);
   }
 }

@@ -14,6 +14,15 @@ public class ValueIdGenerator extends ObjectIdGenerator<String> {
   private static final IdentityHashMap<Value, String> valueIds = new IdentityHashMap<>();
   private static int nextId = 0;
 
+  /**
+   * Reset persistent ids and sequence. Useful to ensure consistent ids across separate
+   * serialization runs (e.g. each ObjectMapper.writeValueAsString call).
+   */
+  public static void reset() {
+    valueIds.clear();
+    nextId = 0;
+  }
+
   @Override
   public Class<?> getScope() {
     return Value.class;

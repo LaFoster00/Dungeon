@@ -1,46 +1,30 @@
 package dgir.core.utility;
 
 import dgir.core.debug.Location;
-import dgir.core.debug.ValueDebugInfo;
 import dgir.core.ir.Block;
 import dgir.core.ir.Operation;
 import dgir.core.ir.Region;
-import dgir.core.ir.Value;
+import dgir.core.serialization.BlockIdGenerator;
+import dgir.core.serialization.ValueIdGenerator;
+import dgir.dialect.builtin.BuiltinOps;
 
-import java.util.IdentityHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static dgir.core.utility.DgirCoreUtils.indent;
 
 /** Util class to convert IR to text. */
 public class IrToText {
-  static final AtomicInteger blockIndex = new AtomicInteger(0);
-  static final IdentityHashMap<Block, String> blockNames = new IdentityHashMap<>();
-
-  static final AtomicInteger valueIndex = new AtomicInteger(0);
-  static final IdentityHashMap<Value, String> valueNames = new IdentityHashMap<>();
-
-  private static String getBlockName(Block block) {
-    return blockNames.computeIfAbsent(block, b -> ".blk_" + blockIndex.getAndIncrement());
-  }
-
-  private static String getValueName(Value value) {
-    return valueNames.computeIfAbsent(
-        value,
-        v -> {
-          if (v.getDebugInfo().equals(ValueDebugInfo.UNKNOWN)) {
-            return "%" + valueIndex.getAndIncrement();
-          } else {
-            return "%" + v.getDebugInfo().name() + "_" + valueIndex.getAndIncrement();
-          }
-        });
-  }
+  private static final ValueIdGenerator valueIdGenerator = new ValueIdGenerator();
+  private static final BlockIdGenerator blockIdGenerator = new BlockIdGenerator();
 
   public static String toText(Operation operation) {
+    if (operation.isa(BuiltinOps.ProgramOp.class)) {
+      ValueIdGenerator.reset();
+      BlockIdGenerator.reset();
+    }
     StringBuilder sb = new StringBuilder();
     if (operation.getOutputValue().isPresent()) {
-      sb.append(getValueName(operation.getOutputValue().get()));
+      sb.append(valueIdGenerator.generateId(operation.getOutputValue().get()));
       sb.append(" :");
       sb.append(operation.getOutputValue().get().getType());
       sb.append(" = ");
@@ -51,7 +35,7 @@ public class IrToText {
     if (!operation.getOperands().isEmpty()) sb.append(' ');
     sb.append(
         operation.getOperands().stream()
-            .map(operand -> operand.getValue().map(IrToText::getValueName).orElse("null"))
+            .map(operand -> operand.getValue().map(valueIdGenerator::generateId).orElse("null"))
             .collect(Collectors.joining(" , ")));
     if (!operation.getOperands().isEmpty()) sb.append(' ');
     sb.append(")");
@@ -91,7 +75,7 @@ public class IrToText {
       if (!operation.getSuccessors().isEmpty()) sb.append(' ');
       sb.append(
           operation.getSuccessors().stream()
-              .map(IrToText::getBlockName)
+              .map(blockIdGenerator::generateId)
               .collect(Collectors.joining(" , ")));
       if (!operation.getSuccessors().isEmpty()) sb.append(' ');
       sb.append("]");
@@ -115,7 +99,7 @@ public class IrToText {
       sb.append("( ");
       sb.append(
           region.getRegionValues().stream()
-              .map(IrToText::getValueName)
+              .map(valueIdGenerator::generateId)
               .collect(Collectors.joining(" , ")));
       sb.append(" ) ");
     }
@@ -130,7 +114,7 @@ public class IrToText {
   }
 
   public static String toText(Block block) {
-    return getBlockName(block)
+    return blockIdGenerator.generateId(block)
         + ": \n"
         + indent(
             block.getOperations().stream().map(IrToText::toText).collect(Collectors.joining("\n")),
