@@ -209,7 +209,7 @@ public final class ReachingDefinitions {
   @Contract(pure = true)
   private static @NotNull Set<Value> seedForRegion(
       @NotNull Operation op, @NotNull Region region, @NotNull Set<Value> parentState) {
-    Set<Value> seed = new HashSet<>(region.getBodyValues());
+    Set<Value> seed = new HashSet<>(region.getRegionValues());
     if (!op.hasTrait(IIsolatedFromAbove.class)) {
       seed.addAll(parentState);
     }

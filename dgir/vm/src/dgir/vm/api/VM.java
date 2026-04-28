@@ -572,9 +572,9 @@ public class VM {
     state.pushScope(currentOp, stepIntoRegion.isolatedFromAbove());
     currentHitBreakpoints.push(Optional.empty());
 
-    // Same as for the func op we need to push the body values of the region onto the stack.
-    List<Value> bodyValues = stepIntoRegion.region().getBodyValues();
-    setupRegion(state, bodyValues, stepIntoRegion.args());
+    // Same as for the func op we need to push the region values of the region onto the stack.
+    List<Value> regionValues = stepIntoRegion.region().getRegionValues();
+    setupRegion(state, regionValues, stepIntoRegion.args());
     nextOperation = stepIntoRegion.region().getEntryOperation();
   }
 
@@ -624,9 +624,9 @@ public class VM {
     state.pushScope(opener, closedScope.isIsolatedFromAbove());
     currentHitBreakpoints.push(Optional.empty());
     // Set the values of the region's arguments in the new stack frame. These values are
-    // stored as body values in the region.
-    List<Value> bodyValues = jumpToRegion.target().getBodyValues();
-    setupRegion(state, bodyValues, jumpToRegion.args());
+    // stored as region values in the region.
+    List<Value> regionValues = jumpToRegion.target().getRegionValues();
+    setupRegion(state, regionValues, jumpToRegion.args());
     nextOperation = jumpToRegion.target().getEntryOperation();
   }
 
@@ -647,9 +647,9 @@ public class VM {
     currentHitBreakpoints.push(Optional.empty());
 
     // Set the values of the function's arguments in the new stack frame.
-    // These values are stored as body values in the function's region.'
-    List<Value> bodyValues = funcOp.getFirstRegionOrThrow().getBodyValues();
-    setupRegion(state, bodyValues, call.args());
+    // These values are stored as region values in the function's region.'
+    List<Value> regionValues = funcOp.getFirstRegionOrThrow().getRegionValues();
+    setupRegion(state, regionValues, call.args());
     nextOperation = funcOp.getFirstRegionOrThrow().getEntryOperation();
   }
 
@@ -714,14 +714,14 @@ public class VM {
   }
 
   private static void setupRegion(
-      @NotNull State state, @NotNull List<Value> bodyValues, @NotNull List<Object> args) {
-    assert bodyValues.size() == args.size()
-        : "Number of arguments does not match number of body values. Expected "
-            + bodyValues.size()
+      @NotNull State state, @NotNull List<Value> regionValues, @NotNull List<Object> args) {
+    assert regionValues.size() == args.size()
+        : "Number of arguments does not match number of region values. Expected "
+            + regionValues.size()
             + " but got "
             + args.size();
-    for (int i = 0; i < bodyValues.size(); i++) {
-      state.setValue(bodyValues.get(i), args.get(i));
+    for (int i = 0; i < regionValues.size(); i++) {
+      state.setValue(regionValues.get(i), args.get(i));
     }
   }
 

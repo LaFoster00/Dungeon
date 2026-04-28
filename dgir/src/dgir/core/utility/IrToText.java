@@ -111,10 +111,10 @@ public class IrToText {
 
   public static String toText(Region region) {
     StringBuilder sb = new StringBuilder();
-    if (!region.getBodyValues().isEmpty()) {
+    if (!region.getRegionValues().isEmpty()) {
       sb.append("( ");
       sb.append(
-          region.getBodyValues().stream()
+          region.getRegionValues().stream()
               .map(IrToText::getValueName)
               .collect(Collectors.joining(" , ")));
       sb.append(" ) ");
@@ -131,7 +131,7 @@ public class IrToText {
 
   public static String toText(Block block) {
     return getBlockName(block)
-        + " \n"
+        + ": \n"
         + indent(
             block.getOperations().stream().map(IrToText::toText).collect(Collectors.joining("\n")),
             1);

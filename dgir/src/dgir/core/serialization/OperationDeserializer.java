@@ -198,7 +198,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
 
     if (regions != null) {
       for (int i = 0; i < regions.size(); i++) {
-        operation.getRegions().get(i).setBodyValues(regions.get(i).getBodyValues());
+        operation.getRegions().get(i).setRegionValues(regions.get(i).getRegionValues());
         operation.getRegions().get(i).takeRegion(regions.get(i));
       }
     }

@@ -42,16 +42,16 @@ public final class Operation implements Serializable {
   /**
    * Create an {@link Operation} and populate body values for each of its regions.
    *
-   * <p>Each element of {@code regionBodyValueTypes} corresponds to one region in declaration order.
-   * The values are created as fresh {@link Value} instances typed according to the provided lists
-   * and set as the region's body values after creation.
+   * <p>Each element of {@code regionValueTypes} corresponds to one region in declaration order. The
+   * values are created as fresh {@link Value} instances typed according to the provided lists and
+   * set as the region's body values after creation.
    *
    * @param location the source location of the operation.
    * @param op a default (no-arg) op prototype used to obtain the ident and default attributes.
    * @param operands input value operands, or {@code null} for none.
    * @param successors successor blocks (for branching ops), or {@code null} for none.
    * @param outputType result type, or {@code null} for void ops.
-   * @param regionBodyValueTypes per-region lists of body value types; the number of elements
+   * @param regionValueTypes per-region lists of region value types; the number of elements
    * @return the newly constructed operation.
    */
   @NotNull
@@ -62,14 +62,14 @@ public final class Operation implements Serializable {
       @Nullable List<Value> operands,
       @Nullable List<Block> successors,
       @Nullable Type outputType,
-      @NotNull List<Type>... regionBodyValueTypes) {
+      @NotNull List<Type>... regionValueTypes) {
     Operation operation =
-        Create(location, op, operands, successors, outputType, regionBodyValueTypes.length);
-    for (int i = 0; i < regionBodyValueTypes.length; i++) {
+        Create(location, op, operands, successors, outputType, regionValueTypes.length);
+    for (int i = 0; i < regionValueTypes.length; i++) {
       operation
           .getRegions()
           .get(i)
-          .setBodyValues(regionBodyValueTypes[i].stream().map(Value::new).toList());
+          .setRegionValues(regionValueTypes[i].stream().map(Value::new).toList());
     }
     return operation;
   }

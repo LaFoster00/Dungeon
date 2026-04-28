@@ -34,7 +34,7 @@ import java.util.*;
  * @see Operation
  * @see Block
  */
-@JsonPropertyOrder({"index", "bodyValues", "blocks"})
+@JsonPropertyOrder({"index", "regionValues", "blocks"})
 public final class Region {
 
   // =========================================================================
@@ -47,9 +47,9 @@ public final class Region {
    * Values visible inside this region, acting as parameters/arguments (e.g. the induction variable
    * of a for-loop body).
    */
-  @JsonIdentityReference private final @NotNull List<@NotNull Value> bodyValues;
+  private final @JsonIdentityReference @NotNull List<@NotNull Value> regionValues;
 
-  @JsonIgnore private final @Nullable Operation parent;
+  private final @JsonIgnore @Nullable Operation parent;
 
   // =========================================================================
   // Constructors
@@ -65,22 +65,22 @@ public final class Region {
 
   public Region(@Nullable Operation parent, List<Type> bodyValueTypes) {
     this.parent = parent;
-    this.bodyValues = initBodyValues(bodyValueTypes);
+    this.regionValues = iniRegionValues(bodyValueTypes);
   }
 
   private Region(
-      @NotNull List<Block> blocks, @Nullable Operation parent, @Nullable List<Value> bodyValues) {
+      @NotNull List<Block> blocks, @Nullable Operation parent, @Nullable List<Value> regionValues) {
     this.parent = parent;
-    this.bodyValues = new ArrayList<>(bodyValues == null ? List.of() : bodyValues);
+    this.regionValues = new ArrayList<>(regionValues == null ? List.of() : regionValues);
     for (Block block : blocks) addBlock(block);
   }
 
   /** Deserialization factory — body values and blocks are wired up by Jackson. */
   @JsonCreator
   public static Region createRegion(
-      @JsonProperty(value = "bodyValues") @Nullable List<Value> bodyValues,
+      @JsonProperty(value = "regionValues") @Nullable List<Value> regionValues,
       @JsonProperty(value = "blocks") @Nullable List<Block> blocks) {
-    return new Region(blocks != null ? blocks : List.of(), null, bodyValues);
+    return new Region(blocks != null ? blocks : List.of(), null, regionValues);
   }
 
   // =========================================================================
@@ -159,50 +159,52 @@ public final class Region {
   // =========================================================================
 
   @Contract(pure = true)
-  public @NotNull List<Value> getBodyValues() {
-    return bodyValues;
+  public @NotNull List<Value> getRegionValues() {
+    return regionValues;
   }
 
   @Contract(pure = true)
   public Optional<Value> getBodyValue(int index) {
-    if (index < 0 || index >= bodyValues.size()) return Optional.empty();
-    return Optional.of(bodyValues.get(index));
+    if (index < 0 || index >= regionValues.size()) return Optional.empty();
+    return Optional.of(regionValues.get(index));
   }
 
   @Contract(pure = true)
   public int getBodyValueIndex(@NotNull Value value) {
-    return bodyValues.indexOf(value);
+    return regionValues.indexOf(value);
   }
 
   /**
    * Replace the body values of this region with a new list. Existing uses of the old values are
    * redirected to the corresponding new values.
    *
-   * @param bodyValues The new body values. Must match the existing list in size and types if any of
-   *     the current values are already in use.
+   * @param regionValues The new body values. Must match the existing list in size and types if any
+   *     of the current values are already in use.
    */
-  public void setBodyValues(@NotNull List<Value> bodyValues) {
-    if (!this.bodyValues.isEmpty() && bodyValues.stream().anyMatch(v -> !v.getUses().isEmpty())) {
-      assert this.bodyValues.size() == bodyValues.size()
+  public void setRegionValues(@NotNull List<Value> regionValues) {
+    if (!this.regionValues.isEmpty()
+        && regionValues.stream().anyMatch(v -> !v.getUses().isEmpty())) {
+      assert this.regionValues.size() == regionValues.size()
           : "Body values of regions must have the same size.";
-      for (int i = 0; i < this.bodyValues.size(); i++) {
-        assert this.bodyValues.get(i).getType().equals(bodyValues.get(i).getType())
+      for (int i = 0; i < this.regionValues.size(); i++) {
+        assert this.regionValues.get(i).getType().equals(regionValues.get(i).getType())
             : "Body value types of regions must match.";
       }
     }
 
-    if (!this.bodyValues.isEmpty())
-      for (int i = 0; i < bodyValues.size(); i++)
-        this.bodyValues.get(i).replaceAllUsesWith(bodyValues.get(i));
+    if (!this.regionValues.isEmpty())
+      for (int i = 0; i < regionValues.size(); i++)
+        this.regionValues.get(i).replaceAllUsesWith(regionValues.get(i));
 
-    this.bodyValues.clear();
-    this.bodyValues.addAll(bodyValues);
+    this.regionValues.clear();
+    this.regionValues.addAll(regionValues);
   }
 
   public void setBodyValue(@NotNull Value value, int index) {
-    assert index >= 0 && index < bodyValues.size() : "Index out of bounds.";
-    assert bodyValues.get(index).getType().equals(value.getType()) : "Body value type must match.";
-    bodyValues.set(index, value);
+    assert index >= 0 && index < regionValues.size() : "Index out of bounds.";
+    assert regionValues.get(index).getType().equals(value.getType())
+        : "Body value type must match.";
+    regionValues.set(index, value);
   }
 
   // =========================================================================
@@ -214,6 +216,7 @@ public final class Region {
     return Optional.ofNullable(parent);
   }
 
+  @JsonIgnore
   @Contract(pure = true)
   public int getIndex() {
     return parent == null ? -1 : parent.getRegions().indexOf(this);
@@ -223,14 +226,14 @@ public final class Region {
    * Move all blocks from {@code other} into this region. Uses of {@code other}'s body values are
    * replaced with the corresponding values from this region.
    *
-   * @param other The region to drain. Must have matching body value types.
+   * @param other The region to drain. Must have matching region value types.
    */
   public void takeRegion(@NotNull Region other) {
-    assert this.bodyValues.size() == other.bodyValues.size()
-        : "Body values of regions must have the same size.";
-    for (int i = 0; i < this.bodyValues.size(); i++) {
-      assert this.bodyValues.get(i).getType().equals(other.bodyValues.get(i).getType())
-          : "Body value types of regions must match.";
+    assert this.regionValues.size() == other.regionValues.size()
+        : "Region values of regions must have the same size.";
+    for (int i = 0; i < this.regionValues.size(); i++) {
+      assert this.regionValues.get(i).getType().equals(other.regionValues.get(i).getType())
+          : "Region value types of regions must match.";
     }
 
     for (Block block : new ArrayList<>(other.blocks)) {
@@ -238,9 +241,9 @@ public final class Region {
       addBlock(block);
     }
 
-    for (int i = 0; i < this.bodyValues.size(); i++) {
-      Value thisBodyValue = this.bodyValues.get(i);
-      Value otherBodyValue = other.bodyValues.get(i);
+    for (int i = 0; i < this.regionValues.size(); i++) {
+      Value thisBodyValue = this.regionValues.get(i);
+      Value otherBodyValue = other.regionValues.get(i);
       if (thisBodyValue != otherBodyValue) otherBodyValue.replaceAllUsesWith(thisBodyValue);
     }
   }
@@ -249,11 +252,11 @@ public final class Region {
   // Private Helpers
   // =========================================================================
 
-  private static List<Value> initBodyValues(List<Type> bodyValueTypes) {
+  private static List<Value> iniRegionValues(List<Type> bodyValueTypes) {
     List<Type> types = bodyValueTypes == null ? List.of() : bodyValueTypes;
     List<Value> values = new ArrayList<>(types.size());
     for (Type type : types)
-      values.add(new Value(Objects.requireNonNull(type, "body value type cannot be null")));
+      values.add(new Value(Objects.requireNonNull(type, "region value type cannot be null")));
     return values;
   }
 
@@ -264,9 +267,9 @@ public final class Region {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder("Region[" + getIndex() + "] (");
-    for (int i = 0; i < bodyValues.size(); i++) {
-      builder.append(bodyValues.get(i));
-      if (i < bodyValues.size() - 1) builder.append(", ");
+    for (int i = 0; i < regionValues.size(); i++) {
+      builder.append(regionValues.get(i));
+      if (i < regionValues.size() - 1) builder.append(", ");
     }
 
     builder.append(") {");

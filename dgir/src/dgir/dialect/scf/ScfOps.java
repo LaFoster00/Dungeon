@@ -254,10 +254,6 @@ public sealed interface ScfOps {
    * <p>The four operands passed at construction time seed the initial induction variable, lower
    * bound, upper bound, and step respectively.
    *
-   * <p>Additionally, a "break" value is available as the second body value of the loop's single
-   * region, which can be set to true to terminate the loop early (similar to "break" in most
-   * languages) regardless of the loop condition.
-   *
    * <p>Ident: {@code scf.for}
    *
    * <pre>{@code
@@ -324,7 +320,7 @@ public sealed interface ScfOps {
     // =========================================================================
 
     /**
-     * Returns the induction variable of this loop, which is the first body value of its single
+     * Returns the induction variable of this loop, which is the first region value of its single
      * region.
      *
      * @return the induction variable.
