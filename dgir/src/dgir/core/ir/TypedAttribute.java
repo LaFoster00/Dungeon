@@ -51,4 +51,23 @@ public abstract class TypedAttribute extends Attribute {
   private void setType(@NotNull Type type) {
     this.type = type;
   }
+
+  // =========================================================================
+  // Object
+  // =========================================================================
+
+  @Override
+  public boolean equals(Object obj) {
+    return super.equals(obj) && obj instanceof TypedAttribute other && type.equals(other.type);
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode() + type.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return getIdent() + "(" + getStorage() + " : " + type + ")";
+  }
 }
