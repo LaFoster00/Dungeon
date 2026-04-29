@@ -46,8 +46,7 @@ public abstract class Op {
    * @return the dialect that contributed this operation.
    */
   @Contract(pure = true)
-  @NotNull
-  public abstract Class<? extends Dialect> getDialect();
+  public abstract @NotNull Class<? extends Dialect> getDialect();
 
   /**
    * Get the unique identifier of this operation.
@@ -55,8 +54,7 @@ public abstract class Op {
    * @return the unique identifier of this operation.
    */
   @Contract(pure = true)
-  @NotNull
-  public abstract String getIdent();
+  public abstract @NotNull String getIdent();
 
   /**
    * Get the namespace of this dialect. Only available after dialect registration.
@@ -65,8 +63,7 @@ public abstract class Op {
    * @throws NullPointerException if the dialect is not registered.
    */
   @Contract(pure = true)
-  @NotNull
-  public String getNamespace() {
+  public @NotNull String getNamespace() {
     return DGIRContext.registeredDialects.get(getDialect()).getNamespace();
   }
 
