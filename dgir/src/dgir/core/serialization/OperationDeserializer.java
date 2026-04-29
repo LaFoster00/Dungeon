@@ -48,7 +48,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
   public Operation deserialize(JsonParser jp, DeserializationContext ctxt) throws JacksonException {
     JsonNode node = jp.readValueAsTree();
 
-    // Resolve operation kind from ident before touching optional fields.
+    // Step 1: read the operation kind first so we can look up the registered IR definition.
     JsonNode identNode = node.get("ident");
     if (identNode == null || identNode.isNull()) {
       return ctxt.reportInputMismatch(Operation.class, "Missing required field 'ident'.");
@@ -66,6 +66,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
           ident);
     }
 
+    // Step 2: deserialize optional operands if the payload provides them.
     List<Value> operands = null;
     JsonNode operandsNode = node.get("operands");
     if (operandsNode != null && !operandsNode.isNull()) {
@@ -79,6 +80,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
     }
 
+    // Step 3: deserialize declared attributes and dynamic attributes separately.
     List<NamedAttribute> attributes = null;
     JsonNode attributesNode = node.get("attributes");
     if (attributesNode != null && !attributesNode.isNull()) {
@@ -107,12 +109,14 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
     }
 
+    // Step 4: read the optional output value so we can derive the result type.
     Value outputValue = null;
     JsonNode outputNode = node.get("output");
     if (outputNode != null && !outputNode.isNull()) {
       outputValue = ctxt.readTreeAsValue(outputNode, Value.class);
     }
 
+    // Step 5: successors are resolved later, so create placeholders now and remember their JSON.
     List<Block> successors = null;
     Map<Block, JsonNode> unresolvedSuccessors = new HashMap<>();
     JsonNode successorsNode = node.get("successors");
@@ -129,6 +133,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
     }
 
+    // Step 6: materialize nested regions before binding any successor block references.
     List<Region> regions = null;
     JsonNode regionsNode = node.get("regions");
     if (regionsNode != null && !regionsNode.isNull()) {
@@ -142,12 +147,15 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
     }
 
+    // Step 7: load the source location if present; otherwise keep the unknown sentinel.
     Location location = Location.UNKNOWN;
     JsonNode locNode = node.get("loc");
     if (locNode != null && !locNode.isNull()) {
       location = ctxt.readTreeAsValue(locNode, Location.class);
     }
 
+    // Step 8: now that child regions exist, walk their operations and resolve any deferred
+    // successor references to real blocks.
     if (regions != null) {
       for (Region region : regions) {
         for (Block block : region.getBlocks()) {
@@ -162,7 +170,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
                   return ctxt.reportInputMismatch(
                       Operation.class, "Encountered unresolved successor block reference.");
                 }
-                // Let Jackson resolve block identity references after region materialization.
+                // Resolve the block identity only after the target region has been materialized.
                 Block targetBlock = ctxt.readTreeAsValue(blockId, Block.class);
                 blockOperand.setValue(targetBlock);
               }
@@ -203,6 +211,8 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
     }
 
+    // Step 9: collect any successor operands whose targets still need to be bound by a parent
+    // region deserializer, and keep their JSON ids for that later pass.
     Map<BlockOperand, JsonNode> unresolvedBlockOperands = new HashMap<>();
     for (BlockOperand blockOperand : operation.getBlockOperands()) {
       Block placeholder = blockOperand.getValue().orElse(null);
@@ -221,6 +231,8 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       unresolvedBlockOperands.put(blockOperand, unresolvedId);
     }
     if (!unresolvedBlockOperands.isEmpty()) {
+      // Store the deferred bindings keyed by this operation so nested deserializations can
+      // complete successor resolution once all surrounding blocks are available.
       unresolvedSuccessorReferences.put(operation, unresolvedBlockOperands);
     }
 
