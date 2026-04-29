@@ -66,7 +66,7 @@ public abstract class Op {
    */
   @Contract(pure = true)
   @NotNull
-  public final String getNamespace() {
+  public String getNamespace() {
     return DGIRContext.registeredDialects.get(getDialect()).getNamespace();
   }
 
