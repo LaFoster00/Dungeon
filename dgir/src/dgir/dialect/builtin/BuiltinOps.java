@@ -48,12 +48,6 @@ public sealed interface BuiltinOps {
     public @NotNull Class<? extends Dialect> getDialect() {
       return BuiltinDialect.class;
     }
-
-    @Contract(pure = true)
-    @Override
-    public @NotNull String getNamespace() {
-      return "";
-    }
   }
 
   /**

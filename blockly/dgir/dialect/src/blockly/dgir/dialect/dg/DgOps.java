@@ -41,16 +41,6 @@ public sealed interface DgOps {
     public @NotNull Class<? extends Dialect> getDialect() {
       return DungeonDialect.class;
     }
-
-    /**
-     * Returns the namespace prefix used when printing this operation.
-     *
-     * @return the fixed {@code "dg"} namespace.
-     */
-    @Override
-    public @NotNull String getNamespace() {
-      return "dg";
-    }
   }
 
   /**

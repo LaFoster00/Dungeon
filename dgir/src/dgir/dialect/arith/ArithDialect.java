@@ -22,7 +22,7 @@ import static dgir.dialect.arith.ArithOps.*;
  * <ul>
  *   <li>{@link ConstantOp} — produces a constant value
  *   <li>{@link BinaryOp} — unified binary numeric operation
- *   <li>{@link BinaryOp} — compares two numeric operands
+ *   <li>{@link UnaryOp} — unary arithmetic operations
  *   <li>{@link CastOp} — casts a numeric operand to a target type
  * </ul>
  */

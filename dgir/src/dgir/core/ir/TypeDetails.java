@@ -259,6 +259,7 @@ public record TypeDetails(
   public static void insert(@NotNull TypeDescriptor descriptor) {
     TypeDetails details = new TypeDetails(descriptor);
     // Populate the registered caches
+    DGIRContext.registeredTypes.put(details.type(), details);
     DGIRContext.registeredTypesByIdent.put(details.ident(), details);
   }
 }

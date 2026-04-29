@@ -62,17 +62,6 @@ public sealed interface ArithOps {
     public @NotNull Class<? extends Dialect> getDialect() {
       return ArithDialect.class;
     }
-
-    /**
-     * Returns the namespace prefix used when printing this operation.
-     *
-     * @return the fixed {@code "arith"} namespace.
-     */
-    @Contract(pure = true)
-    @Override
-    public @NotNull String getNamespace() {
-      return "arith";
-    }
   }
 
   /**

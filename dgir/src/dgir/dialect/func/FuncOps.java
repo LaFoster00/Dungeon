@@ -56,12 +56,6 @@ public sealed interface FuncOps {
     public @NotNull Class<? extends Dialect> getDialect() {
       return FuncDialect.class;
     }
-
-    @Contract(pure = true)
-    @Override
-    public @NotNull String getNamespace() {
-      return "func";
-    }
   }
 
   /**

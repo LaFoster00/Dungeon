@@ -39,12 +39,6 @@ public sealed interface ScfOps {
       return ScfDialect.class;
     }
 
-    @Contract(pure = true)
-    @Override
-    public @NotNull String getNamespace() {
-      return "scf";
-    }
-
     // =========================================================================
     // Constructors
     // =========================================================================

@@ -42,16 +42,6 @@ public sealed interface MemOps {
     public @NotNull Class<? extends Dialect> getDialect() {
       return MemoryDialect.class;
     }
-
-    /**
-     * Returns the namespace prefix used when printing this operation.
-     *
-     * @return the fixed {@code "mem"} namespace.
-     */
-    @Override
-    public @NotNull String getNamespace() {
-      return "mem";
-    }
   }
 
   /**

@@ -52,12 +52,6 @@ public sealed interface CfOps {
     public @NotNull Class<? extends Dialect> getDialect() {
       return CfDialect.class;
     }
-
-    @Contract(pure = true)
-    @Override
-    public @NotNull String getNamespace() {
-      return "cf";
-    }
   }
 
   /**

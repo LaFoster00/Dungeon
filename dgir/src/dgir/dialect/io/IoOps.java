@@ -39,12 +39,6 @@ public sealed interface IoOps {
     public @NotNull Class<? extends Dialect> getDialect() {
       return IoDialect.class;
     }
-
-    @Contract(pure = true)
-    @Override
-    public @NotNull String getNamespace() {
-      return "io";
-    }
   }
 
   /**

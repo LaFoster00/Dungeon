@@ -42,6 +42,10 @@ public class DGIRContext {
   // Types
   // =========================================================================
 
+  /** Registered types by class. */
+  public static final @NotNull Map<Class<? extends Type>, TypeDetails> registeredTypes =
+      new HashMap<>();
+
   /** Registered types by ident. */
   public static final Map<String, TypeDetails> registeredTypesByIdent = new HashMap<>();
 
@@ -79,5 +83,45 @@ public class DGIRContext {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * Check if an operation with the given class is registered in the context.
+   *
+   * @param opClass The operation class to check.
+   * @return true if the operation is registered, false otherwise.
+   */
+  public boolean isOpRegistered(@NotNull Class<? extends Op> opClass) {
+    return registeredOperations.containsKey(opClass);
+  }
+
+  /**
+   * Check if an attribute with the given class is registered in the context.
+   *
+   * @param attrClass The attribute class to check.
+   * @return true if the attribute is registered, false otherwise.
+   */
+  public boolean isAttributeRegistered(@NotNull Class<? extends Attribute> attrClass) {
+    return attributes.containsKey(attrClass);
+  }
+
+  /**
+   * Check if a type with the given class is registered in the context.
+   *
+   * @param typeClass The type class to check.
+   * @return true if the type is registered, false otherwise.
+   */
+  public boolean isTypeRegistered(@NotNull Class<? extends Type> typeClass) {
+    return registeredTypes.containsKey(typeClass);
+  }
+
+  /**
+   * Check if a dialect with the given class is registered in the context.
+   *
+   * @param dialectClass The dialect class to check.
+   * @return true if the dialect is registered, false otherwise.
+   */
+  public boolean isDialectRegistered(@NotNull Class<? extends Dialect> dialectClass) {
+    return registeredDialects.containsKey(dialectClass);
   }
 }

@@ -39,16 +39,6 @@ public sealed interface StrOps {
     public @NotNull Class<? extends Dialect> getDialect() {
       return StrDialect.class;
     }
-
-    /**
-     * Returns the namespace prefix used when printing this operation.
-     *
-     * @return the fixed {@code "str"} namespace.
-     */
-    @Override
-    public @NotNull String getNamespace() {
-      return "str";
-    }
   }
 
   final class ToStringOp extends StrOp implements StrOps, ISingleOperand, IHasResult {

@@ -50,15 +50,6 @@ public abstract class Op {
   public abstract Class<? extends Dialect> getDialect();
 
   /**
-   * Get the namespace of this dialect.
-   *
-   * @return the namespace of this dialect.
-   */
-  @Contract(pure = true)
-  @NotNull
-  public abstract String getNamespace();
-
-  /**
    * Get the unique identifier of this operation.
    *
    * @return the unique identifier of this operation.
@@ -66,6 +57,18 @@ public abstract class Op {
   @Contract(pure = true)
   @NotNull
   public abstract String getIdent();
+
+  /**
+   * Get the namespace of this dialect. Only available after dialect registration.
+   *
+   * @return the namespace of this dialect.
+   * @throws NullPointerException if the dialect is not registered.
+   */
+  @Contract(pure = true)
+  @NotNull
+  public final String getNamespace() {
+    return DGIRContext.registeredDialects.get(getDialect()).getNamespace();
+  }
 
   /**
    * Get a list of all default attributes for this operation. These attributes are populated on the
