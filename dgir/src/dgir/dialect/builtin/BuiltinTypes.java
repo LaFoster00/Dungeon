@@ -21,11 +21,6 @@ public sealed interface BuiltinTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link BuiltinDialect}. */
   sealed interface BuiltinTypeDescriptor extends TypeDescriptor {
     @Override
-    default @NotNull String getNamespace() {
-      return "";
-    }
-
-    @Override
     default @NotNull Class<? extends Dialect> getDialect() {
       return BuiltinDialect.class;
     }
@@ -91,7 +86,7 @@ public sealed interface BuiltinTypes {
       }
 
       @Override
-      public Function<Object, Boolean> getValidator() {
+      public @NotNull Function<Object, Boolean> getValidator() {
         return validator;
       }
 
@@ -162,7 +157,7 @@ public sealed interface BuiltinTypes {
       }
 
       @Override
-      public Function<Object, Boolean> getValidator() {
+      public @NotNull Function<Object, Boolean> getValidator() {
         return validator;
       }
 

@@ -21,11 +21,6 @@ public sealed interface MemTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link MemoryDialect}. */
   sealed interface MemTypeDescriptor extends TypeDescriptor {
     @Override
-    default @NotNull String getNamespace() {
-      return "mem";
-    }
-
-    @Override
     default @NotNull Class<? extends Dialect> getDialect() {
       return MemoryDialect.class;
     }

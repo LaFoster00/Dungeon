@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
  */
 public record OperationDetails(
     @NotNull String ident,
+    @NotNull String namespace,
     @NotNull Class<? extends Op> type,
     @NotNull Dialect dialect,
     @NotNull Function<@NotNull Operation, @NotNull Boolean> verifier,
@@ -90,7 +91,15 @@ public record OperationDetails(
                     }));
 
     return new OperationDetails(
-        ident, type, dialect, verifier, traits, traitVerifiers, opFactory, defaultAttributes);
+        ident,
+        dialect.getNamespace(),
+        type,
+        dialect,
+        verifier,
+        traits,
+        traitVerifiers,
+        opFactory,
+        defaultAttributes);
   }
 
   // =========================================================================

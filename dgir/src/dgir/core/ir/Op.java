@@ -60,11 +60,12 @@ public abstract class Op {
    * Get the namespace of this dialect. Only available after dialect registration.
    *
    * @return the namespace of this dialect.
-   * @throws NullPointerException if the dialect is not registered.
+   * @throws RuntimeException if the operation is not set and the op not registered.
    */
   @Contract(pure = true)
   public @NotNull String getNamespace() {
-    return DGIRContext.registeredDialects.get(getDialect()).getNamespace();
+    if (operation != null) return operation.getDetails().namespace();
+    return OperationDetails.lookup(getClass()).orElseThrow().namespace();
   }
 
   /**

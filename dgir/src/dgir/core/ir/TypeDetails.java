@@ -39,7 +39,7 @@ public record TypeDetails(
   private TypeDetails(@NotNull TypeDescriptor descriptor) {
     this(
         descriptor.getIdent(),
-        descriptor.getNamespace(),
+        Dialect.getOrThrow(descriptor.getDialect()).getNamespace(),
         descriptor.getTypeClass(),
         Dialect.getOrThrow(descriptor.getDialect()),
         descriptor.getValidator(),

@@ -21,7 +21,7 @@ public record AttributeDetails(
   private AttributeDetails(@NotNull AttributeDescriptor descriptor) {
     this(
         descriptor.getIdent(),
-        descriptor.getNamespace(),
+        Dialect.getOrThrow(descriptor.getDialect()).getNamespace(),
         descriptor.getAttributeClass(),
         Dialect.getOrThrow(descriptor.getDialect()));
   }

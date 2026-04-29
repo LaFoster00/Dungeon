@@ -21,11 +21,6 @@ public sealed interface FuncTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link FuncDialect}. */
   sealed interface FuncTypeDescriptor extends TypeDescriptor {
     @Override
-    default @NotNull String getNamespace() {
-      return "func";
-    }
-
-    @Override
     default @NotNull Class<? extends Dialect> getDialect() {
       return FuncDialect.class;
     }

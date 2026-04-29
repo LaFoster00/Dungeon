@@ -19,11 +19,6 @@ import static dgir.dialect.func.FuncOps.FuncOp;
 public sealed interface BuiltinAttrs {
   sealed interface BuiltinAttrDescriptor extends AttributeDescriptor {
     @Override
-    default @NotNull String getNamespace() {
-      return "";
-    }
-
-    @Override
     default @NotNull Class<? extends Dialect> getDialect() {
       return BuiltinDialect.class;
     }

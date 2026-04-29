@@ -13,6 +13,16 @@ import org.jetbrains.annotations.NotNull;
  * {@code public static AttributeDescriptor defaultInstance()}.</h3>
  */
 public interface AttributeDescriptor {
+
+  /**
+   * Returns the class of the dialect that contributes this attribute kind.
+   *
+   * @return the dialect class, never {@code null}.
+   */
+  @Contract(pure = true)
+  @NotNull
+  Class<? extends Dialect> getDialect();
+
   /**
    * Get the Java class that is described by this descriptor.
    *
@@ -30,22 +40,4 @@ public interface AttributeDescriptor {
   @Contract(pure = true)
   @NotNull
   String getIdent();
-
-  /**
-   * Returns the namespace prefix for this attribute kind.
-   *
-   * @return the namespace string, never {@code null}.
-   */
-  @Contract(pure = true)
-  @NotNull
-  String getNamespace();
-
-  /**
-   * Returns the class of the dialect that contributes this attribute kind.
-   *
-   * @return the dialect class, never {@code null}.
-   */
-  @Contract(pure = true)
-  @NotNull
-  Class<? extends Dialect> getDialect();
 }

@@ -106,6 +106,7 @@ public final class Operation implements Serializable {
         Stream.generate(List::<Type>of).limit(numRegions).toArray(List[]::new));
   }
 
+  @SafeVarargs
   public static @NotNull Operation Create(
       @NotNull Location location,
       @NotNull OperationDetails operationDetails,

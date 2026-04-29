@@ -16,11 +16,6 @@ import static dgir.dialect.builtin.BuiltinTypes.isNumeric;
 public sealed interface ArithAttrs {
   sealed interface ArithAttrDescriptor extends AttributeDescriptor {
     @Override
-    default @NotNull String getNamespace() {
-      return "arith";
-    }
-
-    @Override
     default @NotNull Class<? extends Dialect> getDialect() {
       return ArithDialect.class;
     }

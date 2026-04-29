@@ -30,6 +30,16 @@ import java.util.function.Function;
  * </h3>
  */
 public interface TypeDescriptor {
+
+  /**
+   * Returns the class of the dialect that contributes this type.
+   *
+   * @return the dialect class, never {@code null}.
+   */
+  @Contract(pure = true)
+  @NotNull
+  Class<? extends Dialect> getDialect();
+
   /**
    * Get the Java class that is described by this descriptor.
    *
@@ -58,30 +68,12 @@ public interface TypeDescriptor {
   String getIdent();
 
   /**
-   * Returns the namespace prefix for this type (e.g. {@code ""} for builtin types or {@code "func"}
-   * for the func dialect).
-   *
-   * @return the namespace string, never {@code null}.
-   */
-  @Contract(pure = true)
-  @NotNull
-  String getNamespace();
-
-  /**
-   * Returns the class of the dialect that contributes this type.
-   *
-   * @return the dialect class, never {@code null}.
-   */
-  @Contract(pure = true)
-  @NotNull
-  Class<? extends Dialect> getDialect();
-
-  /**
    * Returns a function that checks whether a given value is a valid instance of this type.
    *
    * @return the validator function, never {@code null}.
    */
   @Contract(pure = true)
+  @NotNull
   Function<Object, Boolean> getValidator();
 
   /**

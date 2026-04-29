@@ -11,11 +11,6 @@ import org.jetbrains.annotations.NotNull;
 public sealed interface StrAttrs {
   sealed interface StrAttrDescriptor extends AttributeDescriptor {
     @Override
-    default @NotNull String getNamespace() {
-      return "str";
-    }
-
-    @Override
     default @NotNull Class<? extends Dialect> getDialect() {
       return StrDialect.class;
     }

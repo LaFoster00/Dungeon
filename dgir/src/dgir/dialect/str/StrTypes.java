@@ -19,11 +19,6 @@ public sealed interface StrTypes {
   /** Abstract base class for all type-descriptors contributed by the {@link StrDialect}. */
   sealed interface StrTypeDescriptor extends TypeDescriptor {
     @Override
-    default @NotNull String getNamespace() {
-      return "str";
-    }
-
-    @Override
     default @NotNull Class<? extends Dialect> getDialect() {
       return StrDialect.class;
     }
@@ -45,7 +40,7 @@ public sealed interface StrTypes {
       }
 
       @Override
-      public Function<Object, Boolean> getValidator() {
+      public @NotNull Function<Object, Boolean> getValidator() {
         return value -> value instanceof String;
       }
 
