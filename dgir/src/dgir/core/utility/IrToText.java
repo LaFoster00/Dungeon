@@ -99,7 +99,7 @@ public class IrToText {
       sb.append("( ");
       sb.append(
           region.getRegionValues().stream()
-              .map(valueIdGenerator::generateId)
+              .map(value -> "%s :%s".formatted(valueIdGenerator.generateId(value), value.getType()))
               .collect(Collectors.joining(" , ")));
       sb.append(" ) ");
     }

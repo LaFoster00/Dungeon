@@ -429,7 +429,7 @@ public sealed interface BuiltinTypes {
       return cacheGuard(1);
     }
 
-    public static String identFromWidth(float width) {
+    public static String identFromWidth(int width) {
       return "float" + width;
     }
 
