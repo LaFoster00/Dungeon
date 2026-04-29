@@ -29,12 +29,12 @@ public class BuiltinTests {
   public void emptyProgramOp() {
     ProgramOp programOp = new ProgramOp(LOC);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void simpleProgramOp() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMainOp = entry.getRight();
 
@@ -44,12 +44,12 @@ public class BuiltinTests {
     funcMainOp.addOperation(new PrintOp(LOC, textOp.getResult(), numberTextOP.getResult()), 0);
     funcMainOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void functionCall() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMainOp = entry.getRight();
 
@@ -68,7 +68,7 @@ public class BuiltinTests {
       funcMainOp.addOperation(new ReturnOp(LOC), 0);
     }
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   /**
@@ -77,7 +77,7 @@ public class BuiltinTests {
    */
   @Test
   public void overrideValue() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMainOp = entry.getRight();
 
@@ -89,7 +89,7 @@ public class BuiltinTests {
     funcMainOp.addOperation(new PrintOp(LOC, secondConstOp.getOutputValue().orElseThrow()), 0);
     funcMainOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   /**
@@ -98,10 +98,10 @@ public class BuiltinTests {
    */
   @Test
   public void missingTerminator() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   /** Checks that signed integer attributes preserve signed values across JSON round-trip. */
@@ -109,8 +109,8 @@ public class BuiltinTests {
   public void signedIntegerRoundTrip() {
     Attribute original = new BuiltinAttrs.IntegerAttribute(-1, IntegerT.INT8());
 
-    String json = TestUtils.mapper.writeValueAsString(original);
-    Attribute parsed = TestUtils.mapper.readValue(json, Attribute.class);
+    String json = DgirTestUtils.mapper.writeValueAsString(original);
+    Attribute parsed = DgirTestUtils.mapper.readValue(json, Attribute.class);
 
     assertTrue(parsed instanceof BuiltinAttrs.IntegerAttribute);
     BuiltinAttrs.IntegerAttribute parsedInteger = (BuiltinAttrs.IntegerAttribute) parsed;

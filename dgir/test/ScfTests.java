@@ -38,7 +38,7 @@ public class ScfTests {
 
   @Test
   public void simpleScopeOp() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -49,12 +49,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void nestedScopeOps() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -71,12 +71,12 @@ public class ScfTests {
     outerScope.getRegion().getEntryBlock().addOperation(new EndOp(LOC));
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void scopeOpWithMultipleOperations() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -91,12 +91,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void scopeOpMissingTerminator() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -107,14 +107,14 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   // ===================== IfOp Tests =====================
 
   @Test
   public void simpleIfOpWithThen() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -127,12 +127,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void ifOpWithThenAndElse() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -156,12 +156,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void nestedIfOps() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -203,12 +203,12 @@ public class ScfTests {
     outerIf.getThenRegion().getEntryBlock().addOperation(new EndOp(LOC));
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void ifOpWithValueFromOuterScope() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -228,12 +228,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void ifOpMissingThenTerminator() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -246,12 +246,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void ifOpMissingElseTerminator() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -272,14 +272,14 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   // ===================== ForOp Tests =====================
 
   @Test
   public void simpleForOp() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -304,12 +304,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void nestedForOps() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -357,12 +357,12 @@ public class ScfTests {
     outerFor.getRegion().getEntryBlock().addOperation(new EndOp(LOC));
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void forOpWithComplexBody() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -399,12 +399,12 @@ public class ScfTests {
     forOp.getRegion().getEntryBlock().addOperation(new ContinueOp(LOC));
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void forOpMissingTerminator() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -428,14 +428,14 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   // ===================== Mixed SCF Operations Tests =====================
 
   @Test
   public void ifInsideScope() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -455,12 +455,12 @@ public class ScfTests {
     scopeOp.getRegion().getEntryBlock().addOperation(new EndOp(LOC));
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void forInsideIf() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -490,12 +490,12 @@ public class ScfTests {
     ifOp.getThenRegion().getEntryBlock().addOperation(new EndOp(LOC));
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void complexNestedScfOperations() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -547,12 +547,12 @@ public class ScfTests {
     outerScope.getRegion().getEntryBlock().addOperation(new EndOp(LOC));
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void multipleSequentialScfOps() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -596,14 +596,14 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   // ===================== Value Visibility Tests =====================
 
   @Test
   public void valueDefinedInScopeNotVisibleOutside() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -616,12 +616,12 @@ public class ScfTests {
     funcOp.addOperation(new PrintOp(LOC, innerValue.getResult()), 0);
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void valueDefinedInIfThenNotVisibleOutside() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -636,12 +636,12 @@ public class ScfTests {
     funcOp.addOperation(new PrintOp(LOC, thenValue.getResult()), 0);
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void valueDefinedInForLoopNotVisibleOutside() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -669,12 +669,12 @@ public class ScfTests {
     funcOp.addOperation(new PrintOp(LOC, loopValue.getResult()), 0);
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void inductionVariableNotVisibleOutsideLoop() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -700,14 +700,14 @@ public class ScfTests {
     funcOp.addOperation(new PrintOp(LOC, forOp.getInductionValue()), 0);
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   // ===================== Edge Case Tests =====================
 
   @Test
   public void emptyScopeOp() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -716,12 +716,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void emptyIfThenBranch() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -732,12 +732,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void emptyIfElseBranch() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -749,12 +749,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void emptyForLoopBody() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -777,12 +777,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void deeplyNestedScopes() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -804,12 +804,12 @@ public class ScfTests {
 
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void scfOpsInMultipleFunctions() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -846,6 +846,6 @@ public class ScfTests {
 
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 }

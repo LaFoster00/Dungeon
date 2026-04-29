@@ -18,6 +18,7 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Carries the runtime state associated with a concrete operation instance.
@@ -63,15 +64,17 @@ public final class Operation implements Serializable {
       @Nullable List<Block> successors,
       @Nullable Type outputType,
       @NotNull List<Type>... regionValueTypes) {
-    Operation operation =
-        Create(location, op, operands, successors, outputType, regionValueTypes.length);
-    for (int i = 0; i < regionValueTypes.length; i++) {
-      operation
-          .getRegions()
-          .get(i)
-          .setRegionValues(regionValueTypes[i].stream().map(Value::new).toList());
-    }
-    return operation;
+    return Create(
+        location,
+        OperationDetails.lookup(op.getIdent())
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        MessageFormat.format("Operation {0} is not registered.", op.getIdent()))),
+        operands != null ? operands : List.of(),
+        successors != null ? successors : List.of(),
+        outputType,
+        regionValueTypes);
   }
 
   /**
@@ -86,6 +89,7 @@ public final class Operation implements Serializable {
    * @return the newly constructed operation.
    * @throws IllegalArgumentException if {@code op}'s ident is not yet registered.
    */
+  @SuppressWarnings("unchecked")
   public static @NotNull Operation Create(
       @NotNull Location location,
       @NotNull Op op,
@@ -93,19 +97,13 @@ public final class Operation implements Serializable {
       @Nullable List<Block> successors,
       @Nullable Type outputType,
       int numRegions) {
-    return new Operation(
+    return Create(
         location,
-        OperationDetails.lookup(op.getIdent())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        MessageFormat.format("Operation {0} is not registered.", op.getIdent()))),
-        operands != null ? operands : List.of(),
-        successors != null ? successors : List.of(),
+        op,
+        operands,
+        successors,
         outputType,
-        op.defaultAttributes().get().stream()
-            .collect(Collectors.toMap(NamedAttribute::getName, attr -> attr)),
-        numRegions);
+        Stream.generate(List::<Type>of).limit(numRegions).toArray(List[]::new));
   }
 
   public static @NotNull Operation Create(
@@ -114,21 +112,14 @@ public final class Operation implements Serializable {
       @Nullable List<Value> operands,
       @Nullable List<Block> successors,
       @Nullable Type outputType,
-      int numRegions) {
+      @NotNull List<Type>... regionValueTypes) {
     return new Operation(
         location,
-        OperationDetails.lookup(operationDetails.ident())
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        MessageFormat.format(
-                            "Operation {0} is not registered.", operationDetails.ident()))),
+        operationDetails,
         operands != null ? operands : List.of(),
         successors != null ? successors : List.of(),
         outputType,
-        operationDetails.defaultAttributes().get().stream()
-            .collect(Collectors.toMap(NamedAttribute::getName, attr -> attr)),
-        numRegions);
+        regionValueTypes);
   }
 
   // =========================================================================
@@ -174,17 +165,18 @@ public final class Operation implements Serializable {
    * @param operands The input values.
    * @param successors The blocks succeeding this operation.
    * @param resultType The output result type.
-   * @param attributes The named attributes.
-   * @param numRegions The number of regions.
+   * @param regionValueTypes The types of the region values for each region; the number of elements
+   *     determines the number of regions created, and the types in each list determine the body
+   *     values of the corresponding region.
    */
+  @SafeVarargs
   public Operation(
       @NotNull Location location,
       @NotNull OperationDetails details,
       @NotNull List<Value> operands,
       @NotNull List<Block> successors,
       @Nullable Type resultType,
-      @NotNull Map<String, NamedAttribute> attributes,
-      int numRegions) {
+      @NotNull List<Type>... regionValueTypes) {
     this.location = location;
 
     this.details = details;
@@ -203,11 +195,15 @@ public final class Operation implements Serializable {
     }
     this.blockOperands = Collections.unmodifiableList(blockOperandsList);
 
-    this.attributes = Map.copyOf(attributes);
+    this.attributes =
+        details.defaultAttributes().get().stream()
+            .collect(Collectors.toMap(NamedAttribute::getName, attr -> attr));
 
-    var regionsList = new ArrayList<Region>(numRegions);
-    for (int i = 0; i < numRegions; i++) {
-      regionsList.add(new Region(this));
+    var regionsList = new ArrayList<Region>(regionValueTypes.length);
+    for (List<Type> regionValueType : regionValueTypes) {
+      regionsList.add(
+          new Region(
+              this, regionValueType.stream().map(Value::new).toList(), List.of(new Block())));
     }
     this.regions = Collections.unmodifiableList(regionsList);
   }

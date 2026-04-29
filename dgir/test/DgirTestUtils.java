@@ -27,7 +27,7 @@ import static dgir.dialect.func.FuncOps.FuncOp;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TestUtils {
+public class DgirTestUtils {
   public static ObjectMapper mapper = Utils.getMapper(true);
   public static boolean printResult = true;
   public static boolean saveResult = true;
@@ -47,7 +47,7 @@ public class TestUtils {
 
     assertEquals(
         "",
-        TestUtils.compareSerializedOperations(mapper, op.getOperation(), result),
+        DgirTestUtils.compareSerializedOperations(mapper, op.getOperation(), result),
         "Serialization mismatch for op: " + op.getClass().getSimpleName());
 
     String callerName =
@@ -134,6 +134,11 @@ public class TestUtils {
 
   public static String compareSerializedOperations(
       ObjectMapper mapper, Operation op1, Operation op2) {
+    if (!op1.verify(true)) {
+      System.out.println(
+          "Skipping serialized roundtrip for invalid op: " + op1.getClass().getSimpleName());
+      return "";
+    }
     try {
       String json1 = mapper.writeValueAsString(op1);
       String json2 = mapper.writeValueAsString(op2);

@@ -89,7 +89,6 @@ public sealed interface StrOps {
     @SuppressWarnings("unused")
     public ToStringOp(@NotNull Location location, @NotNull Value operand) {
       setOperation(
-          true,
           Operation.Create(location, this, List.of(operand), null, StrTypes.StringT.INSTANCE));
     }
   }
@@ -166,7 +165,6 @@ public sealed interface StrOps {
      */
     public ConcatOp(@NotNull Location location, @NotNull Value left, @NotNull Value right) {
       setOperation(
-          true,
           Operation.Create(location, this, List.of(left, right), null, StrTypes.StringT.INSTANCE));
     }
   }
@@ -227,7 +225,6 @@ public sealed interface StrOps {
      */
     public LengthOp(@NotNull Location location, @NotNull Value operand) {
       setOperation(
-          true,
           Operation.Create(location, this, List.of(operand), null, BuiltinTypes.IntegerT.INT32()));
     }
   }
@@ -293,7 +290,6 @@ public sealed interface StrOps {
      */
     public CharAtOp(@NotNull Location location, @NotNull Value string, @NotNull Value index) {
       setOperation(
-          true,
           Operation.Create(
               location, this, List.of(string, index), null, BuiltinTypes.IntegerT.UINT16()));
     }
@@ -359,7 +355,6 @@ public sealed interface StrOps {
      */
     public EqualsOp(@NotNull Location location, @NotNull Value left, @NotNull Value right) {
       setOperation(
-          true,
           Operation.Create(
               location, this, List.of(left, right), null, BuiltinTypes.IntegerT.BOOL()));
     }
@@ -420,7 +415,6 @@ public sealed interface StrOps {
      */
     public IsEmptyOp(@NotNull Location location, @NotNull Value operand) {
       setOperation(
-          true,
           Operation.Create(location, this, List.of(operand), null, BuiltinTypes.IntegerT.BOOL()));
     }
   }
@@ -481,7 +475,6 @@ public sealed interface StrOps {
      */
     public ToLowerCaseOp(@NotNull Location location, @NotNull Value operand) {
       setOperation(
-          true,
           Operation.Create(location, this, List.of(operand), null, StrTypes.StringT.INSTANCE));
     }
   }
@@ -542,7 +535,6 @@ public sealed interface StrOps {
      */
     public ToUpperCaseOp(@NotNull Location location, @NotNull Value operand) {
       setOperation(
-          true,
           Operation.Create(location, this, List.of(operand), null, StrTypes.StringT.INSTANCE));
     }
   }
@@ -603,7 +595,6 @@ public sealed interface StrOps {
      */
     public TrimOp(@NotNull Location location, @NotNull Value operand) {
       setOperation(
-          true,
           Operation.Create(location, this, List.of(operand), null, StrTypes.StringT.INSTANCE));
     }
   }
@@ -682,7 +673,6 @@ public sealed interface StrOps {
     public SubstringOp(
         @NotNull Location location, @NotNull Value string, @NotNull Value beginIndex) {
       setOperation(
-          true,
           Operation.Create(
               location, this, List.of(string, beginIndex), null, StrTypes.StringT.INSTANCE));
     }
@@ -701,7 +691,6 @@ public sealed interface StrOps {
         @NotNull Value beginIndex,
         @NotNull Value endIndex) {
       setOperation(
-          true,
           Operation.Create(
               location,
               this,
@@ -817,7 +806,6 @@ public sealed interface StrOps {
      */
     public StartsWithOp(@NotNull Location location, @NotNull Value string, @NotNull Value prefix) {
       setOperation(
-          true,
           Operation.Create(
               location, this, List.of(string, prefix), null, BuiltinTypes.IntegerT.BOOL()));
     }
@@ -872,7 +860,6 @@ public sealed interface StrOps {
      */
     public EndsWithOp(@NotNull Location location, @NotNull Value string, @NotNull Value suffix) {
       setOperation(
-          true,
           Operation.Create(
               location, this, List.of(string, suffix), null, BuiltinTypes.IntegerT.BOOL()));
     }
@@ -932,7 +919,6 @@ public sealed interface StrOps {
      */
     public IndexOfOp(@NotNull Location location, @NotNull Value string, @NotNull Value substring) {
       setOperation(
-          true,
           Operation.Create(
               location, this, List.of(string, substring), null, BuiltinTypes.IntegerT.INT32()));
     }
@@ -993,7 +979,6 @@ public sealed interface StrOps {
     public LastIndexOfOp(
         @NotNull Location location, @NotNull Value string, @NotNull Value substring) {
       setOperation(
-          true,
           Operation.Create(
               location, this, List.of(string, substring), null, BuiltinTypes.IntegerT.INT32()));
     }

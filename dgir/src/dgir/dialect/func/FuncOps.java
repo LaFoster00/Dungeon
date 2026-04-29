@@ -363,7 +363,7 @@ public sealed interface FuncOps {
      * @param type the function signature.
      */
     public FuncOp(@NotNull Location location, @NotNull String name, @NotNull FuncType type) {
-      setOperation(true, Operation.Create(location, this, null, null, null, type.getInputs()));
+      setOperation(Operation.Create(location, this, null, null, null, type.getInputs()));
       getFuncNameAttribute().setValue(name);
       getTypeAttribute().setType(type);
     }
@@ -522,7 +522,7 @@ public sealed interface FuncOps {
      * @param location the source location of this operation.
      */
     public ReturnOp(@NotNull Location location) {
-      setOperation(false, Operation.Create(location, this, null, null, null));
+      setOperation(Operation.Create(location, this, null, null, null));
     }
 
     /**

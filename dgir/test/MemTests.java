@@ -34,7 +34,7 @@ public class MemTests {
   }
 
   private static Pair<ProgramOp, FuncOp> newMain() {
-    return TestUtils.createProgramOpWithEntryFunc();
+    return DgirTestUtils.createProgramOpWithEntryFunc();
   }
 
   @Test
@@ -47,7 +47,7 @@ public class MemTests {
     funcMain.addOperation(new AllocGcOp(LOC, IntegerT.INT32(), notAnInt.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -67,7 +67,7 @@ public class MemTests {
     assertTrue(realloc.getDynamicSize().isEmpty());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -84,7 +84,7 @@ public class MemTests {
     funcMain.addOperation(new ReallocGcOp(LOC, alloc.getResult(), newSize.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -112,7 +112,7 @@ public class MemTests {
     assertEquals(intArray(OptionalInt.of(3)), cast.getArrayType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -126,7 +126,7 @@ public class MemTests {
     funcMain.addOperation(new CastOp(LOC, intArray(OptionalInt.empty()), alloc.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -140,7 +140,7 @@ public class MemTests {
     funcMain.addOperation(new CastOp(LOC, floatArray(OptionalInt.empty()), alloc.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -156,7 +156,7 @@ public class MemTests {
     funcMain.addOperation(new CastOp(LOC, intArray(OptionalInt.of(4)), fixed.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -172,7 +172,7 @@ public class MemTests {
     assertEquals(IntegerT.INT64(), sizeof.getResult().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -185,7 +185,7 @@ public class MemTests {
     funcMain.addOperation(new SizeofOp(LOC, notArray.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -203,7 +203,7 @@ public class MemTests {
     assertEquals(IntegerT.INT32(), getElement.getResult().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
@@ -231,7 +231,7 @@ public class MemTests {
     funcMain.addOperation(new GetElementOp(LOC, alloc.getResult(), index.getResult()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test

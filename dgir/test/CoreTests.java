@@ -88,7 +88,7 @@ public class CoreTests {
 
   @Test
   public void reachingDefSameBlock() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
 
@@ -96,12 +96,12 @@ public class CoreTests {
     funcOp.addOperation(new PrintOp(LOC, constOp.getResult()), 0);
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void reachingDefSuccessorBlock() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
     Block entryBlock = funcOp.getRegion().getEntryBlock();
@@ -118,12 +118,12 @@ public class CoreTests {
     targetBlock.addOperation(new PrintOp(LOC, constOp.getResult()));
     targetBlock.addOperation(new ReturnOp(LOC));
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void reachingDefDominanceViolation() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
     Block entryBlock = funcOp.getEntryBlock();
@@ -148,12 +148,12 @@ public class CoreTests {
     mergeBlock.addOperation(new PrintOp(LOC, val.getResult()));
     mergeBlock.addOperation(new ReturnOp(LOC));
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void reachingDefDiamondShape() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcOp = entry.getRight();
     Block entryBlock = funcOp.getEntryBlock();
@@ -178,12 +178,12 @@ public class CoreTests {
     mergeBlock.addOperation(new PrintOp(LOC, val.getResult()));
     mergeBlock.addOperation(new ReturnOp(LOC));
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void dynamicAttributeSerializationRoundTrip() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     FuncOp funcOp = entry.getRight();
 
     var constOp = funcOp.addOperation(new ConstantOp(LOC, 42), 0);
@@ -195,7 +195,7 @@ public class CoreTests {
     String json = mapper.writeValueAsString(operation);
     Operation roundTripped = mapper.readValue(json, Operation.class);
 
-    assertEquals("", TestUtils.compareSerializedOperations(mapper, operation, roundTripped));
+    assertEquals("", DgirTestUtils.compareSerializedOperations(mapper, operation, roundTripped));
     assertTrue(
         roundTripped
             .getDynamicAttributeAs("tag", BuiltinAttrs.SymbolRefAttribute.class)

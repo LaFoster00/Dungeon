@@ -45,7 +45,7 @@ public class FuncTests {
     FuncOp funcOp = new FuncOp(LOC, "testFunc");
     funcOp.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(funcOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(funcOp));
   }
 
   /** Test case for a function with multiple parameters and a return value. */
@@ -58,7 +58,7 @@ public class FuncTests {
     // the parameters.
     funcOp.addOperation(new ReturnOp(LOC, funcOp.getArgument(0).orElseThrow()), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(funcOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(funcOp));
   }
 
   /**
@@ -72,13 +72,13 @@ public class FuncTests {
     // Returning an INT32 when the function expects StringT
     funcOp.addOperation(new ReturnOp(LOC, funcOp.getArgument(0).orElseThrow()), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(funcOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(funcOp));
   }
 
   /** Test case for a recursive function call. */
   @Test
   public void recursiveFuncCall() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
     mainFunc.addOperation(new ReturnOp(LOC), 0);
@@ -92,12 +92,12 @@ public class FuncTests {
             new CallOp(LOC, factorial, factorial.getArgument(0).orElseThrow()), 0);
     factorial.addOperation(new ReturnOp(LOC, callOp.getOutputValue().orElseThrow()), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void callBetweenFunctions() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -110,24 +110,24 @@ public class FuncTests {
     mainFunc.addOperation(new PrintOp(LOC, callOp.getOutputValue().orElseThrow()), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void callToNonExistentFunction() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
     mainFunc.addOperation(new CallOp(LOC, "ghost", FuncType.of(List.of(), IntegerT.INT32())), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void invalidArgumentCountCall() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -140,12 +140,12 @@ public class FuncTests {
     mainFunc.addOperation(new CallOp(LOC, target), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void invalidArgumentTypeCall() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -159,7 +159,7 @@ public class FuncTests {
     mainFunc.addOperation(new CallOp(LOC, target, strOp.getResult()), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   // =========================================================================
@@ -172,7 +172,7 @@ public class FuncTests {
    */
   @Test
   public void basicConstantFuncRef() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -185,7 +185,7 @@ public class FuncTests {
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
     assertInstanceOf(FuncType.class, funcRef.getResult().getType());
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   /**
@@ -194,7 +194,7 @@ public class FuncTests {
    */
   @Test
   public void constantFuncRefByName() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -207,7 +207,7 @@ public class FuncTests {
     mainFunc.addOperation(new ConstantOp(LOC, "noArgFunc", targetType), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   // =========================================================================
@@ -220,7 +220,7 @@ public class FuncTests {
    */
   @Test
   public void callIndirectBasic() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -236,7 +236,7 @@ public class FuncTests {
     mainFunc.addOperation(new PrintOp(LOC, callOp.getOutputValue().orElseThrow()), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   /**
@@ -245,7 +245,7 @@ public class FuncTests {
    */
   @Test
   public void callIndirectWithArgs() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -262,7 +262,7 @@ public class FuncTests {
     mainFunc.addOperation(new PrintOp(LOC, callOp.getOutputValue().orElseThrow()), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   /**
@@ -271,7 +271,7 @@ public class FuncTests {
    */
   @Test
   public void callIndirectWrongArgCount() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -285,7 +285,7 @@ public class FuncTests {
     mainFunc.addOperation(new CallIndirectOp(LOC, funcRef.getResult(), List.of()), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   /**
@@ -294,7 +294,7 @@ public class FuncTests {
    */
   @Test
   public void callIndirectWrongArgType() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp mainFunc = entry.getRight();
 
@@ -309,6 +309,6 @@ public class FuncTests {
         new CallIndirectOp(LOC, funcRef.getResult(), List.of(strArg.getResult())), 0);
     mainFunc.addOperation(new ReturnOp(LOC), 0);
 
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 }

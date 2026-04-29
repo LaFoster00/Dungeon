@@ -1,10 +1,7 @@
 package dgir.core.ir;
 
 import com.fasterxml.jackson.annotation.*;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.UnmodifiableView;
+import org.jetbrains.annotations.*;
 
 import java.util.*;
 
@@ -34,20 +31,24 @@ import java.util.*;
  * @see Operation
  * @see Block
  */
-@JsonPropertyOrder({"index", "regionValues", "blocks"})
+@JsonPropertyOrder({"regionValues", "blocks"})
 public final class Region {
 
   // =========================================================================
   // Members
   // =========================================================================
 
+  /**
+   * The blocks contained in this region, in order. A region always has at least one block (the
+   * entry block), which is created automatically if needed.
+   */
   private final @NotNull List<Block> blocks = new ArrayList<>();
 
   /**
    * Values visible inside this region, acting as parameters/arguments (e.g. the induction variable
    * of a for-loop body).
    */
-  private final @JsonIdentityReference @NotNull List<@NotNull Value> regionValues;
+  private final @JsonIdentityReference @Unmodifiable @NotNull List<@NotNull Value> regionValues;
 
   private final @JsonIgnore @Nullable Operation parent;
 
@@ -55,32 +56,19 @@ public final class Region {
   // Constructors
   // =========================================================================
 
-  public Region() {
-    this(null, List.of());
-  }
-
-  public Region(@Nullable Operation parent) {
-    this(parent, List.of());
-  }
-
-  public Region(@Nullable Operation parent, List<Type> bodyValueTypes) {
-    this.parent = parent;
-    this.regionValues = iniRegionValues(bodyValueTypes);
-  }
-
-  private Region(
-      @NotNull List<Block> blocks, @Nullable Operation parent, @Nullable List<Value> regionValues) {
+  public Region(
+      @Nullable Operation parent, @Nullable List<Value> regionValues, @NotNull List<Block> blocks) {
     this.parent = parent;
     this.regionValues = new ArrayList<>(regionValues == null ? List.of() : regionValues);
     for (Block block : blocks) addBlock(block);
   }
 
-  /** Deserialization factory — body values and blocks are wired up by Jackson. */
   @JsonCreator
-  public static Region createRegion(
-      @JsonProperty(value = "regionValues") @Nullable List<Value> regionValues,
-      @JsonProperty(value = "blocks") @Nullable List<Block> blocks) {
-    return new Region(blocks != null ? blocks : List.of(), null, regionValues);
+  public Region(
+      @JsonProperty("regionValues") @Nullable List<Value> regionValues,
+      @JsonProperty("blocks") @NotNull List<Block> blocks) {
+    this(null, regionValues, blocks);
+    assert !blocks.isEmpty() : "Region must have at least one block.";
   }
 
   // =========================================================================
@@ -125,19 +113,18 @@ public final class Region {
   public Block removeBlockAt(int index) {
     assert index >= 0 && index < blocks.size() : "Index out of bounds.";
     Block block = blocks.remove(index);
-    if (block != null) block.setParent(null);
+    if (block != null) {
+      // Ensure that none of the region values are used or defined in the removed block.
+      assert !block.areValuesUsedOrDefined(new HashSet<>(regionValues), false)
+          : "Cannot remove block that uses or defines region values of its current parent.";
+      block.setParent(null);
+    }
     return block;
-  }
-
-  /** Ensure this region has at least one (entry) block. */
-  public void ensureEntryBlock() {
-    if (this.blocks.isEmpty()) addBlock(new Block());
   }
 
   @JsonIgnore
   @Contract(pure = true)
   public @NotNull Block getEntryBlock() {
-    ensureEntryBlock();
     return blocks.getFirst();
   }
 
@@ -159,52 +146,19 @@ public final class Region {
   // =========================================================================
 
   @Contract(pure = true)
-  public @NotNull List<Value> getRegionValues() {
+  public @NotNull @Unmodifiable List<Value> getRegionValues() {
     return regionValues;
   }
 
   @Contract(pure = true)
-  public Optional<Value> getBodyValue(int index) {
+  public Optional<Value> getRegionValue(int index) {
     if (index < 0 || index >= regionValues.size()) return Optional.empty();
     return Optional.of(regionValues.get(index));
   }
 
   @Contract(pure = true)
-  public int getBodyValueIndex(@NotNull Value value) {
+  public int getRegionValueIndex(@NotNull Value value) {
     return regionValues.indexOf(value);
-  }
-
-  /**
-   * Replace the body values of this region with a new list. Existing uses of the old values are
-   * redirected to the corresponding new values.
-   *
-   * @param regionValues The new body values. Must match the existing list in size and types if any
-   *     of the current values are already in use.
-   */
-  public void setRegionValues(@NotNull List<Value> regionValues) {
-    if (!this.regionValues.isEmpty()
-        && regionValues.stream().anyMatch(v -> !v.getUses().isEmpty())) {
-      assert this.regionValues.size() == regionValues.size()
-          : "Body values of regions must have the same size.";
-      for (int i = 0; i < this.regionValues.size(); i++) {
-        assert this.regionValues.get(i).getType().equals(regionValues.get(i).getType())
-            : "Body value types of regions must match.";
-      }
-    }
-
-    if (!this.regionValues.isEmpty())
-      for (int i = 0; i < regionValues.size(); i++)
-        this.regionValues.get(i).replaceAllUsesWith(regionValues.get(i));
-
-    this.regionValues.clear();
-    this.regionValues.addAll(regionValues);
-  }
-
-  public void setBodyValue(@NotNull Value value, int index) {
-    assert index >= 0 && index < regionValues.size() : "Index out of bounds.";
-    assert regionValues.get(index).getType().equals(value.getType())
-        : "Body value type must match.";
-    regionValues.set(index, value);
   }
 
   // =========================================================================
@@ -226,38 +180,46 @@ public final class Region {
    * Move all blocks from {@code other} into this region. Uses of {@code other}'s body values are
    * replaced with the corresponding values from this region.
    *
-   * @param other The region to drain. Must have matching region value types.
+   * @param other The region to drain. Must have matching region value types and count.
+   * @param override If true, all blocks currently contained in this region will be removed first.
    */
-  public void takeRegion(@NotNull Region other) {
+  public void takeRegion(@NotNull Region other, boolean override) {
+    assertRegionCompatibility(other);
+
+    if (override)
+      for (Block block : List.copyOf(getBlocks())) {
+        removeBlock(block);
+      }
+
+    // Update uses of the other region's body values to point to this region's body values instead.
+    for (int i = 0; i < this.regionValues.size(); i++) {
+      Value thisBodyValue = this.regionValues.get(i);
+      Value otherBodyValue = other.regionValues.get(i);
+      if (thisBodyValue != otherBodyValue) otherBodyValue.replaceAllUsesWith(thisBodyValue);
+    }
+
+    // Move all blocks from the other region into this region, updating their parent pointers.
+    for (Block block : List.copyOf(other.blocks)) {
+      other.removeBlock(block);
+      addBlock(block);
+    }
+  }
+
+  // =========================================================================
+  // Helpers
+  // =========================================================================
+
+  /**
+   * Assert that this region is compatible with another region, meaning they have the same number of
+   * region values and matching types. This is a precondition for taking blocks from other regions.
+   */
+  public void assertRegionCompatibility(@NotNull Region other) {
     assert this.regionValues.size() == other.regionValues.size()
         : "Region values of regions must have the same size.";
     for (int i = 0; i < this.regionValues.size(); i++) {
       assert this.regionValues.get(i).getType().equals(other.regionValues.get(i).getType())
           : "Region value types of regions must match.";
     }
-
-    for (Block block : new ArrayList<>(other.blocks)) {
-      other.removeBlock(block);
-      addBlock(block);
-    }
-
-    for (int i = 0; i < this.regionValues.size(); i++) {
-      Value thisBodyValue = this.regionValues.get(i);
-      Value otherBodyValue = other.regionValues.get(i);
-      if (thisBodyValue != otherBodyValue) otherBodyValue.replaceAllUsesWith(thisBodyValue);
-    }
-  }
-
-  // =========================================================================
-  // Private Helpers
-  // =========================================================================
-
-  private static List<Value> iniRegionValues(List<Type> bodyValueTypes) {
-    List<Type> types = bodyValueTypes == null ? List.of() : bodyValueTypes;
-    List<Value> values = new ArrayList<>(types.size());
-    for (Type type : types)
-      values.add(new Value(Objects.requireNonNull(type, "region value type cannot be null")));
-    return values;
   }
 
   // =========================================================================

@@ -45,6 +45,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
 
   /** Deserialize a full operation payload, then resolve successor references in a second step. */
   @Override
+  @SuppressWarnings("unchecked")
   public Operation deserialize(JsonParser jp, DeserializationContext ctxt) throws JacksonException {
     JsonNode node = jp.readValueAsTree();
 
@@ -180,6 +181,18 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
     }
 
+    // Extract the region value types from the deserialized regions to pass to the operation
+    // constructor.
+    // The content of the regions is taken after the operation is created.
+    List<Type>[] regionValueTypes;
+    if (regions != null)
+      regionValueTypes =
+          regions.stream()
+              .map(Region::getRegionValues)
+              .map(values -> values.stream().map(Value::getType).toList())
+              .toArray(List[]::new);
+    else regionValueTypes = new List[0];
+
     Operation operation;
     operation =
         Operation.Create(
@@ -188,7 +201,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
             operands,
             successors,
             outputValue != null ? outputValue.getType() : null,
-            regions != null ? regions.size() : 0);
+            regionValueTypes);
     if (outputValue != null) operation.setOutputValue(outputValue);
 
     if (attributes != null) {
@@ -206,8 +219,7 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
 
     if (regions != null) {
       for (int i = 0; i < regions.size(); i++) {
-        operation.getRegions().get(i).setRegionValues(regions.get(i).getRegionValues());
-        operation.getRegions().get(i).takeRegion(regions.get(i));
+        operation.getRegions().get(i).takeRegion(regions.get(i), true);
       }
     }
 

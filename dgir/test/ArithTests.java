@@ -25,7 +25,7 @@ public class ArithTests {
 
   @Test
   public void integerArithmeticOps() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -61,12 +61,12 @@ public class ArithTests {
     assertEquals(IntegerT.INT64(), remOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void mixedTypeArithmeticDominatesFloat() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -86,12 +86,12 @@ public class ArithTests {
     assertEquals(FloatT.FLOAT64(), addOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void mixedTypeCompareReturnsBool() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -111,12 +111,12 @@ public class ArithTests {
     assertEquals(IntegerT.BOOL(), cmpOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void castImplicitConversions() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -131,12 +131,12 @@ public class ArithTests {
     assertEquals(IntegerT.INT16(), int16Op.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void castRejectsNonNumericTarget() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -144,12 +144,12 @@ public class ArithTests {
     funcMain.addOperation(new CastOp(LOC, int32Op.getResult(), StrTypes.StringT.INSTANCE()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void compareRejectsNonNumericOperands() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -160,12 +160,12 @@ public class ArithTests {
         new BinaryOp(LOC, stringOp.getResult(), int32Op.getResult(), BinModeAttr.BinMode.EQ), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void addRejectsNonNumericOperands() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     FuncOp funcMain = entry.getRight();
 
     var stringOp = funcMain.addOperation(new ConstantOp(LOC, "oops"), 0);
@@ -182,7 +182,7 @@ public class ArithTests {
 
   @Test
   public void castRejectsNonNumericOperand() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -190,12 +190,12 @@ public class ArithTests {
     funcMain.addOperation(new CastOp(LOC, stringOp.getResult(), IntegerT.INT32()), 0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void mixedSignedUnsignedArithmeticDominantType() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -217,12 +217,12 @@ public class ArithTests {
     assertEquals(IntegerT.UINT32(), mulOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void mixedSignedUnsignedFloatArithmeticDominantType() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -246,12 +246,12 @@ public class ArithTests {
     assertEquals(FloatT.FLOAT64(), add64.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void mixedSignedUnsignedFloatComparisonsReturnBool() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -275,12 +275,12 @@ public class ArithTests {
     assertEquals(IntegerT.BOOL(), ltOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void unsignedOutputTest() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -289,12 +289,12 @@ public class ArithTests {
     funcMain.addOperation(new ConstantOp(LOC, new IntegerAttribute(-1, IntegerT.UINT16())), 0);
     funcMain.addOperation(new ReturnOp(LOC), 0);
 
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void unsignedOnlyModesRejectFloatingOperands() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -311,12 +311,12 @@ public class ArithTests {
         0);
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertFalse(TestUtils.testValidityAndSerialization(programOp));
+    assertFalse(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 
   @Test
   public void unsignedOnlyModesAcceptMixedSignedAndUnsignedIntegers() {
-    Pair<ProgramOp, FuncOp> entry = TestUtils.createProgramOpWithEntryFunc();
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
     ProgramOp programOp = entry.getLeft();
     FuncOp funcMain = entry.getRight();
 
@@ -338,6 +338,6 @@ public class ArithTests {
     assertEquals(IntegerT.INT32(), moduiOp.getOutputValue().orElseThrow().getType());
 
     funcMain.addOperation(new ReturnOp(LOC), 0);
-    assertTrue(TestUtils.testValidityAndSerialization(programOp));
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 }

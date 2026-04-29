@@ -4,17 +4,17 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import dgir.core.utility.DgirCoreUtils;
 import dgir.core.analysis.DotCFG;
 import dgir.core.serialization.BlockIdGenerator;
+import dgir.core.traits.IIsolatedFromAbove;
 import dgir.core.traits.ITerminator;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.UnmodifiableView;
+import dgir.core.utility.DgirCoreUtils;
+import org.jetbrains.annotations.*;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -278,5 +278,189 @@ public final class Block extends IRObjectWithUseList<Block, BlockOperand> implem
   @Override
   public String toString() {
     return "Block[" + getIndex() + "] {" + operations.size() + '}';
+  }
+
+  /**
+   * Get the set of values defined by operations in this block. This includes all values returned by
+   * the operations in this block, including those of nested (and IsolatedFromAbove) regions.
+   *
+   * @param stopAtIsolation If true, do not traverse into nested regions that are isolated from
+   *     above.
+   * @return An unmodifiable set of values defined in this block.
+   * @implNote This is a potentially expensive operation that traverses all operations in the block
+   *     and their nested regions. Use with caution.
+   */
+  @Contract(pure = true)
+  public @NotNull @Unmodifiable Set<Value> getDefinedValues(boolean stopAtIsolation) {
+    Set<Value> values = new HashSet<>();
+    walkBlocks(
+        stopAtIsolation,
+        block -> {
+          for (Operation op : block.operations) {
+            op.getOutputValue().ifPresent(values::add);
+          }
+          return WalkResult.CONTINUE;
+        });
+    return Collections.unmodifiableSet(values);
+  }
+
+  /**
+   * Get the set of values used by operations in this block. This includes all values used as
+   * operands by the operations in this block, including those of nested (and IsolatedFromAbove)
+   * regions.
+   *
+   * @param stopAtIsolation If true, do not traverse into nested regions that are isolated from
+   *     above.
+   * @return An unmodifiable set of values used in this block.
+   * @implNote This is a potentially expensive operation that traverses all operations in the block
+   *     and their nested regions. Use with caution.
+   */
+  @Contract(pure = true)
+  public @NotNull @Unmodifiable Set<@NotNull Value> getUsedValues(boolean stopAtIsolation) {
+    Set<Value> values = new HashSet<>();
+    walkBlocks(
+        stopAtIsolation,
+        block -> {
+          for (Operation op : block.operations) {
+            op.getOperands().forEach(operand -> operand.getValue().ifPresent(values::add));
+          }
+          return WalkResult.CONTINUE;
+        });
+    return Collections.unmodifiableSet(values);
+  }
+
+  /**
+   * Check whether any of the given values are used by operations in this block or its nested
+   * regions.
+   *
+   * @param values The values to check for usage.
+   * @param stopAtIsolation If true, do not traverse into nested regions that are isolated from
+   *     above. This is useful for checking whether values are used in the "current" block without
+   *     considering nested scopes that cannot access those values.
+   * @return True if any of the given values are used in this block or its nested regions, false
+   *     otherwise.
+   */
+  @Contract(pure = true)
+  public boolean areValuesUsed(@NotNull Set<@NotNull Value> values, boolean stopAtIsolation) {
+    AtomicBoolean result = new AtomicBoolean(false);
+    walkBlocks(
+        stopAtIsolation,
+        block -> {
+          for (Operation op : block.operations) {
+            if (checkValueUsed(values, op)) {
+              result.set(true);
+              return WalkResult.STOP;
+            }
+          }
+          return WalkResult.CONTINUE;
+        });
+    return result.get();
+  }
+
+  /**
+   * Check whether any of the given values are defined by operations in this block or its nested
+   * regions.
+   *
+   * @param values The values to check for definition.
+   * @param stopAtIsolation If true, do not traverse into nested regions that are isolated from
+   *     above. This is useful for checking whether values are defined in the "current" block
+   *     without considering nested scopes that cannot access those values.
+   * @return True if any of the given values are defined in this block or its nested regions, false
+   *     otherwise.
+   */
+  @Contract(pure = true)
+  public boolean areValuesDefined(@NotNull Set<@NotNull Value> values, boolean stopAtIsolation) {
+    AtomicBoolean result = new AtomicBoolean(false);
+    walkBlocks(
+        stopAtIsolation,
+        block -> {
+          for (Operation op : block.operations) {
+            if (checkValueDefined(values, op)) {
+              result.set(true);
+              return WalkResult.STOP;
+            }
+          }
+          return WalkResult.CONTINUE;
+        });
+    return result.get();
+  }
+
+  /**
+   * Check whether any of the given values are used or defined by operations in this block or its
+   * nested regions.
+   *
+   * @param values The values to check for usage or definition.
+   * @param stopAtIsolation If true, do not traverse into nested regions that are isolated from
+   *     above. This is useful for checking whether values are used or defined in the "current"
+   *     block without considering nested scopes that cannot access those values.
+   * @return True if any of the given values are used or defined in this block or its nested
+   *     regions, false otherwise.
+   */
+  @Contract(pure = true)
+  public boolean areValuesUsedOrDefined(
+      @NotNull Set<@NotNull Value> values, boolean stopAtIsolation) {
+    AtomicBoolean used = new AtomicBoolean(false);
+    walkBlocks(
+        stopAtIsolation,
+        block -> {
+          for (Operation op : block.operations) {
+            if (checkValueUsed(values, op) || checkValueDefined(values, op)) {
+              used.set(true);
+              return WalkResult.STOP;
+            }
+          }
+          return WalkResult.CONTINUE;
+        });
+    return used.get();
+  }
+
+  @Contract(pure = true)
+  public static boolean checkValueUsed(
+      @NotNull Set<@NotNull Value> values, @NotNull Operation operation) {
+    return operation.getOperands().stream()
+        .filter(operand -> operand.getValue().isPresent())
+        .map(operand -> operand.getValue().get())
+        .anyMatch(values::contains);
+  }
+
+  @Contract(pure = true)
+  public static boolean checkValueDefined(
+      @NotNull Set<@NotNull Value> values, @NotNull Operation operation) {
+    return operation.getOutputValue().map(values::contains).orElse(false);
+  }
+
+  private enum WalkResult {
+    CONTINUE,
+    STOP
+  }
+
+  /**
+   * Walk the operations in this block and its nested regions, applying the given function to each
+   * block. The function can return CONTINUE to keep walking or STOP to terminate early. If
+   * stopAtIsolation is true, nested regions that are isolated from above will not be traversed.
+   *
+   * @param stopAtIsolation Whether to stop traversal at isolated regions.
+   * @param fn The function to apply to each block during the walk.
+   */
+  private void walkBlocks(boolean stopAtIsolation, @NotNull Function<Block, WalkResult> fn) {
+    List<Block> workList = new ArrayList<>();
+    Set<Block> visited = new HashSet<>();
+    workList.add(this);
+    while (!workList.isEmpty()) {
+      Block block = workList.removeFirst();
+      if (visited.contains(block)) continue;
+      visited.add(block);
+      WalkResult result = fn.apply(block);
+      if (result == WalkResult.STOP) {
+        return;
+      } else if (result == WalkResult.CONTINUE) {
+        for (Operation op : block.operations) {
+          if (stopAtIsolation && op.hasTrait(IIsolatedFromAbove.class)) continue;
+          for (Region region : op.getRegions()) {
+            workList.addAll(region.getBlocks());
+          }
+        }
+      }
+    }
   }
 }

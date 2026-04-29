@@ -501,7 +501,7 @@ public sealed interface ArithOps {
      * @param value the typed attribute holding the constant value and its type.
      */
     public ConstantOp(@NotNull Location location, @NotNull TypedAttribute value) {
-      setOperation(true, Operation.Create(location, this, null, null, value.getType()));
+      setOperation(Operation.Create(location, this, null, null, value.getType()));
       getAttributesMap().get("value").setAttribute(value);
     }
 

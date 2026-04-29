@@ -136,7 +136,7 @@ public sealed interface BuiltinOps {
      * @param location the source location of this operation.
      */
     public ProgramOp(@NotNull Location location) {
-      setOperation(true, Operation.Create(location, this, null, null, null, 1));
+      setOperation(Operation.Create(location, this, null, null, null, 1));
     }
 
     // =========================================================================
@@ -223,7 +223,7 @@ public sealed interface BuiltinOps {
      * @param value the value to forward as the result.
      */
     public IdOp(@NotNull Location location, @NotNull Value value) {
-      setOperation(true, Operation.Create(location, this, List.of(value), null, value.getType()));
+      setOperation(Operation.Create(location, this, List.of(value), null, value.getType()));
     }
 
     /**
@@ -234,7 +234,7 @@ public sealed interface BuiltinOps {
      * @param to the destination value whose type becomes the output type.
      */
     public IdOp(@NotNull Location location, @NotNull Value from, @NotNull Value to) {
-      setOperation(true, Operation.Create(location, this, List.of(from), null, from.getType()));
+      setOperation(Operation.Create(location, this, List.of(from), null, from.getType()));
       setOutputValue(to);
     }
   }

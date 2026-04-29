@@ -40,7 +40,7 @@ public sealed interface ScfRunners {
     public Action handleForOp(Operation forOp, State state) {
       ForRunner.ForBounds bounds = ForRunner.getBounds(forOp, state);
 
-      Value induction = forOp.getRegionOrThrow(0).getBodyValue(0).orElseThrow();
+      Value induction = forOp.getRegionOrThrow(0).getRegionValue(0).orElseThrow();
       long inductionValue = state.getValueAsOrThrow(induction, Number.class).longValue();
 
       inductionValue += bounds.step;
@@ -48,7 +48,7 @@ public sealed interface ScfRunners {
         return Action.JumpToRegion(
             forOp.getRegionOrThrow(0),
             ((BuiltinTypes.IntegerT)
-                    forOp.getFirstRegionOrThrow().getBodyValue(0).orElseThrow().getType())
+                    forOp.getFirstRegionOrThrow().getRegionValue(0).orElseThrow().getType())
                 .convertToValidNumber(inductionValue));
       }
 

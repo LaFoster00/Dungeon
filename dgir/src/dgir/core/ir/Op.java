@@ -144,18 +144,6 @@ public abstract class Op {
     return this;
   }
 
-  /**
-   * Sets the backing operation and optionally ensures every region has an entry block.
-   *
-   * @param ensureEntryBlocks whether to create missing entry blocks.
-   * @param operation the operation to set.
-   */
-  public Op setOperation(boolean ensureEntryBlocks, @NotNull Operation operation) {
-    this.operation = operation;
-    if (ensureEntryBlocks) ensureEntryBlocks();
-    return this;
-  }
-
   // =========================================================================
   // Verification
   // =========================================================================
@@ -328,13 +316,6 @@ public abstract class Op {
   // =========================================================================
   // Regions
   // =========================================================================
-
-  /** Goes over all regions and ensures that each has at least one entry block. */
-  public void ensureEntryBlocks() {
-    for (Region region : getRegions()) {
-      region.ensureEntryBlock();
-    }
-  }
 
   @Contract(pure = true)
   public @NotNull List<Region> getRegions() {

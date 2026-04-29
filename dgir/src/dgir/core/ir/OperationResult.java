@@ -31,6 +31,8 @@ public class OperationResult {
   public OperationResult(@NotNull Operation parent, @NotNull Value value) {
     this.parent = parent;
     this.value = value;
+    // Add this result to the definitions of the value
+    this.value.addDefiningOp(this);
   }
 
   /**
@@ -40,8 +42,7 @@ public class OperationResult {
    * @param type the type of the new value.
    */
   public OperationResult(@NotNull Operation parent, @NotNull Type type) {
-    this.parent = parent;
-    this.value = new Value(type);
+    this(parent, new Value(type));
   }
 
   // =========================================================================
@@ -72,7 +73,11 @@ public class OperationResult {
             + " != Provided "
             + value.getType();
 
+    // Remove this result from the definitions of the previous value
+    this.value.removeDefiningOp(this);
     this.value = value;
+    // Add this result to the definitions of the new value
+    this.value.addDefiningOp(this);
   }
 
   /**

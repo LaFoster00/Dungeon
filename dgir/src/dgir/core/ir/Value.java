@@ -8,8 +8,12 @@ import dgir.dialect.builtin.BuiltinTypes;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
@@ -36,6 +40,12 @@ public final class Value extends IRObjectWithUseList<Value, ValueOperand> implem
    * checking.
    */
   private final @NotNull Type type;
+
+  /**
+   * The set of definitions(assignments) of this value. Regions are not counted as definitions,
+   * since the actual value of a region value is controlled by the owning operation's semantics.
+   */
+  private final @NotNull Set<OperationResult> definitions = new HashSet<>();
 
   /**
    * The debug information for this value. By default, this is {@link ValueDebugInfo#UNKNOWN}, which
@@ -118,6 +128,32 @@ public final class Value extends IRObjectWithUseList<Value, ValueOperand> implem
   /** Updates the debug name while preserving the current source location. */
   public void setName(@NotNull String name) {
     debugInfo = new ValueDebugInfo(debugInfo.location(), name);
+  }
+
+  /** Returns an unmodifiable view of the set of operation results that define this value. */
+  @Contract(pure = true)
+  public @Unmodifiable @NotNull Set<OperationResult> getDefinitions() {
+    return Collections.unmodifiableSet(definitions);
+  }
+
+  /** Adds an operation result to the set of definitions for this value. */
+  public void addDefiningOp(OperationResult op) {
+    definitions.add(op);
+  }
+
+  /** Removes a definition from the set of defining operation results for this value. */
+  public void removeDefiningOp(OperationResult op) {
+    definitions.remove(op);
+  }
+
+  @Override
+  public void replaceAllUsesWith(@NotNull Value newValue) {
+    assert newValue.getType().equals(type) : "Cannot replace with a value of different type.";
+    super.replaceAllUsesWith(newValue);
+    // Make sure that all operation results defining this value define the new value instead.
+    for (OperationResult result : definitions) {
+      result.setValue(newValue);
+    }
   }
 
   // =========================================================================

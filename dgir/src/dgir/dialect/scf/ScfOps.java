@@ -119,7 +119,7 @@ public sealed interface ScfOps {
      * @param location the source location of this operation.
      */
     public EndOp(@NotNull Location location) {
-      setOperation(true, Operation.Create(location, this, null, null, null));
+      setOperation(Operation.Create(location, this, null, null, null));
     }
   }
 
@@ -172,7 +172,7 @@ public sealed interface ScfOps {
      * @param location the source location of this operation.
      */
     public ContinueOp(@NotNull Location location) {
-      setOperation(true, Operation.Create(location, this, null, null, null));
+      setOperation(Operation.Create(location, this, null, null, null));
     }
 
     // =========================================================================
@@ -224,7 +224,7 @@ public sealed interface ScfOps {
     private YieldOp() {}
 
     public YieldOp(@NotNull Location location, @NotNull Value value) {
-      setOperation(true, Operation.Create(location, this, List.of(value), null, null));
+      setOperation(Operation.Create(location, this, List.of(value), null, null));
     }
 
     @Override
@@ -305,7 +305,6 @@ public sealed interface ScfOps {
         Value upperBound,
         Value step) {
       setOperation(
-          true,
           Operation.Create(
               location,
               this,
@@ -327,7 +326,7 @@ public sealed interface ScfOps {
      */
     @Contract(pure = true)
     public @NotNull Value getInductionValue() {
-      return getRegion().getBodyValue(0).orElseThrow();
+      return getRegion().getRegionValue(0).orElseThrow();
     }
 
     /**
@@ -561,7 +560,7 @@ public sealed interface ScfOps {
      * @param location the source location of this operation.
      */
     public ScopeOp(@NotNull Location location) {
-      setOperation(true, Operation.Create(location, this, null, null, null, 1));
+      setOperation(Operation.Create(location, this, null, null, null, 1));
     }
 
     @Override
@@ -621,7 +620,7 @@ public sealed interface ScfOps {
      * @param location the source location of this operation.
      */
     public WhileOp(@NotNull Location location) {
-      setOperation(true, Operation.Create(location, this, null, null, null, 2));
+      setOperation(Operation.Create(location, this, null, null, null, 2));
     }
 
     /**
@@ -694,7 +693,6 @@ public sealed interface ScfOps {
 
     public SelectOp(@NotNull Location location, Value cond, Value trueVal, Value falseVal) {
       setOperation(
-          true,
           Operation.Create(
               location, this, List.of(cond, trueVal, falseVal), null, trueVal.getType()));
     }

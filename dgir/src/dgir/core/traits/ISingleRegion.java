@@ -53,7 +53,7 @@ public interface ISingleRegion extends IOpTrait {
    */
   @Contract(pure = true)
   default @NotNull Optional<Value> getArgument(int index) {
-    return getRegion().getBodyValue(index);
+    return getRegion().getRegionValue(index);
   }
 
   /**
