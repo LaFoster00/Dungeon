@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Validates the structural and semantic correctness of an {@link Operation} and, optionally, all
@@ -175,12 +177,59 @@ public class OperationVerifier {
       }
     }
 
-    // All attributes must be set and type-valid
+    // All attributes must be set and type-valid, and in case default attributes are typed, ensure
+    // the current attribute has the same type.
+    var defaultAttributes =
+        operation.getDetails().defaultAttributes().get().stream()
+            .collect(Collectors.toMap(NamedAttribute::getName, Function.identity()));
     for (NamedAttribute attr : operation.getAttributesMap().values()) {
+      if (attr.getAttribute().isEmpty()) {
+        operation.emitError("Operation attribute '" + attr.getName() + "' is not set");
+        return false;
+      }
+
+      // Check if default attribute had a specific type, and if so verify the provided attribute has
+      // the same type
+      var defaultAttribute = defaultAttributes.get(attr.getName());
+      if (defaultAttribute.getAttribute().isPresent()) {
+        if (defaultAttribute.getAttributeOrThrow().getClass()
+            != attr.getAttributeOrThrow().getClass()) {
+          operation.emitError(
+              "Operation attribute '"
+                  + attr.getName()
+                  + "' has type "
+                  + attr.getAttributeOrThrow().getClass().getSimpleName()
+                  + " but default attribute provided type "
+                  + defaultAttribute.getAttributeOrThrow().getClass().getSimpleName());
+          return false;
+        }
+      }
+
+      // In case of typed attribute, validate the storage value against the type's validator
+      // function
       if (attr.getAttributeOrThrow() instanceof TypedAttribute typedAttribute
           && !typedAttribute.getType().validate(typedAttribute.getStorage())) {
         operation.emitError(
             "Operation attribute '"
+                + attr.getName()
+                + "' with invalid value for storage type "
+                + typedAttribute.getType().getParameterizedIdent()
+                + ": "
+                + typedAttribute.getStorage());
+        return false;
+      }
+    }
+
+    // All dynamic attributes must be set and type-valid
+    for (NamedAttribute attr : operation.getDynamicAttributesMap().values()) {
+      if (attr.getAttribute().isEmpty()) {
+        operation.emitError("Operation dynamic attribute '" + attr.getName() + "' is not set");
+        return false;
+      }
+      if (attr.getAttributeOrThrow() instanceof TypedAttribute typedAttribute
+          && !typedAttribute.getType().validate(typedAttribute.getStorage())) {
+        operation.emitError(
+            "Operation dynamic attribute '"
                 + attr.getName()
                 + "' with invalid value for storage type "
                 + typedAttribute.getType().getParameterizedIdent()
