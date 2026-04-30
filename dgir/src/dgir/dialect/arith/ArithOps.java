@@ -115,13 +115,7 @@ public sealed interface ArithOps {
           operation.emitError("Result type must match the operand type");
           return false;
         }
-        if (unaryOp.getAttributeAs("unaryMode", UnaryModeAttr.class).isEmpty()) {
-          unaryOp.emitError("Unary operation must define a unaryMode attribute");
-          return false;
-        }
-        UnaryModeAttr.UnaryMode unaryMode =
-            unaryOp.getAttributeAs("unaryMode", UnaryModeAttr.class).get().getMode();
-        Optional<String> result = unaryMode.verifyOperand(unaryOp);
+        Optional<String> result = unaryOp.getMode().verifyOperand(unaryOp);
         if (result.isPresent()) {
           unaryOp.emitError(result.get());
           return false;
@@ -228,11 +222,7 @@ public sealed interface ArithOps {
           return false;
         }
 
-        if (binaryOp.getAttributeAs("binMode", BinModeAttr.class).isEmpty()) {
-          binaryOp.emitError("Binary operation must define a binMode attribute");
-          return false;
-        }
-        BinMode binMode = binaryOp.getAttributeAs("binMode", BinModeAttr.class).get().getMode();
+        BinMode binMode = binaryOp.getMode();
         Optional<String> modeError = binMode.verifyOperands(binaryOp);
         if (modeError.isPresent()) {
           binaryOp.emitError(modeError.get());
