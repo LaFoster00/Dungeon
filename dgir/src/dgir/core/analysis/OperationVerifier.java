@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -174,45 +173,72 @@ public class OperationVerifier {
       }
     }
 
-    // All attributes must be set and type-valid, and in case default attributes are typed, ensure
-    // the current attribute has the same type.
-    var defaultAttributes =
-        operation.getDetails().defaultAttributes().get().stream()
-            .collect(Collectors.toMap(NamedAttribute::getName, Function.identity()));
-    for (NamedAttribute attr : operation.getAttributesMap().values()) {
-      if (attr.getAttribute().isEmpty()) {
-        operation.emitError("Operation attribute '" + attr.getName() + "' is not set");
+    {
+      // All attributes must be set and type-valid, and in case default attributes are typed, ensure
+      // the current attribute has the same type.
+      var attributes = new HashMap<>(operation.getAttributesMap());
+      var defaultAttributes = operation.getDetails().defaultAttributes().get();
+      if (attributes.size() != defaultAttributes.size()) {
+        operation.emitError(
+            "Operation has incorrect number of attributes: expected %d, got %d"
+                .formatted(defaultAttributes.size(), attributes.size()));
         return false;
       }
 
-      // Check if default attribute had a specific type, and if so verify the provided attribute has
-      // the same type
-      var defaultAttribute = defaultAttributes.get(attr.getName());
-      if (defaultAttribute.getAttribute().isPresent()) {
-        if (defaultAttribute.getAttributeOrThrow().getClass()
-            != attr.getAttributeOrThrow().getClass()) {
+      for (NamedAttribute defaultAttribute : operation.getDetails().defaultAttributes().get()) {
+        if (!attributes.containsKey(defaultAttribute.getName())) {
+          operation.emitError(
+              "Operation is missing required attribute '" + defaultAttribute.getName() + "'");
+          return false;
+        }
+        var attr = attributes.get(defaultAttribute.getName());
+
+        if (attr.getAttribute().isEmpty()) {
+          operation.emitError("Operation attribute '" + attr.getName() + "' is not set");
+          return false;
+        }
+
+        // Check if default attribute had a specific type, and if so verify the provided attribute
+        // has
+        // the same type
+        if (defaultAttribute.getAttribute().isPresent()) {
+          if (defaultAttribute.getAttributeOrThrow().getClass()
+              != attr.getAttributeOrThrow().getClass()) {
+            operation.emitError(
+                "Operation attribute '"
+                    + attr.getName()
+                    + "' has type "
+                    + attr.getAttributeOrThrow().getClass().getSimpleName()
+                    + " but default attribute provided type "
+                    + defaultAttribute.getAttributeOrThrow().getClass().getSimpleName());
+            return false;
+          }
+        }
+
+        // In case of typed attribute, validate the storage value against the type's validator
+        // function
+        if (attr.getAttributeOrThrow() instanceof TypedAttribute typedAttribute
+            && !typedAttribute.getType().validate(typedAttribute.getStorage())) {
           operation.emitError(
               "Operation attribute '"
                   + attr.getName()
-                  + "' has type "
-                  + attr.getAttributeOrThrow().getClass().getSimpleName()
-                  + " but default attribute provided type "
-                  + defaultAttribute.getAttributeOrThrow().getClass().getSimpleName());
+                  + "' with invalid value for storage type "
+                  + typedAttribute.getType().getParameterizedIdent()
+                  + ": "
+                  + typedAttribute.getStorage());
           return false;
         }
+        attributes.remove(defaultAttribute.getName());
       }
-
-      // In case of typed attribute, validate the storage value against the type's validator
-      // function
-      if (attr.getAttributeOrThrow() instanceof TypedAttribute typedAttribute
-          && !typedAttribute.getType().validate(typedAttribute.getStorage())) {
+      // Check that only inherent attributes are set
+      if (!attributes.isEmpty()) {
         operation.emitError(
-            "Operation attribute '"
-                + attr.getName()
-                + "' with invalid value for storage type "
-                + typedAttribute.getType().getParameterizedIdent()
-                + ": "
-                + typedAttribute.getStorage());
+            "Operation has unexpected attributes: [ %s ]\nAllowed attributes: [ %s ]"
+                .formatted(
+                    String.join(",", attributes.keySet()),
+                    operation.getDetails().defaultAttributes().get().stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(","))));
         return false;
       }
     }
