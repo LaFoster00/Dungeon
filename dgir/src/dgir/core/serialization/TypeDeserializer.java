@@ -48,7 +48,7 @@ public class TypeDeserializer extends StdDeserializer<Type> {
     }
 
     try {
-      return TypeDetails.fromParameterizedIdent(parameterizedIdent);
+      return Type.fromParameterizedIdent(parameterizedIdent);
     } catch (IllegalArgumentException ex) {
       return ctxt.reportInputMismatch(Type.class, ex.getMessage());
     }

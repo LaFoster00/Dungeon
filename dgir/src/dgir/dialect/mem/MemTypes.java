@@ -1,11 +1,7 @@
 package dgir.dialect.mem;
 
+import dgir.core.ir.*;
 import dgir.core.utility.DgirCoreUtils;
-import dgir.core.ir.Dialect;
-import dgir.core.ir.Type;
-import dgir.core.ir.TypeDescriptor;
-import dgir.core.ir.TypeDetails;
-import dgir.core.ir.TypeUniquer;
 import dgir.dialect.builtin.BuiltinTypes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Contract;
@@ -13,7 +9,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /** Sealed marker interface for all types contributed by the {@link MemoryDialect}. */
@@ -54,16 +52,33 @@ public sealed interface MemTypes {
       public @NotNull Function<@NotNull Pair<@NotNull String, @NotNull TypeDetails>, @NotNull Type>
           getParameterizedIdentFactory() {
         return args -> {
-          List<String> params = DgirCoreUtils.getParameterStrings(args.getLeft());
-          if (params.isEmpty() || params.size() > 2) {
-            throw new IllegalArgumentException("Invalid number of parameters for array type");
-          }
-          Type elementType = TypeDetails.fromParameterizedIdent(params.getFirst());
-          OptionalInt width =
-              params.size() == 2
-                  ? OptionalInt.of(Integer.parseInt(params.get(1).trim()))
-                  : OptionalInt.empty();
-          return ArrayT.of(elementType, width);
+          AtomicReference<Type> elementType = new AtomicReference<>();
+          AtomicReference<OptionalInt> width = new AtomicReference<>();
+          Type.consumeParametricIdent(
+              args.getLeft(),
+              parameters -> {
+                if (parameters.isEmpty() || parameters.size() > 2) {
+                  return Optional.of(
+                      "Invalid number of parameters for array type: expected 1 or 2, got "
+                          + parameters.size());
+                }
+                if (!(parameters.getFirst() instanceof Type type))
+                  return Optional.of(
+                      "Invalid parameter type for array element type: expected a type, got "
+                          + parameters.getFirst().getClass().getSimpleName());
+                elementType.set(type);
+                if (parameters.size() == 2 && !(parameters.get(1) instanceof Integer length))
+                  return Optional.of(
+                      "Invalid parameter type for array width: expected an integer, got "
+                          + parameters.get(1).getClass().getSimpleName());
+                width.set(
+                    parameters.size() == 2
+                        ? OptionalInt.of((Integer) parameters.get(1))
+                        : OptionalInt.empty());
+                return Optional.empty();
+              });
+
+          return ArrayT.of(elementType.get(), width.get());
         };
       }
     }
@@ -83,10 +98,9 @@ public sealed interface MemTypes {
      */
     @Override
     public @NotNull String getParameterizedIdent() {
-      return "mem.array<"
-          + elementType.getParameterizedIdent()
-          + (width != -1 ? ", " + width : "")
-          + ">";
+      return Type.buildParameterizedIdent(
+          getDetails(),
+          DgirCoreUtils.listOf(getElementType(), getWidth().isPresent() ? width : null));
     }
 
     // =========================================================================

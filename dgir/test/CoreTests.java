@@ -1,11 +1,10 @@
-import dgir.core.ir.Dialect;
-import dgir.core.utility.DgirCoreUtils;
-import dgir.core.utility.IrToText;
 import dgir.core.debug.Location;
-import dgir.core.ir.Operation;
 import dgir.core.ir.Block;
-import dgir.core.ir.TypeDetails;
+import dgir.core.ir.Dialect;
+import dgir.core.ir.Operation;
+import dgir.core.ir.Type;
 import dgir.core.serialization.Utils;
+import dgir.core.utility.IrToText;
 import dgir.dialect.builtin.BuiltinAttrs;
 import dgir.dialect.mem.MemTypes;
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,7 +12,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 import static dgir.dialect.arith.ArithOps.ConstantOp;
@@ -25,11 +26,7 @@ import static dgir.dialect.func.FuncOps.FuncOp;
 import static dgir.dialect.func.FuncOps.ReturnOp;
 import static dgir.dialect.func.FuncTypes.FuncType;
 import static dgir.dialect.io.IoOps.PrintOp;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * These are test for checking the validity of the core IR and traits. These test are mainly there
@@ -55,35 +52,36 @@ public class CoreTests {
     var topLevelFunc = FuncType.of(List.of(IntegerT.INT32(), arrayType), IntegerT.INT64());
 
     assertSame(
-        IntegerT.INT32(),
-        TypeDetails.fromParameterizedIdent(IntegerT.INT32().getParameterizedIdent()));
-    assertSame(nestedFunc, TypeDetails.fromParameterizedIdent(nestedFunc.getParameterizedIdent()));
-    assertSame(arrayType, TypeDetails.fromParameterizedIdent(arrayType.getParameterizedIdent()));
-    assertSame(
-        topLevelFunc, TypeDetails.fromParameterizedIdent(topLevelFunc.getParameterizedIdent()));
+        IntegerT.INT32(), Type.fromParameterizedIdent(IntegerT.INT32().getParameterizedIdent()));
+    assertSame(nestedFunc, Type.fromParameterizedIdent(nestedFunc.getParameterizedIdent()));
+    assertSame(arrayType, Type.fromParameterizedIdent(arrayType.getParameterizedIdent()));
+    assertSame(topLevelFunc, Type.fromParameterizedIdent(topLevelFunc.getParameterizedIdent()));
     assertEquals("func.func<\"(int32) -> (int32)\">", nestedFunc.getParameterizedIdent());
 
-    assertEquals(
-        List.of(IntegerT.INT32(), arrayType, nestedFunc),
-        TypeDetails.fromParameterString(
-            "int32, mem.array<func.func<\"(int32) -> (int32)\">, 4>, func.func<\"(int32) -> (int32)\">"));
+    List<Type> deserialized = new ArrayList<>();
+    Type.consumeParameterText(
+        "int32, mem.array<func.func<\"(int32) -> (int32)\">, 4>, func.func<\"(int32) -> (int32)\">",
+        Type.AllTypes.of(deserialized));
+    assertEquals(List.of(IntegerT.INT32(), arrayType, nestedFunc), deserialized);
   }
 
   @Test
   public void malformedParameterizedSyntaxIsRejected() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> TypeDetails.fromParameterizedIdent("func.func<\"(int32) -> (int32)"));
+        () -> Type.fromParameterizedIdent("func.func<\"(int32) -> (int32)"));
     assertThrows(
         IllegalArgumentException.class,
-        () -> TypeDetails.fromParameterString("int32,,func.func<\"(int32) -> (int32)\">"));
+        () ->
+            Type.consumeParameterText(
+                "int32,,func.func<\"(int32) -> (int32)\">", parameters -> Optional.empty()));
   }
 
   @Test
-  public void quotedCustomExpressionsArePreservedInParameterStrings() {
+  public void quotedCustomExpressionsAreUnquotedInParameterStrings() {
     assertEquals(
-        List.of("\"(int32, string) -> (bool)\"", "int32"),
-        DgirCoreUtils.getParameterStrings("custom<\"(int32, string) -> (bool)\", int32>"));
+        List.of("(int32, string) -> (bool)", "int32"),
+        Type.extractParameterStrings("custom<\"(int32, string) -> (bool)\", int32>"));
   }
 
   @Test

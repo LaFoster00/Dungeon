@@ -2,11 +2,12 @@ package dgir.core.utility;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.lang.StackWalker.Option;
 import java.lang.StackWalker.StackFrame;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,21 @@ import java.util.Optional;
  */
 public class DgirCoreUtils {
   /**
+   * Create an unmodifiable list containing the given elements. Similar to List.of() but allows
+   * {@code null} elements.
+   *
+   * @param elements the elements to include in the list, may be {@code null} or contain {@code
+   *     null} values.
+   * @return an unmodifiable list containing the given elements, never {@code null}.
+   * @param <T> the element type.
+   * @see List#of(Object...)
+   */
+  @SafeVarargs
+  public static <T> @UnmodifiableView @NotNull List<@Nullable T> listOf(@Nullable T... elements) {
+    return Collections.unmodifiableList(Arrays.asList(elements));
+  }
+
+  /**
    * Indent each line of {@code text} by {@code indent} tab characters. Lines are determined by
    * splitting on {@code \n} (not {@code \r\n}).
    *
@@ -26,148 +42,11 @@ public class DgirCoreUtils {
    */
   public static String indent(String text, int indent) {
     StringBuilder builder = new StringBuilder();
-    String indentStr = String.join("", java.util.Collections.nCopies(indent, "\t"));
+    String indentStr = String.join("", Collections.nCopies(indent, "\t"));
     for (String line : text.lines().toList()) {
       builder.append(indentStr).append(line).append("\n");
     }
     return builder.toString();
-  }
-
-  /**
-   * Split {@code text} by the first occurrence of {@code delimiter} that appears at nesting depth
-   * 0, where depth is tracked by counting matched pairs of {@code < >} and {@code ( )}. Quoted
-   * substrings (delimited by {@code "..."}) are treated as atomic and may contain delimiters or
-   * nested bracket characters without affecting the split.
-   *
-   * <p>This is the core primitive used by {@link #getParameterStrings(String)}. It can be reused
-   * whenever a string must be split on an arbitrary delimiter sequence while respecting bracket
-   * nesting.
-   *
-   * <p>If the delimiter does not appear at depth 0, the whole input is returned as a single-element
-   * list.
-   *
-   * <p>Examples:
-   *
-   * <pre>
-   *   splitAtDepthZero("i32, string", ",")
-   *       → ["i32", " string"]
-   * </pre>
-   *
-   * @param text the string to split; must not be {@code null}.
-   * @param delimiter the delimiter sequence to split on; must not be {@code null} or empty.
-   * @return an unmodifiable list of the parts (in order, not trimmed); never {@code null}.
-   */
-  @Contract(pure = true)
-  public static @NotNull @Unmodifiable List<String> splitAtDepthZero(
-      @NotNull String text, @NotNull String delimiter) {
-    assert !delimiter.isEmpty() : "delimiter must not be empty";
-
-    List<String> result = new ArrayList<>();
-    int depth = 0;
-    boolean inQuotes = false;
-    int start = 0;
-    int i = 0;
-
-    while (i < text.length()) {
-      char c = text.charAt(i);
-
-      if (inQuotes) {
-        if (c == '"' && (i == 0 || text.charAt(i - 1) != '\\')) {
-          inQuotes = false;
-        }
-        i++;
-        continue;
-      }
-
-      if (c == '"') {
-        inQuotes = true;
-        i++;
-        continue;
-      }
-
-      // Track nesting depth
-      if (c == '<' || c == '(') {
-        depth++;
-        i++;
-        continue;
-      }
-      if (c == '>') {
-        depth--;
-        i++;
-        continue;
-      }
-      if (c == ')') {
-        depth--;
-        i++;
-        continue;
-      }
-
-      // Check for delimiter match at depth 0
-      if (depth == 0 && text.startsWith(delimiter, i)) {
-        result.add(text.substring(start, i));
-        i += delimiter.length();
-        start = i;
-        continue;
-      }
-
-      i++;
-    }
-
-    // Add the final segment
-    result.add(text.substring(start));
-
-    return Collections.unmodifiableList(result);
-  }
-
-  /**
-   * Extract the top-level comma-separated parameter strings from a parameterized type ident.
-   *
-   * <p>The method strips the outermost {@code <…>} wrapper and then splits the inner text by {@code
-   * ','} at nesting depth 0 via {@link #splitAtDepthZero(String, String)}. Both angle-bracket pairs
-   * ({@code < >}) and parenthesis pairs ({@code ( )}) increment/decrement the depth counter, so
-   * nested generic types and parenthesised signatures are never split mid-way. Quoted custom
-   * expressions are preserved as-is. Each resulting segment is trimmed of surrounding whitespace,
-   * and empty segments are rejected.
-   *
-   * <p>Examples:
-   *
-   * <pre>
-   *   "struct.struct&lt;i32, string&gt;"
-   *       → ["i32", "string"]
-   * </pre>
-   *
-   * @param parameterizedIdent a parameterized ident string that contains exactly one outermost
-   *     {@code <…>} wrapper (e.g. {@code "foo<a, b<c>, d>"}).
-   * @return an unmodifiable list of trimmed, non-empty parameter strings; never {@code null}.
-   */
-  @Contract(pure = true)
-  public static @NotNull @Unmodifiable List<String> getParameterStrings(
-      @NotNull String parameterizedIdent) {
-    String normalizedIdent = parameterizedIdent.trim();
-    if (normalizedIdent.isEmpty()) {
-      throw new IllegalArgumentException("Parameterized ident must not be empty.");
-    }
-
-    // Strip the outermost < … >
-    String inner =
-        normalizedIdent.substring(normalizedIdent.indexOf('<') + 1, normalizedIdent.length() - 1);
-
-    if (inner.isBlank()) {
-      throw new IllegalArgumentException(
-          "Malformed parameterized ident (empty parameter list): " + parameterizedIdent);
-    }
-
-    // Delegate to the general splitter, then trim and reject empty segments
-    return splitAtDepthZero(inner, ",").stream()
-        .map(String::trim)
-        .peek(
-            s -> {
-              if (s.isEmpty()) {
-                throw new IllegalArgumentException(
-                    "Malformed parameterized ident (empty parameter): " + parameterizedIdent);
-              }
-            })
-        .toList();
   }
 
   // =========================================================================
