@@ -303,7 +303,7 @@ public final class Operation implements Serializable {
    * @return an unmodifiable list of {@link ValueOperand}s.
    */
   @Contract(pure = true)
-  public @NotNull @Unmodifiable List<ValueOperand> getOperands() {
+  public @NotNull @Unmodifiable List<@NotNull ValueOperand> getOperands() {
     return operands;
   }
 

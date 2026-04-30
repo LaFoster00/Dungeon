@@ -168,10 +168,7 @@ public class OperationVerifier {
   private boolean verifyOnEntry(@NotNull Operation operation) {
     // All operands must be non-null and have a non-null value
     for (ValueOperand operand : operation.getOperands()) {
-      if (operand == null) {
-        operation.emitError("Operation has null operand");
-        return false;
-      } else if (operand.getValue().isEmpty()) {
+      if (operand.getValue().isEmpty()) {
         operation.emitError("Operation has operand with null value");
         return false;
       }
