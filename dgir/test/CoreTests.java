@@ -209,7 +209,7 @@ public class CoreTests {
             .getValue()
             .intValue());
     assertTrue(roundTripped.toString().contains("<dynamic ["));
-    assertTrue(IrToText.toText(roundTripped).contains("<dynamic ["));
+    assertTrue(IrToText.toText(roundTripped).contains("<dynamic["));
 
     assertTrue(roundTripped.removeDynamicAttribute("tag").isPresent());
     assertTrue(roundTripped.getDynamicAttribute("tag").isEmpty());

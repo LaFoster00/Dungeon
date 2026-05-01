@@ -16,10 +16,12 @@ import java.util.stream.Collectors;
  * operations nested within it.
  *
  * <p>Verification is performed in a single iterative traversal using a work-list. Each work item
- * (operation or block) is visited twice — once on entry and once on exit — mirroring a depth-first
- * pre/post-order walk without recursion.
+ * (operation or block) is visited twice — once on entry and once on exit — to avoid expensive
+ * checks (e.g. region traversal) for operations that are isolated from above until all their parent
+ * operations have been fully verified. Same for block where we don't want to check for successors
+ * until we know that all branching operations are valid.
  *
- * <p>{@link IIsolatedFromAbove} operations are skipped during the main traversal and re-verified in
+ * <p>{@link IIsolatedFromAbove} operations are skipped during the main traversal and verified in
  * parallel on exit from their enclosing operation.
  */
 public class OperationVerifier {
@@ -138,6 +140,14 @@ public class OperationVerifier {
       // ---- First visit (entry) ----
       if (!top.verifyOnEntry()) return false;
 
+      // For operations: enqueue all blocks of all regions in reverse order so they are
+      // processed in forward order when popped from the stack
+      if (recursive && top.op != null) {
+        for (Region region : top.op.getRegions().reversed())
+          for (Block block : region.getBlocks().reversed()) workList.add(new WorkItem(block));
+        continue;
+      }
+
       // Enqueue children
       if (top.block != null) {
         // For blocks: enqueue ops that are not isolated-from-above (those are handled on exit)
@@ -145,14 +155,6 @@ public class OperationVerifier {
           if (op.getRegions().isEmpty() || !op.hasTrait(IIsolatedFromAbove.class))
             workList.add(new WorkItem(op));
         }
-        continue;
-      }
-
-      // For operations: enqueue all blocks of all regions in reverse order so they are
-      // processed in forward order when popped from the stack
-      if (recursive && top.op != null) {
-        for (Region region : top.op.getRegions().reversed())
-          for (Block block : region.getBlocks().reversed()) workList.add(new WorkItem(block));
       }
     }
 
@@ -199,8 +201,7 @@ public class OperationVerifier {
         }
 
         // Check if default attribute had a specific type, and if so verify the provided attribute
-        // has
-        // the same type
+        // has the same type
         if (defaultAttribute.getAttribute().isPresent()) {
           if (defaultAttribute.getAttributeOrThrow().getClass()
               != attr.getAttributeOrThrow().getClass()) {
@@ -211,6 +212,23 @@ public class OperationVerifier {
                     + attr.getAttributeOrThrow().getClass().getSimpleName()
                     + " but default attribute provided type "
                     + defaultAttribute.getAttributeOrThrow().getClass().getSimpleName());
+            return false;
+          }
+          // If the default attribute is typed, the provided attribute must be typed with the same
+          // type
+          if (defaultAttribute.getAttributeOrThrow() instanceof TypedAttribute defaultTypedAttribute
+              && !defaultTypedAttribute
+                  .getType()
+                  .equals(((TypedAttribute) attr.getAttributeOrThrow()).getType())) {
+            operation.emitError(
+                "Typed operation attribute '"
+                    + attr.getName()
+                    + "' has type "
+                    + ((TypedAttribute) attr.getAttributeOrThrow())
+                        .getType()
+                        .getParameterizedIdent()
+                    + " but default attribute provided type "
+                    + defaultTypedAttribute.getType().getParameterizedIdent());
             return false;
           }
         }
@@ -276,6 +294,10 @@ public class OperationVerifier {
     // Region structural checks
     if (operation.getRegions().isEmpty()) return true;
 
+    /*
+    Branching to the entry block is not allowed as it would destroy the dominance relationship of the cfg.
+    We need a well defined entry block without predecessors.
+     */
     for (Region region : operation.getRegions()) {
       if (region.getBlocks().isEmpty()) continue;
       if (!region.getBlocks().getFirst().getPredecessors().isEmpty()) {
@@ -353,14 +375,6 @@ public class OperationVerifier {
         return false;
       }
     }
-
-    if (isValidWithoutTerminator(block)) return true;
-
-    if (!block.hasTerminator()) {
-      block.getOperations().getLast().emitError("Block does not have a terminator");
-      return false;
-    }
-
     return true;
   }
 
