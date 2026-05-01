@@ -9,7 +9,7 @@ import java.util.*;
  * A region containing an ordered list of {@link Block}s, attached to an {@link Operation}.
  *
  * <p>Regions can also be freestanding ("orphan" regions) while being built up, and then transferred
- * into an operation via {@link #takeRegion(Region)}.
+ * into an operation via {@link #takeRegion}.
  *
  * <p>Every region always has at least one block — the <em>entry block</em> — which is created
  * automatically if needed. Execution enters a region through this block.

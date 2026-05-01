@@ -344,11 +344,11 @@ public abstract class Type {
    * Extract the top-level comma-separated parameter strings from a parameterized type ident.
    *
    * <p>The method strips the outermost {@code <…>} wrapper and then splits the inner text by {@code
-   * ','} at nesting depth 0 via {@link (String, String)}. Both angle-bracket pairs ({@code < >})
-   * and parenthesis pairs ({@code ( )}) increment/decrement the depth counter, so nested generic
-   * types and parenthesised signatures are never split mid-way. Quoted custom expressions are
-   * unquoted and unescaped. Each resulting segment is trimmed of surrounding whitespace, and empty
-   * segments are rejected.
+   * ','} at nesting depth 0 via {@link #splitAtDepth}. Both angle-bracket pairs ({@code < >}) and
+   * parenthesis pairs ({@code ( )}) increment/decrement the depth counter, so nested generic types
+   * and parenthesised signatures are never split mid-way. Quoted custom expressions are unquoted
+   * and unescaped. Each resulting segment is trimmed of surrounding whitespace, and empty segments
+   * are rejected.
    *
    * <p>Examples:
    *

@@ -67,7 +67,7 @@ public sealed interface MemTypes {
                       "Invalid parameter type for array element type: expected a type, got "
                           + parameters.getFirst().getClass().getSimpleName());
                 elementType.set(type);
-                if (parameters.size() == 2 && !(parameters.get(1) instanceof Integer length))
+                if (parameters.size() == 2 && !(parameters.get(1) instanceof Integer))
                   return Optional.of(
                       "Invalid parameter type for array width: expected an integer, got "
                           + parameters.get(1).getClass().getSimpleName());
