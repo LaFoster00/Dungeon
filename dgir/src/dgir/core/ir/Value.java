@@ -132,6 +132,7 @@ public final class Value extends IRObjectWithUseList<Value, ValueOperand> implem
 
   /** Returns an unmodifiable view of the set of operation results that define this value. */
   @Contract(pure = true)
+  @JsonIgnore
   public @Unmodifiable @NotNull Set<OperationResult> getDefinitions() {
     return Collections.unmodifiableSet(definitions);
   }
