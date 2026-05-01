@@ -21,6 +21,9 @@ public class IrToText {
     if (operation.isa(BuiltinOps.ProgramOp.class)) {
       ValueIdGenerator.reset();
       BlockIdGenerator.reset();
+      return operation.getFirstRegionOrThrow().getEntryBlock().getOperations().stream()
+          .map(IrToText::toText)
+          .collect(Collectors.joining("\n"));
     }
     StringBuilder sb = new StringBuilder();
     if (operation.getOutputValue().isPresent()) {
@@ -31,14 +34,20 @@ public class IrToText {
     }
 
     sb.append(operation.getDetails().ident());
-    sb.append(" (");
     if (!operation.getOperands().isEmpty()) sb.append(' ');
     sb.append(
         operation.getOperands().stream()
             .map(operand -> operand.getValue().map(valueIdGenerator::generateId).orElse("null"))
-            .collect(Collectors.joining(" , ")));
+            .collect(Collectors.joining(", ")));
     if (!operation.getOperands().isEmpty()) sb.append(' ');
-    sb.append(")");
+
+    if (!operation.getSuccessors().isEmpty()) {
+      sb.append(" ==> ");
+      sb.append(
+          operation.getSuccessors().stream()
+              .map(blockIdGenerator::generateId)
+              .collect(Collectors.joining(", ")));
+    }
 
     if (!operation.getNamedAttributes().isEmpty()) {
       String attrs =
@@ -47,11 +56,11 @@ public class IrToText {
                   attr ->
                       "%s = {%s}"
                           .formatted(attr.getName(), attr.getAttributeOrThrow().getStorage()))
-              .collect(Collectors.joining(" , "));
+              .collect(Collectors.joining(", "));
       if (!attrs.isEmpty()) {
-        sb.append(" [ ");
+        sb.append(" [");
         sb.append(attrs);
-        sb.append(" ]");
+        sb.append("]");
       }
     }
 
@@ -62,23 +71,12 @@ public class IrToText {
                   attr ->
                       "%s = {%s}"
                           .formatted(attr.getName(), attr.getAttributeOrThrow().getStorage()))
-              .collect(Collectors.joining(" , "));
+              .collect(Collectors.joining(", "));
       if (!dynamicAttrs.isEmpty()) {
-        sb.append(" <dynamic [ ");
+        sb.append(" <dynamic[");
         sb.append(dynamicAttrs);
-        sb.append(" ]>");
+        sb.append("]>");
       }
-    }
-
-    if (!operation.getSuccessors().isEmpty()) {
-      sb.append(" ==> [");
-      if (!operation.getSuccessors().isEmpty()) sb.append(' ');
-      sb.append(
-          operation.getSuccessors().stream()
-              .map(blockIdGenerator::generateId)
-              .collect(Collectors.joining(" , ")));
-      if (!operation.getSuccessors().isEmpty()) sb.append(' ');
-      sb.append("]");
     }
 
     if (!operation.getLocation().equals(Location.UNKNOWN)) {
