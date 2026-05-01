@@ -1,10 +1,9 @@
 import dgir.core.debug.Location;
-import dgir.core.ir.Block;
-import dgir.core.ir.Dialect;
-import dgir.core.ir.Operation;
-import dgir.core.ir.Type;
+import dgir.core.ir.*;
 import dgir.core.serialization.Utils;
 import dgir.core.utility.IrToText;
+import dgir.dialect.arith.ArithAttrs;
+import dgir.dialect.arith.ArithOps;
 import dgir.dialect.builtin.BuiltinAttrs;
 import dgir.dialect.mem.MemTypes;
 import org.apache.commons.lang3.tuple.Pair;
@@ -214,5 +213,46 @@ public class CoreTests {
 
     assertTrue(roundTripped.removeDynamicAttribute("tag").isPresent());
     assertTrue(roundTripped.getDynamicAttribute("tag").isEmpty());
+  }
+
+  /**
+   * Equivalent of this bril code
+   *
+   * @main { a: int = const 47; b: int = const 42; cond: bool = const true; br cond .left .right;
+   *     <p>.left: b: int = const 1; c: int = const 5; jmp .end;
+   *     <p>.right: a: int = const 2; c: int = const 10; jmp .end;
+   *     <p>.end: d: int = sub a c; print d; }
+   */
+  @Test
+  public void condition() {
+    Pair<ProgramOp, FuncOp> entry = DgirTestUtils.createProgramOpWithEntryFunc();
+    ProgramOp programOp = entry.getLeft();
+    FuncOp funcOp = entry.getRight();
+
+    Value c = new Value(IntegerT.INT64());
+
+    Block entryBlock = funcOp.getEntryBlock();
+    Block leftBlock = funcOp.addBlock(new Block());
+    Block rightBlock = funcOp.addBlock(new Block());
+    Block endBlock = funcOp.addBlock(new Block());
+
+    var a = entryBlock.addOperation(new ConstantOp(LOC, 47L));
+    var b = entryBlock.addOperation(new ConstantOp(LOC, 42L));
+    var cond = entryBlock.addOperation(new ConstantOp(LOC, true));
+    entryBlock.addOperation(new BranchCondOp(LOC, cond.getResult(), leftBlock, rightBlock));
+
+    leftBlock.addOperation(new ConstantOp(LOC, 1L)).setOutputValue(b.getResult());
+    leftBlock.addOperation(new ConstantOp(LOC, 5L)).setOutputValue(c);
+    leftBlock.addOperation(new BranchOp(LOC, endBlock));
+
+    rightBlock.addOperation(new ConstantOp(LOC, 2L)).setOutputValue(a.getResult());
+    rightBlock.addOperation(new ConstantOp(LOC, 10L)).setOutputValue(c);
+    rightBlock.addOperation(new BranchOp(LOC, endBlock));
+
+    endBlock.addOperation(
+        new ArithOps.BinaryOp(LOC, a.getResult(), c, ArithAttrs.BinModeAttr.BinMode.SUB));
+    endBlock.addOperation(new ReturnOp(LOC));
+
+    assertTrue(DgirTestUtils.testValidityAndSerialization(programOp));
   }
 }

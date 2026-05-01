@@ -505,6 +505,16 @@ public sealed interface ArithOps {
     }
 
     /**
+     * Create a 64-bit integer constant.
+     *
+     * @param location the source location of this operation.
+     * @param value the integer value to embed.
+     */
+    public ConstantOp(@NotNull Location location, long value) {
+      this(location, new IntegerAttribute(value, IntegerT.INT64()));
+    }
+
+    /**
      * Create a boolean ({@code int1}) constant.
      *
      * @param location the source location of this operation.
