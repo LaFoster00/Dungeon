@@ -218,10 +218,25 @@ public class CoreTests {
   /**
    * Equivalent of this bril code
    *
-   * @main { a: int = const 47; b: int = const 42; cond: bool = const true; br cond .left .right;
-   *     <p>.left: b: int = const 1; c: int = const 5; jmp .end;
-   *     <p>.right: a: int = const 2; c: int = const 10; jmp .end;
-   *     <p>.end: d: int = sub a c; print d; }
+   * <pre>{@code
+   * @main {
+   *      a: int = const 47;
+   *      b: int = const 42;
+   *      cond: bool = const true;
+   *      br cond .left .right;
+   *   .left: b:
+   *      int = const 1;
+   *      c: int = const 5;
+   *      jmp .end;
+   *   .right: a:
+   *      int = const 2;
+   *      c: int = const 10;
+   *      jmp .end;
+   *   .end: d:
+   *      int = sub a c;
+   *      print d;
+   * }
+   * }</pre>
    */
   @Test
   public void condition() {
