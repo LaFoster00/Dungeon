@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Deserializes an {@link Operation} from its JSON object form.
@@ -134,18 +135,36 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       }
     }
 
-    // Step 6: materialize nested regions before binding any successor block references.
-    List<Region> regions = null;
+    // Step 6:  Extract the region value types from the deserialized regions to pass to the
+    // operation constructor.
+    List<List<Value>> regionsValues;
     JsonNode regionsNode = node.get("regions");
     if (regionsNode != null && !regionsNode.isNull()) {
       if (!regionsNode.isArray()) {
         return ctxt.reportInputMismatch(Operation.class, "Field 'regions' must be an array.");
       }
-      regions = new ArrayList<>();
-      for (JsonNode regionNode : regionsNode) {
-        Region region = ctxt.readTreeAsValue(regionNode, Region.class);
-        regions.add(region);
-      }
+      regionsValues =
+          regionsNode
+              // Access the individual regions
+              .valueStream()
+              // Filter out the regionValues into separate streams
+              .map(JsonNode::propertyStream)
+              .map(
+                  entryStream ->
+                      entryStream.filter(entry -> entry.getKey().equals("regionValues")).findAny())
+              // Deserialize the values from the stream if present
+              .map(
+                  optionalEntry ->
+                      // Get the value stream if the entry exists
+                      optionalEntry.map(Map.Entry::getValue).map(JsonNode::valueStream).stream()
+                          // Flat map so that we get an empty stream in case no values are given
+                          .flatMap(
+                              values ->
+                                  values.map(value -> ctxt.readTreeAsValue(value, Value.class))))
+              .map(Stream::toList)
+              .toList();
+    } else {
+      regionsValues = List.of();
     }
 
     // Step 7: load the source location if present; otherwise keep the unknown sentinel.
@@ -155,44 +174,6 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
       location = ctxt.readTreeAsValue(locNode, Location.class);
     }
 
-    // Step 8: now that child regions exist, walk their operations and resolve any deferred
-    // successor references to real blocks.
-    if (regions != null) {
-      for (Region region : regions) {
-        for (Block block : region.getBlocks()) {
-          for (Operation operation : block.getOperations()) {
-            Map<BlockOperand, JsonNode> unresolvedReferences =
-                unresolvedSuccessorReferences.get(operation);
-            if (unresolvedReferences != null) {
-              for (Map.Entry<BlockOperand, JsonNode> entry : unresolvedReferences.entrySet()) {
-                BlockOperand blockOperand = entry.getKey();
-                JsonNode blockId = entry.getValue();
-                if (blockId == null || blockId.isNull()) {
-                  return ctxt.reportInputMismatch(
-                      Operation.class, "Encountered unresolved successor block reference.");
-                }
-                // Resolve the block identity only after the target region has been materialized.
-                Block targetBlock = ctxt.readTreeAsValue(blockId, Block.class);
-                blockOperand.setValue(targetBlock);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Extract the region value types from the deserialized regions to pass to the operation
-    // constructor.
-    // The content of the regions is taken after the operation is created.
-    List<Type>[] regionValueTypes;
-    if (regions != null)
-      regionValueTypes =
-          regions.stream()
-              .map(Region::getRegionValues)
-              .map(values -> values.stream().map(Value::getType).toList())
-              .toArray(List[]::new);
-    else regionValueTypes = new List[0];
-
     Operation operation;
     operation =
         Operation.Create(
@@ -201,8 +182,9 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
             operands,
             successors,
             outputValue != null ? outputValue.getType() : null,
-            regionValueTypes);
+            regionsValues);
     if (outputValue != null) operation.setOutputValue(outputValue);
+
 
     if (attributes != null) {
       for (NamedAttribute attribute : attributes) {
@@ -213,13 +195,46 @@ public class OperationDeserializer extends StdDeserializer<Operation> {
     if (dynamicAttributes != null) {
       for (NamedAttribute dynamicAttribute : dynamicAttributes) {
         operation.setDynamicAttribute(
-            dynamicAttribute.getName(), dynamicAttribute.getAttributeOrThrow());
+          dynamicAttribute.getName(), dynamicAttribute.getAttributeOrThrow());
       }
     }
 
-    if (regions != null) {
-      for (int i = 0; i < regions.size(); i++) {
-        operation.getRegions().get(i).takeRegion(regions.get(i), true);
+    // Step 8: Populate regions with their blocks
+    if (!regionsValues.isEmpty()) {
+      int blockI = 0;
+      for (JsonNode regionNode : regionsNode) {
+        Region region = operation.getRegion(blockI++).orElseThrow();
+        // Remove default entry block
+        region.removeBlockAt(0);
+        if (!regionNode.propertyNames().contains("blocks"))
+          return ctxt.reportInputMismatch(Region.class, "Missing required field 'blocks'.");
+        if (!regionNode.get("blocks").isArray())
+          return ctxt.reportInputMismatch(Region.class, "Field 'blocks' must be an array.");
+        for (JsonNode blockNode : regionNode.get("blocks"))
+          region.addBlock(ctxt.readTreeAsValue(blockNode, Block.class));
+      }
+    }
+
+    // Step 9: now that all child regions are populated, walk their operations and resolve any
+    // deferred successor references to real blocks.
+    for (Region region : operation.getRegions()) {
+      for (Block block : region.getBlocks()) {
+        for (Operation op : block.getOperations()) {
+          Map<BlockOperand, JsonNode> unresolvedReferences = unresolvedSuccessorReferences.get(op);
+          if (unresolvedReferences != null) {
+            for (Map.Entry<BlockOperand, JsonNode> entry : unresolvedReferences.entrySet()) {
+              BlockOperand blockOperand = entry.getKey();
+              JsonNode blockId = entry.getValue();
+              if (blockId == null || blockId.isNull()) {
+                return ctxt.reportInputMismatch(
+                    Operation.class, "Encountered unresolved successor block reference.");
+              }
+              // Resolve the block identity only after the target region has been materialized.
+              Block targetBlock = ctxt.readTreeAsValue(blockId, Block.class);
+              blockOperand.setValue(targetBlock);
+            }
+          }
+        }
       }
     }
 

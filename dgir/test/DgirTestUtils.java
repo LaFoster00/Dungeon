@@ -134,11 +134,6 @@ public class DgirTestUtils {
 
   public static String compareSerializedOperations(
       ObjectMapper mapper, Operation op1, Operation op2) {
-    if (!op1.verify(true)) {
-      System.out.println(
-          "Skipping serialized roundtrip for invalid op: " + op1.getClass().getSimpleName());
-      return "";
-    }
     try {
       String json1 = mapper.writeValueAsString(op1);
       String json2 = mapper.writeValueAsString(op2);

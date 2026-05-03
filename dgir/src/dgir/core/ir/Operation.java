@@ -114,13 +114,33 @@ public final class Operation implements Serializable {
       @Nullable List<Block> successors,
       @Nullable Type outputType,
       @NotNull List<Type>... regionValueTypes) {
-    return new Operation(
+    return Create(
         location,
         operationDetails,
-        operands != null ? operands : List.of(),
-        successors != null ? successors : List.of(),
+        operands,
+        successors,
         outputType,
-        regionValueTypes);
+        Arrays.stream(regionValueTypes)
+            .map(types -> types.stream().map(Value::new))
+            .map(Stream::toList)
+            .toList());
+  }
+
+  public static @NotNull Operation Create(
+    @NotNull Location location,
+    @NotNull OperationDetails operationDetails,
+    @Nullable List<Value> operands,
+    @Nullable List<Block> successors,
+    @Nullable Type outputType,
+    @NotNull List<List<Value>> regionsValues
+  ){
+    return new Operation(
+      location,
+      operationDetails,
+      operands != null ? operands : List.of(),
+      successors != null ? successors : List.of(),
+      outputType,
+      regionsValues);
   }
 
   // =========================================================================
@@ -166,18 +186,16 @@ public final class Operation implements Serializable {
    * @param operands The input values.
    * @param successors The blocks succeeding this operation.
    * @param resultType The output result type.
-   * @param regionValueTypes The types of the region values for each region; the number of elements
-   *     determines the number of regions created, and the types in each list determine the body
-   *     values of the corresponding region.
+   * @param regionsValues The values used for the region values for each region; the number of
+   *     elements determines the number of regions created
    */
-  @SafeVarargs
   public Operation(
       @NotNull Location location,
       @NotNull OperationDetails details,
       @NotNull List<Value> operands,
       @NotNull List<Block> successors,
       @Nullable Type resultType,
-      @NotNull List<Type>... regionValueTypes) {
+      @NotNull List<List<Value>> regionsValues) {
     this.location = location;
 
     this.details = details;
@@ -200,11 +218,9 @@ public final class Operation implements Serializable {
         details.defaultAttributes().get().stream()
             .collect(Collectors.toMap(NamedAttribute::getName, attr -> attr));
 
-    var regionsList = new ArrayList<Region>(regionValueTypes.length);
-    for (List<Type> regionValueType : regionValueTypes) {
-      regionsList.add(
-          new Region(
-              this, regionValueType.stream().map(Value::new).toList(), List.of(new Block())));
+    var regionsList = new ArrayList<Region>(regionsValues.size());
+    for (List<Value> regionValues : regionsValues) {
+      regionsList.add(new Region(this, regionValues, List.of(new Block())));
     }
     this.regions = Collections.unmodifiableList(regionsList);
   }
