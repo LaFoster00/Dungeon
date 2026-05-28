@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>Convenience accessor {@link #getResult()} delegates to the first result slot.
  */
+// TODO: provide additional validation, ensuring that the return type matches an expected type.2
 public interface IHasResult extends IOpTrait {
   /**
    * Verifies that the operation declares and materializes a result value.

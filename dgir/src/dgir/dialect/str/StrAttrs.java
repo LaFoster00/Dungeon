@@ -27,7 +27,7 @@ public sealed interface StrAttrs {
 
       @Override
       public @NotNull String getIdent() {
-        return "stringAttr";
+        return "str.attr";
       }
     }
   }
